@@ -170,7 +170,7 @@
         </div>
 
         <div class="kpi-card">
-            <p class="kpi-label">Active Employee</p>
+            <p class="kpi-label">Active Employees</p>
             <div class="kpi-value-row">
                 <p class="kpi-value kpi-value--success" id="kpi-active-employees">-</p>
                 <span class="kpi-badge badge-active" id="kpi-active-pct">-</span>
@@ -186,7 +186,7 @@
         </div>
 
         <div class="kpi-card">
-            <p class="kpi-label">Occupied</p>
+            <p class="kpi-label">Occupied Rooms</p>
             <div class="kpi-value-row">
                 <p class="kpi-value kpi-value--primary" id="kpi-occupied">-</p>
                 <span class="kpi-badge badge-default" id="kpi-occupied-pct">-</span>
@@ -194,7 +194,7 @@
         </div>
 
         <div class="kpi-card kpi-card--accent">
-            <p class="kpi-label">Available</p>
+            <p class="kpi-label">Available Rooms</p>
             <div class="kpi-value-row">
                 <p class="kpi-value kpi-value--success" id="kpi-available">-</p>
                 <span class="kpi-badge badge-active" id="kpi-available-pct">-</span>
