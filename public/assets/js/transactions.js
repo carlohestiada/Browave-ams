@@ -4,6 +4,14 @@ function apiUrl(path) {
     return base + '/' + path.replace(/^\/+/, '');
 }
 
+function getTransactionDateString(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
+
 function loadTransactionOptions(date, target) {
     let url = apiUrl('api/employees/index.php');
     const showAll = target === 'arrival' && $('#arrival_show_all').is(':checked');
@@ -15,7 +23,12 @@ function loadTransactionOptions(date, target) {
             url += '?exclude_arrived_date=' + encodeURIComponent(date);
         }
     } else {
-        url += '?status=Active';
+        const params = ['status=Active'];
+        if (date) {
+            params.push('exclude_transaction_type=departure');
+            params.push('exclude_transaction_date=' + encodeURIComponent(date));
+        }
+        url += '?' + params.join('&');
     }
 
     $.get(url, function(data) {
@@ -345,10 +358,11 @@ function deleteTransaction(transactionId, transactionType) {
                 if (res.success) {
                     loadTransactions('arrival', '#arrivalTable');
                     loadTransactions('departure', '#departureTable');
-                    loadTransactionOptions('', 'departure');
 
                     const arrivalDate = $('#arrival_transaction_date').val() || '';
+                    const departureDate = $('#departure_transaction_date').val() || '';
                     loadTransactionOptions(arrivalDate, 'arrival');
+                    loadTransactionOptions(departureDate, 'departure');
 
                     swalSuccess('Deleted successfully');
                 } else {
@@ -367,28 +381,33 @@ $(function() {
         const today = $('#arrival_transaction_date').val() || '';
         loadTransactionOptions(today, 'arrival');
         loadTransactions('arrival', '#arrivalTable');
-        submitTransaction('#arrivalForm', apiUrl('api/transactions/arrival'));
+        submitTransaction('#arrivalForm', apiUrl('api/transactions/index.php/arrival'));
 
         // Clear transaction_id when opening new record modal
         $('[data-bs-target="#arrivalModal"]').on('click', function() {
             $('#arrival_transaction_id').val('');
             $('#arrivalForm')[0].reset();
+            $('#arrival_transaction_date').val(getTransactionDateString());
             $('#arrival_employee_search').val('');
             $('#arrival_employee_id').val('');
+            loadTransactionOptions($('#arrival_transaction_date').val(), 'arrival');
         });
     }
 
     if ($('#departureForm').length) {
-        loadTransactionOptions('', 'departure');
+        const today = $('#departure_transaction_date').val() || '';
+        loadTransactionOptions(today, 'departure');
         loadTransactions('departure', '#departureTable');
-        submitTransaction('#departureForm', apiUrl('api/transactions/departure'));
+        submitTransaction('#departureForm', apiUrl('api/transactions/index.php/departure'));
 
         // Clear transaction_id when opening new record modal
         $('[data-bs-target="#departureModal"]').on('click', function() {
             $('#departure_transaction_id').val('');
             $('#departureForm')[0].reset();
+            $('#departure_transaction_date').val(getTransactionDateString());
             $('#departure_employee_search').val('');
             $('#departure_employee_id').val('');
+            loadTransactionOptions($('#departure_transaction_date').val(), 'departure');
         });
     }
 });
@@ -459,7 +478,13 @@ $(function() {
     });
 
     $('#departureModal').on('show.bs.modal', function() {
-        loadTransactionOptions('', 'departure');
+        const date = $('#departure_transaction_date').val() || '';
+        loadTransactionOptions(date, 'departure');
+    });
+
+    $('#departure_transaction_date').on('change', function() {
+        const date = $(this).val();
+        loadTransactionOptions(date, 'departure');
     });
 });
 

@@ -18,6 +18,17 @@ class DailyHeadcount
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getBetween($startDate, $endDate)
+    {
+        $stmt = $this->db->prepare(
+            "SELECT * FROM daily_headcount WHERE date BETWEEN ? AND ? ORDER BY date ASC"
+        );
+
+        $stmt->execute([$startDate, $endDate]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function getByDate($date)
     {
         $stmt = $this->db->prepare(
@@ -103,5 +114,25 @@ class DailyHeadcount
             );
             return $stmt->execute([$date, $activeCount, $mealCount]);
         }
+    }
+
+    public function getTransactionsByDateRange($startDate, $endDate)
+    {
+        $stmt = $this->db->prepare(
+            "SELECT
+                t.id,
+                DATE(t.transaction_date) AS transaction_date,
+                t.transaction_type,
+                e.employee_code,
+                e.full_name
+             FROM transactions t
+             LEFT JOIN employees e ON t.employee_id = e.id
+             WHERE DATE(t.transaction_date) BETWEEN ? AND ?
+             ORDER BY DATE(t.transaction_date) ASC, e.full_name ASC"
+        );
+
+        $stmt->execute([$startDate, $endDate]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

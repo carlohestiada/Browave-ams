@@ -16,7 +16,9 @@ class MealPlanningController
 
     public function index()
     {
-        echo json_encode($this->dailyHeadcount->getAll());
+        $headcounts = $this->dailyHeadcount->getAll();
+
+        echo json_encode(array_values($this->attachTransactions($headcounts)));
     }
 
     public function getByDate($date)
@@ -32,7 +34,40 @@ class MealPlanningController
             ];
         }
 
-        echo json_encode($headcount);
+        echo json_encode($this->attachTransactions([$headcount])[$date] ?? $headcount);
+    }
+
+    public function getRange($startDate, $endDate)
+    {
+        if (!$this->isValidDate($startDate) || !$this->isValidDate($endDate) || $startDate > $endDate) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Invalid date range']);
+            return;
+        }
+
+        $savedHeadcounts = $this->dailyHeadcount->getBetween($startDate, $endDate);
+        $headcountsByDate = [];
+
+        foreach ($savedHeadcounts as $headcount) {
+            $headcountsByDate[$headcount['date']] = $headcount;
+        }
+
+        $rows = [];
+        $current = new DateTime($startDate);
+        $last = new DateTime($endDate);
+
+        while ($current <= $last) {
+            $date = $current->format('Y-m-d');
+            $rows[] = $headcountsByDate[$date] ?? [
+                'date' => $date,
+                'active_count' => $this->dailyHeadcount->calculateActiveCount($date),
+                'meal_count' => 0
+            ];
+
+            $current->modify('+1 day');
+        }
+
+        echo json_encode(array_values($this->attachTransactions($rows, $startDate, $endDate)));
     }
 
     public function edit($id)
@@ -99,5 +134,46 @@ class MealPlanningController
             'active_count' => $activeCount,
             'meal_count' => $mealCount
         ]);
+    }
+
+    private function attachTransactions($headcounts, $startDate = null, $endDate = null)
+    {
+        if (empty($headcounts)) {
+            return [];
+        }
+
+        $dates = array_column($headcounts, 'date');
+        $startDate = $startDate ?? min($dates);
+        $endDate = $endDate ?? max($dates);
+        $transactions = $this->dailyHeadcount->getTransactionsByDateRange($startDate, $endDate);
+        $grouped = [];
+
+        foreach ($transactions as $transaction) {
+            $date = $transaction['transaction_date'];
+            $type = $transaction['transaction_type'] === 'departure' ? 'departures' : 'arrivals';
+
+            if (!isset($grouped[$date])) {
+                $grouped[$date] = ['arrivals' => [], 'departures' => []];
+            }
+
+            $grouped[$date][$type][] = $transaction;
+        }
+
+        $withTransactions = [];
+        foreach ($headcounts as $headcount) {
+            $date = $headcount['date'];
+            $headcount['arrivals'] = $grouped[$date]['arrivals'] ?? [];
+            $headcount['departures'] = $grouped[$date]['departures'] ?? [];
+            $withTransactions[$date] = $headcount;
+        }
+
+        return $withTransactions;
+    }
+
+    private function isValidDate($date)
+    {
+        $parsed = DateTime::createFromFormat('Y-m-d', $date);
+
+        return $parsed && $parsed->format('Y-m-d') === $date;
     }
 }

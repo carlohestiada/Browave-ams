@@ -427,7 +427,10 @@ body{
    Small utilities / helper classes (global)
    ----------------------------- */
 .table-warning {
-	background-color: #fff3cd !important;
+	background-color: #ffdfdf !important;
+}
+.content-wrapper .table tbody tr.table-warning td {
+    background-color: #ffffff;
 }
 
 /* ============================================================
@@ -662,6 +665,48 @@ body{
 }
 .content-wrapper .table tbody tr:hover td {
 	background-color: #f0f7ff;
+}
+
+.meal-headcount-summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	background: #ffffff;
+	border: 1px solid #c3c6d5;
+	border-left: 4px solid #094cb2;
+	border-radius: 10px;
+	padding: 16px 20px;
+	box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.meal-headcount-summary__label {
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #434653;
+	margin-bottom: 4px;
+}
+.meal-headcount-summary__range {
+	font-size: 13px;
+	color: #5f6675;
+}
+.meal-headcount-summary__value {
+	min-width: 96px;
+	text-align: right;
+	font-size: 36px;
+	font-weight: 800;
+	line-height: 1;
+	color: #003686;
+}
+@media (max-width: 576px) {
+	.meal-headcount-summary {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+	.meal-headcount-summary__value {
+		text-align: left;
+	}
 }
 
 .table-footer-bar {

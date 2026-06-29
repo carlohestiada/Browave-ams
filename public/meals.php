@@ -11,31 +11,58 @@
 
         <button
             class="btn btn-primary"
-            data-bs-toggle="modal"
-            data-bs-target="#mealModal">
+            type="button"
+            onclick="openMealModal()">
             Add Meal Plan
         </button>
     </div>
 
-    <!-- Date Filter -->
+    <!-- Week Filter -->
     <div class="card mb-3">
         <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <label class="form-label">Filter by Date</label>
-                    <input type="date" id="filterDate" class="form-control" onchange="loadMealsByDate()">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">View</label>
+                    <select id="mealViewMode" class="form-select" onchange="changeMealViewMode()">
+                        <option value="weekly">Weekly List</option>
+                        <option value="monthly">Monthly View</option>
+                    </select>
                 </div>
-                <div class="col-md-6 d-flex align-items-end">
+                <div class="col-md-4 meal-weekly-filter">
+                    <label class="form-label">Week</label>
+                    <div class="input-group">
+                        <button class="btn btn-outline-secondary" type="button" onclick="changeMealWeek(-1)">Previous</button>
+                        <input type="week" id="filterWeek" class="form-control" onchange="loadMealsByWeek()">
+                        <button class="btn btn-outline-secondary" type="button" onclick="changeMealWeek(1)">Next</button>
+                    </div>
+                </div>
+                <div class="col-md-4 meal-monthly-filter d-none">
+                    <label class="form-label">Month</label>
+                    <div class="input-group">
+                        <button class="btn btn-outline-secondary" type="button" onclick="changeMealMonth(-1)">Previous</button>
+                        <input type="month" id="filterMonth" class="form-control" onchange="loadMealsByMonth()">
+                        <button class="btn btn-outline-secondary" type="button" onclick="changeMealMonth(1)">Next</button>
+                    </div>
+                </div>
+                <div class="col-md-5 d-flex align-items-end">
                     <button class="btn btn-info me-2" onclick="recalculateHeadcount()">Calculate Today</button>
                     <button class="btn btn-secondary" onclick="loadMealPlans()">Reset Filter</button>
                 </div>
             </div>
             <div class="row">
                 <div class="col-12 mt-3">
-                    <div class="form-text">Select a date to view the saved totals for that day. If a meal plan already exists, saving will update the record instead of creating a duplicate.</div>
+                    <div class="form-text">Select a week to view the saved totals for each day. If a meal plan already exists, saving will update the record instead of creating a duplicate.</div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="meal-headcount-summary mb-3">
+        <div>
+            <div class="meal-headcount-summary__label" id="mealSummaryLabel">Weekly Meal Headcount</div>
+            <div class="meal-headcount-summary__range" id="mealSummaryRange">-</div>
+        </div>
+        <div class="meal-headcount-summary__value" id="mealSummaryTotal">0</div>
     </div>
 
     <!-- Meal Plans Table -->
@@ -47,6 +74,8 @@
                         <th>Date</th>
                         <th>Active Employees</th>
                         <th>Meal Headcount</th>
+                        <th>Arrival</th>
+                        <th>Departure</th>
                         <th width="180">Action</th>
                     </tr>
                 </thead>
@@ -66,22 +95,24 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="mealForm">
-                <input type="hidden" id="mealId" name="id">
+                <input type="hidden" id="mealTransactionId" name="transaction_id">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="meal_date" class="form-label">Date</label>
-                        <input type="date" class="form-control" id="meal_date" name="date" required>
+                        <label for="meal_transaction_type" class="form-label">Type</label>
+                        <select class="form-select" id="meal_transaction_type" name="transaction_type" required>
+                            <option value="arrival">Arrival</option>
+                            <option value="departure">Departure</option>
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label for="active_count" class="form-label">Active Employees</label>
-                        <input type="number" class="form-control" id="active_count" name="active_count" required min="0">
+                        <label for="meal_employee_id" class="form-label">Employee Name</label>
+                        <select class="form-select" id="meal_employee_id" name="employee_id" required>
+                            <option value="">Select employee</option>
+                        </select>
                     </div>
                     <div class="mb-3">
-                        <label for="meal_count" class="form-label">Meal Headcount</label>
-                        <input type="number" class="form-control" id="meal_count" name="meal_count" required min="0">
-                    </div>
-                    <div class="alert alert-info" role="alert">
-                        <small><strong>Note:</strong> Active Employees count is automatically calculated from the system. Adjust if needed.</small>
+                        <label for="meal_transaction_date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="meal_transaction_date" name="transaction_date" required>
                     </div>
                 </div>
                 <div class="modal-footer">

@@ -9,7 +9,15 @@ class Employee
         $this->db = $db;
     }
 
-    public function getAll($excludeArrivedDate = null, $markArrivedDate = null, $status = null, $departmentId = null, $search = null)
+    public function getAll(
+        $excludeArrivedDate = null,
+        $markArrivedDate = null,
+        $status = null,
+        $departmentId = null,
+        $search = null,
+        $excludeTransactionType = null,
+        $excludeTransactionDate = null
+    )
     {
         $selectExtra = '';
         $params = [];
@@ -58,6 +66,15 @@ class Employee
                 WHERE transaction_type = 'arrival' AND DATE(transaction_date) = ?
             )";
             $params[] = $excludeArrivedDate;
+        }
+
+        if (!empty($excludeTransactionType) && !empty($excludeTransactionDate)) {
+            $conditions[] = "e.id NOT IN (
+                SELECT employee_id FROM transactions
+                WHERE transaction_type = ? AND DATE(transaction_date) = ?
+            )";
+            $params[] = $excludeTransactionType;
+            $params[] = $excludeTransactionDate;
         }
 
         if (!empty($conditions)) {

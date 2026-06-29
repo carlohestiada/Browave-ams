@@ -16,6 +16,11 @@ $action = $parts[1] ?? null;
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
+    if ($id === 'range' && !empty($_GET['start_date']) && !empty($_GET['end_date'])) {
+        $controller->getRange($_GET['start_date'], $_GET['end_date']);
+        return;
+    }
+
     if ($action === 'date' && $id) {
         $controller->getByDate($id);
         return;

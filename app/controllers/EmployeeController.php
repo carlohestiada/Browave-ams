@@ -17,12 +17,22 @@ class EmployeeController
 
         $excludeDate = $_GET['exclude_arrived_date'] ?? null;
         $markDate = $_GET['mark_arrived_date'] ?? null;
+        $excludeTransactionType = $_GET['exclude_transaction_type'] ?? null;
+        $excludeTransactionDate = $_GET['exclude_transaction_date'] ?? null;
         $status = $_GET['status'] ?? null;
         $departmentId = $_GET['department_id'] ?? null;
         $search = $_GET['search'] ?? null;
 
         echo json_encode(
-            $this->employee->getAll($excludeDate, $markDate, $status, $departmentId, $search)
+            $this->employee->getAll(
+                $excludeDate,
+                $markDate,
+                $status,
+                $departmentId,
+                $search,
+                $excludeTransactionType,
+                $excludeTransactionDate
+            )
         );
     }
 
