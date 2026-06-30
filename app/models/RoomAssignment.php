@@ -57,6 +57,10 @@ class RoomAssignment
             return ['success' => false, 'error' => 'This employee already has an active room assignment. Please check out or transfer the existing room before assigning a new one.'];
         }
 
+        if ($this->roomIsReserved($data['room_id'], $data['employee_id'])) {
+            return ['success' => false, 'error' => 'This room is reserved by another employee. Please choose another room or remove the reservation first.'];
+        }
+
         if ($this->roomOccupiedToday($data['room_id'])) {
             return ['success' => false, 'error' => 'The selected room is already occupied. Please choose another available room.'];
         }
@@ -120,6 +124,10 @@ class RoomAssignment
             return ['success' => false, 'error' => 'The selected room is the same as the current room. Please choose a different room.'];
         }
 
+        if ($this->roomIsReserved($newRoomId, $row['employee_id'])) {
+            return ['success' => false, 'error' => 'The selected room is reserved by another employee. Please choose another room or remove the reservation first.'];
+        }
+
         if ($this->roomOccupiedToday($newRoomId, $assignmentId)) {
             return ['success' => false, 'error' => 'The selected room is already assigned. Please choose another room.'];
         }
@@ -153,6 +161,7 @@ class RoomAssignment
             return ['success' => false, 'error' => 'Could not delete room assignment.'];
         }
 
+        $this->clearRoomReservation($assignment['room_id']);
         $this->syncRoomStatuses([$assignment['room_id'], $assignment['transferred_to_room_id']]);
 
         return ['success' => true];
@@ -247,6 +256,31 @@ class RoomAssignment
         }
 
         $checked = true;
+    }
+
+    private function roomIsReserved($roomId, $employeeId)
+    {
+        $stmt = $this->db->prepare(
+            "SELECT reserved_by_employee_id FROM rooms WHERE id=?"
+        );
+        $stmt->execute([$roomId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row || empty($row['reserved_by_employee_id'])) {
+            return false;
+        }
+
+        return (int)$row['reserved_by_employee_id'] !== (int)$employeeId;
+    }
+
+    private function clearRoomReservation($roomId)
+    {
+        if (empty($roomId)) {
+            return;
+        }
+
+        $stmt = $this->db->prepare("UPDATE rooms SET reserved_by_employee_id=NULL WHERE id=?");
+        $stmt->execute([$roomId]);
     }
 
     private function updateRoomStatus($roomId, $status, $occupancy = null)

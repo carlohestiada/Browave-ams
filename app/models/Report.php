@@ -100,6 +100,8 @@ class Report
         $stats = [
             'total_employees' => 0,
             'active_employees' => 0,
+            'male_employees' => 0,
+            'female_employees' => 0,
             'arrivals_today' => 0,
             'departures_today' => 0,
             'meal_headcount' => 0,
@@ -119,6 +121,16 @@ class Report
         $stmt = $this->db->query("SELECT COUNT(*) as count FROM employees WHERE status='Active'");
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         $stats['active_employees'] = $result['count'];
+
+        // Gender counts
+        $stmt = $this->db->query("SELECT gender, COUNT(*) as count FROM employees GROUP BY gender");
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            if (strtolower($row['gender'] ?? '') === 'male') {
+                $stats['male_employees'] = (int) $row['count'];
+            } elseif (strtolower($row['gender'] ?? '') === 'female') {
+                $stats['female_employees'] = (int) $row['count'];
+            }
+        }
 
         // Arrivals today
         $stmt = $this->db->prepare("SELECT COUNT(*) as count FROM transactions WHERE transaction_type='arrival' AND DATE(transaction_date)=?");

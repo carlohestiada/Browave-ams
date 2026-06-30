@@ -262,10 +262,16 @@ function loadRoomsForAssign(selector = '#assign_room', onlyAvailable = true) {
         const selectedRoom = String($(selector).data('selected-room') || '');
         let opts = '<option value="">Select room</option>';
         rooms
-            .filter(r => !onlyAvailable || r.status === 'Available' || String(r.id) === selectedRoom)
+            .filter(r => {
+                if (!onlyAvailable) {
+                    return String(r.id) === selectedRoom || r.status !== 'Reserved';
+                }
+                return (r.status === 'Available' || String(r.id) === selectedRoom) && r.status !== 'Reserved';
+            })
             .forEach(r => {
                 const selected = String(r.id) === selectedRoom ? ' selected' : '';
-                opts += `<option value="${r.id}"${selected}>${r.room_no} (${r.accommodation_name || ''})</option>`;
+                const label = r.status === 'Reserved' ? `${r.room_no} (${r.accommodation_name || ''}) - Reserved` : `${r.room_no} (${r.accommodation_name || ''})`;
+                opts += `<option value="${r.id}"${selected}>${label}</option>`;
             });
         $(selector).html(opts);
         $(selector).removeData('selected-room');

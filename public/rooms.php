@@ -171,7 +171,14 @@
                         <select class="form-select" id="status" name="status" required>
                             <option value="Available">Available</option>
                             <option value="Occupied">Occupied</option>
+                            <option value="Reserved">Reserved</option>
                             <option value="Maintenance">Maintenance</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="reservedEmployeeGroup" style="display:none;">
+                        <label class="form-label">Reserved By</label>
+                        <select class="form-select" id="reserved_by_employee_id" name="reserved_by_employee_id">
+                            <option value="">Select employee</option>
                         </select>
                     </div>
                     <div class="mb-3">

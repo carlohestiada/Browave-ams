@@ -11,6 +11,7 @@ class Room
     {
         $this->db = $db;
         $this->assignment = new RoomAssignment($db);
+        $this->ensureReservationColumns();
     }
 
     public function getAll()
@@ -18,11 +19,12 @@ class Room
         $this->assignment->refreshRoomStatuses();
 
         $stmt = $this->db->query(
-            "SELECT r.*, f.floor_name, b.building_name, a.accommodation_name
+            "SELECT r.*, f.floor_name, b.building_name, a.accommodation_name, e.full_name AS reserved_by_employee_name
              FROM rooms r
              LEFT JOIN floors f ON r.floor_id = f.id
              LEFT JOIN buildings b ON f.building_id = b.id
              LEFT JOIN accommodations a ON b.accommodation_id = a.id
+             LEFT JOIN employees e ON r.reserved_by_employee_id = e.id
              ORDER BY r.room_no ASC"
         );
 
@@ -34,11 +36,12 @@ class Room
         $this->assignment->refreshRoomStatuses();
 
         $stmt = $this->db->prepare(
-            "SELECT r.*, f.floor_name, b.building_name, a.accommodation_name
+            "SELECT r.*, f.floor_name, b.building_name, a.accommodation_name, e.full_name AS reserved_by_employee_name
              FROM rooms r
              LEFT JOIN floors f ON r.floor_id = f.id
              LEFT JOIN buildings b ON f.building_id = b.id
              LEFT JOIN accommodations a ON b.accommodation_id = a.id
+             LEFT JOIN employees e ON r.reserved_by_employee_id = e.id
              WHERE r.floor_id=?
              ORDER BY r.room_no ASC"
         );
@@ -53,8 +56,10 @@ class Room
         $this->assignment->refreshRoomStatuses();
 
         $stmt = $this->db->prepare(
-            "SELECT r.*, f.floor_name FROM rooms r
+            "SELECT r.*, f.floor_name, e.full_name AS reserved_by_employee_name
+             FROM rooms r
              LEFT JOIN floors f ON r.floor_id = f.id
+             LEFT JOIN employees e ON r.reserved_by_employee_id = e.id
              WHERE r.id=?"
         );
 
@@ -65,9 +70,19 @@ class Room
 
     public function create($data)
     {
+        $status = $data['status'] ?? 'Available';
+        $reservedByEmployeeId = null;
+
+        if ($status === 'Reserved') {
+            $reservedByEmployeeId = $data['reserved_by_employee_id'] ?? null;
+            if (empty($reservedByEmployeeId)) {
+                return false;
+            }
+        }
+
         $stmt = $this->db->prepare(
-            "INSERT INTO rooms (floor_id, room_no, room_type, capacity, current_occupancy, status, gender_restriction, remarks)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO rooms (floor_id, room_no, room_type, capacity, current_occupancy, status, reserved_by_employee_id, gender_restriction, remarks)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
 
         return $stmt->execute([
@@ -76,7 +91,8 @@ class Room
             $data['room_type'],
             $data['capacity'],
             $data['current_occupancy'] ?? 0,
-            $data['status'] ?? 'Available',
+            $status,
+            $reservedByEmployeeId,
             $data['gender_restriction'] ?? '',
             $data['remarks'] ?? ''
         ]);
@@ -84,8 +100,18 @@ class Room
 
     public function update($id, $data)
     {
+        $status = $data['status'] ?? 'Available';
+        $reservedByEmployeeId = null;
+
+        if ($status === 'Reserved') {
+            $reservedByEmployeeId = $data['reserved_by_employee_id'] ?? null;
+            if (empty($reservedByEmployeeId)) {
+                return false;
+            }
+        }
+
         $stmt = $this->db->prepare(
-            "UPDATE rooms SET floor_id=?, room_no=?, room_type=?, capacity=?, status=?, gender_restriction=?, remarks=? WHERE id=?"
+            "UPDATE rooms SET floor_id=?, room_no=?, room_type=?, capacity=?, status=?, reserved_by_employee_id=?, gender_restriction=?, remarks=? WHERE id=?"
         );
 
         return $stmt->execute([
@@ -93,7 +119,8 @@ class Room
             $data['room_no'],
             $data['room_type'],
             $data['capacity'],
-            $data['status'] ?? 'Available',
+            $status,
+            $reservedByEmployeeId,
             $data['gender_restriction'] ?? '',
             $data['remarks'] ?? '',
             $id
@@ -116,6 +143,22 @@ class Room
         );
         $stmt->execute([$roomId, $roomId]);
         return $stmt->fetchColumn() > 0;
+    }
+
+    private function ensureReservationColumns()
+    {
+        static $checked = false;
+
+        if ($checked) {
+            return;
+        }
+
+        $stmt = $this->db->query("SHOW COLUMNS FROM rooms LIKE 'reserved_by_employee_id'");
+        if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+            $this->db->exec("ALTER TABLE rooms ADD reserved_by_employee_id int(11) DEFAULT NULL AFTER status");
+        }
+
+        $checked = true;
     }
 
     public function delete($id)

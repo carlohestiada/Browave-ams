@@ -136,6 +136,10 @@ function renderRoomRow(room) {
     const roomId = String(room.id);
     const checked = selectedRoomIds.has(roomId) ? 'checked' : '';
 
+    const reservationNote = room.status === 'Reserved' && room.reserved_by_employee_name
+        ? `<div class="small text-muted mt-1">Reserved by ${displayValue(room.reserved_by_employee_name)}</div>`
+        : '';
+
     return `
         <tr>
             <td style="text-align:center;">
@@ -153,7 +157,10 @@ function renderRoomRow(room) {
             <td>${displayValue(room.room_type)}</td>
             <td>${displayValue(room.capacity)}</td>
             <td>${displayValue(room.current_occupancy)}</td>
-            <td><span class="badge ${room.status === 'Available' ? 'bg-success' : (room.status === 'Occupied' ? 'bg-warning' : 'bg-secondary')}">${displayValue(room.status)}</span></td>
+            <td>
+                <span class="badge ${room.status === 'Available' ? 'bg-success' : (room.status === 'Occupied' ? 'bg-warning' : (room.status === 'Reserved' ? 'bg-info' : 'bg-secondary'))}">${displayValue(room.status)}</span>
+                ${reservationNote}
+            </td>
             <td>${displayValue(room.gender_restriction)}</td>
             <td>
                 <button class="btn btn-warning btn-sm me-1" onclick="editRoom(${room.id})">Edit</button>
@@ -294,11 +301,41 @@ function resetRoomForm()
     $('#accommodation_id').val('');
     $('#building_id').html('<option value="">Select building</option>');
     $('#floor_id').html('<option value="">Select floor</option>');
+    $('#reservedEmployeeGroup').hide();
+    $('#reserved_by_employee_id').html('<option value="">Select employee</option>');
+}
+
+function loadEmployeesForRoomReservation() {
+    $.get('api/employees.php', function(data) {
+        const employees = typeof data === 'string' ? JSON.parse(data) : data;
+        const select = $('#reserved_by_employee_id');
+        if (!select.length) {
+            return;
+        }
+
+        const options = ['<option value="">Select employee</option>']
+            .concat((employees || []).map(emp => `<option value="${emp.id}">${emp.employee_code ? `${emp.employee_code} - ` : ''}${emp.full_name || 'Unnamed Employee'}</option>`))
+            .join('');
+
+        select.html(options);
+    });
+}
+
+function toggleReservedEmployeeField() {
+    const status = $('#status').val();
+    const group = $('#reservedEmployeeGroup');
+    if (status === 'Reserved') {
+        group.show();
+    } else {
+        group.hide();
+        $('#reserved_by_employee_id').val('');
+    }
 }
 
 function openRoomModal(room)
 {
     resetRoomForm();
+    loadEmployeesForRoomReservation();
 
     if (room) {
         $('#roomId').val(room.id);
@@ -315,6 +352,8 @@ function openRoomModal(room)
                 $('#room_type').val(room.room_type);
                 $('#capacity').val(room.capacity);
                 $('#status').val(room.status);
+                $('#reserved_by_employee_id').val(room.reserved_by_employee_id || '');
+                toggleReservedEmployeeField();
                 $('#gender_restriction').val(room.gender_restriction);
                 $('#remarks').val(room.remarks);
             }, 200);
@@ -346,6 +385,11 @@ function editRoom(id)
 function saveRoom(event)
 {
     event.preventDefault();
+
+    if ($('#status').val() === 'Reserved' && !$('#reserved_by_employee_id').val()) {
+        swalError('Please select the employee who reserved this room.');
+        return;
+    }
 
     const id = $('#roomId').val();
     const url = id ? `${roomsApiUrl}/${id}` : roomsApiUrl;
@@ -435,6 +479,7 @@ function deleteSelectedRooms()
 $(function() {
     loadAccommodations();
     loadRooms();
+    loadEmployeesForRoomReservation();
     $('#selectAllRooms').on('change', function() {
         toggleAllRooms(this.checked);
     });
@@ -448,4 +493,5 @@ $(function() {
     $('#roomForm').on('submit', saveRoom);
     $('#accommodation_id').on('change', loadBuildingsForModal);
     $('#building_id').on('change', loadFloorsForModal);
+    $('#status').on('change', toggleReservedEmployeeField);
 });
