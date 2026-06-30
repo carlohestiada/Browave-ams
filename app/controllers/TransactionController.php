@@ -33,32 +33,52 @@ class TransactionController
         }
     }
 
+    private function validateTransactionRequest($data, $type, $excludeId = null)
+    {
+        if (empty($data['employee_id']) || empty($data['transaction_date'])) {
+            return ['valid' => false, 'statusCode' => 400, 'error' => 'Missing required fields'];
+        }
+
+        $transactionDate = trim($data['transaction_date']);
+        $today = date('Y-m-d');
+
+        if ($transactionDate < $today) {
+            return ['valid' => false, 'statusCode' => 400, 'error' => 'Past dates are not allowed.'];
+        }
+
+        $sameTypeRecord = $this->transaction->findByEmployeeAndDate($data['employee_id'], $transactionDate, $type, $excludeId);
+        if ($sameTypeRecord) {
+            return ['valid' => false, 'statusCode' => 400, 'error' => 'Employee already has a ' . $type . ' record on this date'];
+        }
+
+        $otherType = $type === 'arrival' ? 'departure' : 'arrival';
+        $otherTypeRecord = $this->transaction->findByEmployeeAndDate($data['employee_id'], $transactionDate, $otherType, $excludeId);
+        if ($otherTypeRecord) {
+            return ['valid' => false, 'statusCode' => 400, 'error' => 'Employee already has a ' . $otherType . ' record on this date'];
+        }
+
+        return ['valid' => true, 'statusCode' => 200, 'transactionDate' => $transactionDate];
+    }
+
     public function storeArrival()
     {
         $data = $_POST;
 
-        if (empty($data['employee_id']) || empty($data['transaction_date'])) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Missing required fields']);
-            return;
-        }
-
-        // prevent duplicate arrival for same employee on same date
-        $exists = $this->transaction->exists($data['employee_id'], 'arrival', $data['transaction_date']);
-        if ($exists) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Employee is already assigned to that date.']);
+        $validation = $this->validateTransactionRequest($data, 'arrival');
+        if (!$validation['valid']) {
+            http_response_code($validation['statusCode']);
+            echo json_encode(['success' => false, 'error' => $validation['error']]);
             return;
         }
 
         $this->transaction->create([
             'employee_id' => $data['employee_id'],
             'transaction_type' => 'arrival',
-            'transaction_date' => $data['transaction_date'],
+            'transaction_date' => $validation['transactionDate'],
             'remarks' => $data['remarks'] ?? ''
         ]);
 
-        $this->refreshEmployeeStatusAfterTransaction($data['employee_id'], 'arrival', $data['transaction_date']);
+        $this->refreshEmployeeStatusAfterTransaction($data['employee_id'], 'arrival', $validation['transactionDate']);
 
         echo json_encode(['success' => true]);
     }
@@ -67,28 +87,21 @@ class TransactionController
     {
         $data = $_POST;
 
-        if (empty($data['employee_id']) || empty($data['transaction_date'])) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Missing required fields']);
-            return;
-        }
-
-        // prevent duplicate departure for same employee on same date
-        $exists = $this->transaction->exists($data['employee_id'], 'departure', $data['transaction_date']);
-        if ($exists) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Departure already recorded for this employee on this date']);
+        $validation = $this->validateTransactionRequest($data, 'departure');
+        if (!$validation['valid']) {
+            http_response_code($validation['statusCode']);
+            echo json_encode(['success' => false, 'error' => $validation['error']]);
             return;
         }
 
         $this->transaction->create([
             'employee_id' => $data['employee_id'],
             'transaction_type' => 'departure',
-            'transaction_date' => $data['transaction_date'],
+            'transaction_date' => $validation['transactionDate'],
             'remarks' => $data['remarks'] ?? ''
         ]);
 
-        $this->refreshEmployeeStatusAfterTransaction($data['employee_id'], 'departure', $data['transaction_date']);
+        $this->refreshEmployeeStatusAfterTransaction($data['employee_id'], 'departure', $validation['transactionDate']);
 
         echo json_encode(['success' => true]);
     }
@@ -116,12 +129,6 @@ class TransactionController
     {
         parse_str(file_get_contents("php://input"), $data);
 
-        if (empty($data['employee_id']) || empty($data['transaction_date'])) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Missing required fields']);
-            return;
-        }
-
         // Get the existing transaction to know its type
         $existingTx = $this->transaction->getById($id);
         if (!$existingTx) {
@@ -130,26 +137,16 @@ class TransactionController
             return;
         }
 
-        // Check for duplicates (excluding current transaction)
-        $isDuplicate = $this->transaction->exists(
-            $data['employee_id'],
-            $existingTx['transaction_type'],
-            $data['transaction_date'],
-            $id // exclude current ID
-        );
-
-        if ($isDuplicate) {
-            http_response_code(400);
-            echo json_encode([
-                'success' => false,
-                'error' => 'Employee already has a ' . $existingTx['transaction_type'] . ' record on this date'
-            ]);
+        $validation = $this->validateTransactionRequest($data, $existingTx['transaction_type'], $id);
+        if (!$validation['valid']) {
+            http_response_code($validation['statusCode']);
+            echo json_encode(['success' => false, 'error' => $validation['error']]);
             return;
         }
 
         $this->transaction->update($id, [
             'employee_id' => $data['employee_id'],
-            'transaction_date' => $data['transaction_date'],
+            'transaction_date' => $validation['transactionDate'],
             'remarks' => $data['remarks'] ?? ''
         ]);
 
@@ -157,7 +154,7 @@ class TransactionController
         $this->refreshEmployeeStatusAfterTransaction(
             $data['employee_id'],
             $existingTx['transaction_type'],
-            $data['transaction_date']
+            $validation['transactionDate']
         );
 
         echo json_encode(['success' => true]);

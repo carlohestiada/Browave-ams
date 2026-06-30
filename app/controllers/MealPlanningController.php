@@ -17,21 +17,29 @@ class MealPlanningController
     public function index()
     {
         $headcounts = $this->dailyHeadcount->getAll();
+        $normalized = [];
 
-        echo json_encode(array_values($this->attachTransactions($headcounts)));
+        foreach ($headcounts as $headcount) {
+            $headcount['active_count'] = $this->dailyHeadcount->calculateActiveCount($headcount['date']);
+            $normalized[] = $headcount;
+        }
+
+        echo json_encode(array_values($this->attachTransactions($normalized)));
     }
 
     public function getByDate($date)
     {
         $headcount = $this->dailyHeadcount->getByDate($date);
+        $activeCount = $this->dailyHeadcount->calculateActiveCount($date);
         
         if (!$headcount) {
-            $activeCount = $this->dailyHeadcount->calculateActiveCount($date);
             $headcount = [
                 'date' => $date,
                 'active_count' => $activeCount,
                 'meal_count' => 0
             ];
+        } else {
+            $headcount['active_count'] = $activeCount;
         }
 
         echo json_encode($this->attachTransactions([$headcount])[$date] ?? $headcount);
@@ -49,6 +57,7 @@ class MealPlanningController
         $headcountsByDate = [];
 
         foreach ($savedHeadcounts as $headcount) {
+            $headcount['active_count'] = $this->dailyHeadcount->calculateActiveCount($headcount['date']);
             $headcountsByDate[$headcount['date']] = $headcount;
         }
 

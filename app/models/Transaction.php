@@ -25,19 +25,30 @@ class Transaction
 
     public function exists($employee_id, $type, $date, $excludeId = null)
     {
-        $sql = "SELECT COUNT(*) as cnt FROM transactions WHERE employee_id = ? AND transaction_type = ? AND DATE(transaction_date) = ?";
-        $params = [$employee_id, $type, $date];
+        return !empty($this->findByEmployeeAndDate($employee_id, $date, $type, $excludeId));
+    }
+
+    public function findByEmployeeAndDate($employee_id, $date, $type = null, $excludeId = null)
+    {
+        $sql = "SELECT * FROM transactions WHERE employee_id = ? AND DATE(transaction_date) = ?";
+        $params = [$employee_id, $date];
+
+        if ($type !== null) {
+            $sql .= " AND transaction_type = ?";
+            $params[] = $type;
+        }
 
         if ($excludeId) {
             $sql .= " AND id != ?";
             $params[] = $excludeId;
         }
 
+        $sql .= " LIMIT 1";
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        return !empty($row) && intval($row['cnt']) > 0;
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     public function getByType($type)

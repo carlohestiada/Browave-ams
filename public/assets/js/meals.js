@@ -204,7 +204,6 @@ function renderMealRow(meal) {
         <button class="btn btn-primary btn-sm" onclick="openMealModal({date: '${meal.date}'})">Create Plan</button>
     ` : `
         <button class="btn btn-primary btn-sm me-1" onclick="openMealModal({date: '${meal.date}'})">Create Plan</button>
-        <span class="text-muted">Unsaved totals for this date.</span>
     `;
 
     return `
@@ -226,7 +225,9 @@ function getMealSortColumns()
     return [
         { index: 0, key: 'date' },
         { index: 1, key: 'active_count' },
-        { index: 2, key: 'meal_count' }
+        { index: 2, key: 'meal_count' },
+        { index: 3, key: 'arrivals' },
+        { index: 4, key: 'departures' }
     ];
 }
 
@@ -403,7 +404,7 @@ function saveMeal(event)
             swalSuccess('Meal plan saved successfully');
         },
         error: function(xhr) {
-            swalError('Error: ' + (xhr.responseJSON?.error || 'Unknown error'));
+            swalError((xhr.responseJSON?.error || 'Unknown error'));
         }
     });
 }
