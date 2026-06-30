@@ -263,14 +263,22 @@ function loadRoomsForAssign(selector = '#assign_room', onlyAvailable = true) {
         let opts = '<option value="">Select room</option>';
         rooms
             .filter(r => {
+                const isSelected = String(r.id) === selectedRoom;
+                const capacityReached = Number(r.capacity) > 0 && Number(r.current_occupancy || 0) >= Number(r.capacity);
+                const isAssignable = !capacityReached && r.status !== 'Reserved' && r.status !== 'Maintenance';
+
                 if (!onlyAvailable) {
-                    return String(r.id) === selectedRoom || r.status !== 'Reserved';
+                    return isSelected || isAssignable;
                 }
-                return (r.status === 'Available' || String(r.id) === selectedRoom) && r.status !== 'Reserved';
+
+                return (isAssignable || isSelected) && r.status !== 'Reserved';
             })
             .forEach(r => {
                 const selected = String(r.id) === selectedRoom ? ' selected' : '';
-                const label = r.status === 'Reserved' ? `${r.room_no} (${r.accommodation_name || ''}) - Reserved` : `${r.room_no} (${r.accommodation_name || ''})`;
+                const capacityReached = Number(r.capacity) > 0 && Number(r.current_occupancy || 0) >= Number(r.capacity);
+                const label = capacityReached
+                    ? `${r.room_no} (${r.accommodation_name || ''}) - Full`
+                    : `${r.room_no} (${r.accommodation_name || ''})`;
                 opts += `<option value="${r.id}"${selected}>${label}</option>`;
             });
         $(selector).html(opts);

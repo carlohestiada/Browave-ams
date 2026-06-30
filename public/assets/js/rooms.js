@@ -137,8 +137,12 @@ function renderRoomRow(room) {
     const checked = selectedRoomIds.has(roomId) ? 'checked' : '';
 
     const reservationNote = room.status === 'Reserved' && room.reserved_by_employee_name
-        ? `<div class="small text-muted mt-1">Reserved by ${displayValue(room.reserved_by_employee_name)}</div>`
+        ? `<div class="small text-muted mt-1">by ${displayValue(room.reserved_by_employee_name)}</div>`
         : '';
+
+    const assignedEmployeeNames = room.assigned_employee_names
+        ? room.assigned_employee_names.split('\n').filter(Boolean).map(name => `<div>${displayValue(name)} -</div>`).join('')
+        : '<span class="text-muted">—</span>';
 
     return `
         <tr>
@@ -161,6 +165,7 @@ function renderRoomRow(room) {
                 <span class="badge ${room.status === 'Available' ? 'bg-success' : (room.status === 'Occupied' ? 'bg-warning' : (room.status === 'Reserved' ? 'bg-info' : 'bg-secondary'))}">${displayValue(room.status)}</span>
                 ${reservationNote}
             </td>
+            <td>${assignedEmployeeNames}</td>
             <td>${displayValue(room.gender_restriction)}</td>
             <td>
                 <button class="btn btn-warning btn-sm me-1" onclick="editRoom(${room.id})">Edit</button>

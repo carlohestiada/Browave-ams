@@ -61,8 +61,8 @@ class RoomAssignment
             return ['success' => false, 'error' => 'This room is reserved by another employee. Please choose another room or remove the reservation first.'];
         }
 
-        if ($this->roomOccupiedToday($data['room_id'])) {
-            return ['success' => false, 'error' => 'The selected room is already occupied. Please choose another available room.'];
+        if (!$this->roomHasCapacity($data['room_id'])) {
+            return ['success' => false, 'error' => 'This room has reached its maximum capacity. Please choose another room.'];
         }
 
         $expectedCheckout = trim($data['expected_checkout_date'] ?? '') ?: $data['checkin_date'];
@@ -83,7 +83,8 @@ class RoomAssignment
             return ['success' => false, 'error' => 'Could not create room assignment.'];
         }
 
-        if (!$this->updateRoomStatus($data['room_id'], 'Occupied', 1)) {
+        $occupancyCount = $this->countRoomOccupants($data['room_id']);
+        if (!$this->updateRoomStatus($data['room_id'], 'Occupied', $occupancyCount)) {
             return ['success' => false, 'error' => 'Assignment created, but room status failed to update.'];
         }
 
@@ -128,8 +129,8 @@ class RoomAssignment
             return ['success' => false, 'error' => 'The selected room is reserved by another employee. Please choose another room or remove the reservation first.'];
         }
 
-        if ($this->roomOccupiedToday($newRoomId, $assignmentId)) {
-            return ['success' => false, 'error' => 'The selected room is already assigned. Please choose another room.'];
+        if (!$this->roomHasCapacity($newRoomId, $assignmentId)) {
+            return ['success' => false, 'error' => 'The selected room has reached its maximum capacity. Please choose another room.'];
         }
 
         $stmt = $this->db->prepare(
@@ -161,13 +162,36 @@ class RoomAssignment
             return ['success' => false, 'error' => 'Could not delete room assignment.'];
         }
 
-        $this->clearRoomReservation($assignment['room_id']);
         $this->syncRoomStatuses([$assignment['room_id'], $assignment['transferred_to_room_id']]);
 
         return ['success' => true];
     }
 
     private function roomOccupiedToday($roomId, $excludeAssignmentId = null)
+    {
+        return $this->countRoomOccupants($roomId, $excludeAssignmentId) > 0;
+    }
+
+    private function roomHasCapacity($roomId, $excludeAssignmentId = null)
+    {
+        $capacity = $this->getRoomCapacity($roomId);
+        if ($capacity === null || $capacity <= 0) {
+            return true;
+        }
+
+        return $this->countRoomOccupants($roomId, $excludeAssignmentId) < $capacity;
+    }
+
+    private function getRoomCapacity($roomId)
+    {
+        $stmt = $this->db->prepare("SELECT capacity FROM rooms WHERE id=?");
+        $stmt->execute([$roomId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? (int) $row['capacity'] : null;
+    }
+
+    private function countRoomOccupants($roomId, $excludeAssignmentId = null)
     {
         $today = date('Y-m-d');
         $sql = "SELECT COUNT(*) AS count
@@ -189,7 +213,7 @@ class RoomAssignment
         $stmt->execute($params);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        return $row && $row['count'] > 0;
+        return (int) ($row['count'] ?? 0);
     }
 
     public function refreshRoomStatuses()
@@ -237,8 +261,13 @@ class RoomAssignment
         }
 
         foreach (array_keys($touchedRooms) as $roomId) {
-            $isOccupied = isset($occupiedRooms[$roomId]);
-            $this->updateRoomStatus($roomId, $isOccupied ? 'Occupied' : 'Available', $isOccupied ? 1 : 0);
+            $occupancyCount = $this->countRoomOccupants($roomId);
+            $isOccupied = $occupancyCount > 0;
+            $roomStatus = $this->getRoomDisplayStatus($roomId);
+            $statusToSet = in_array($roomStatus, ['Reserved', 'Maintenance'], true)
+                ? $roomStatus
+                : ($isOccupied ? 'Occupied' : 'Available');
+            $this->updateRoomStatus($roomId, $statusToSet, $occupancyCount);
         }
     }
 
@@ -273,14 +302,13 @@ class RoomAssignment
         return (int)$row['reserved_by_employee_id'] !== (int)$employeeId;
     }
 
-    private function clearRoomReservation($roomId)
+    private function getRoomDisplayStatus($roomId)
     {
-        if (empty($roomId)) {
-            return;
-        }
-
-        $stmt = $this->db->prepare("UPDATE rooms SET reserved_by_employee_id=NULL WHERE id=?");
+        $stmt = $this->db->prepare("SELECT status FROM rooms WHERE id=?");
         $stmt->execute([$roomId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row['status'] ?? 'Available';
     }
 
     private function updateRoomStatus($roomId, $status, $occupancy = null)

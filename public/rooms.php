@@ -107,6 +107,7 @@
                         <th>Capacity</th>
                         <th>Occupancy</th>
                         <th>Status</th>
+                        <th>Employee Name(s)</th>
                         <th>Gender</th>
                         <th width="180">Action</th>
                     </tr>
