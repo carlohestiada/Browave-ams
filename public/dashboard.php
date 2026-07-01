@@ -76,7 +76,7 @@
         <!-- Department -->
         <div class="ams-card dashboard-card-panel dashboard-chart-panel--wide">
             <div class="dashboard-card-header">
-                <div class="dashboard-card-title">  
+                <div class="dashboard-card-title">
                     <span>Department Chart</span>
                 </div>
                 <div class="dashboard-chart-legend" id="trend-chart-legend">
@@ -85,51 +85,125 @@
             </div>
             <div class="dashboard-card-body dashboard-chart-body">
                 <div id="dashboard-chart-tooltip" class="dashboard-chart-tooltip"></div>
-                <svg id="trend-chart-svg" class="dashboard-trend-chart" viewBox="0 0 800 200" preserveAspectRatio="none">
+                <div id="department-chart-empty" class="dashboard-chart-empty-state" style="display:none;">
+                    <svg class="dashboard-chart-empty-illustration" viewBox="0 0 120 80" aria-hidden="true">
+                        <rect x="12" y="22" width="18" height="38" rx="4" fill="#dbeafe"></rect>
+                        <rect x="40" y="14" width="18" height="46" rx="4" fill="#bfdbfe"></rect>
+                        <rect x="68" y="28" width="18" height="32" rx="4" fill="#93c5fd"></rect>
+                        <rect x="96" y="18" width="12" height="42" rx="4" fill="#60a5fa"></rect>
+                        <path d="M12 58c10-8 19-12 30-12s20 4 30 10 19 8 36 8" stroke="#00639d" stroke-width="3" stroke-linecap="round" fill="none"></path>
+                    </svg>
+                    <p class="dashboard-chart-empty-title"><strong>No data available.</strong></p>
+                    <p class="dashboard-chart-empty-text">Please add employee records to generate chart statistics.</p>
+                </div>
+                <svg id="trend-chart-svg" class="dashboard-trend-chart" viewBox="0 0 800 420" preserveAspectRatio="none">
                     <!-- Points injected by JS -->
                 </svg>
                 <div class="dashboard-trend-chart-labels" id="trend-chart-labels">
                     <!-- Month labels injected by JS -->
-                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Gender Distribution -->
-        <div class="ams-card dashboard-card-panel">
+        <!-- Gender Distribution — enhanced donut -->
+        <div class="ams-card dashboard-card-panel gender-chart-card">
             <div class="dashboard-card-header">
                 <div class="dashboard-card-title">
-                    <span>Gender Chart</span>
+                    <span>Gender Distribution</span>
                 </div>
+                <span class="gender-chart-subtitle">All employees</span>
             </div>
             <div class="dashboard-card-body dashboard-donut-body">
+
+                <!-- Donut ring -->
                 <div class="dashboard-donut-wrap">
+                    <div id="gender-chart-tooltip" class="dashboard-gender-tooltip" role="status" aria-live="polite"></div>
                     <svg class="dashboard-donut-chart" viewBox="0 0 36 36">
-                        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e2e8f0" stroke-width="4"></circle>
-                        <circle id="gender-donut-arc" cx="18" cy="18" r="15.9" fill="none" stroke="#00639d"
-                                stroke-width="4" stroke-linecap="round"
-                                stroke-dasharray="0 100" transform="rotate(-90 18 18)"></circle>
+                        <!-- Decorative outer glow ring -->
+                        <circle cx="18" cy="18" r="15.9"
+                                fill="none"
+                                stroke="#eef4ff"
+                                stroke-width="5"></circle>
+                        <!-- Track ring -->
+                        <circle cx="18" cy="18" r="15.9"
+                                fill="none"
+                                stroke="#e2e8f0"
+                                stroke-width="3.2"></circle>
+                        <!-- Female arc (background, rendered first) -->
+                        <circle id="gender-donut-arc-female"
+                                cx="18" cy="18" r="15.9"
+                                fill="none"
+                                stroke="#e879a0"
+                                stroke-width="3.2"
+                                stroke-linecap="round"
+                                stroke-dasharray="0 100"
+                                transform="rotate(-90 18 18)"
+                                class="gender-arc-animate"></circle>
+                        <!-- Male arc (rendered on top) -->
+                        <circle id="gender-donut-arc"
+                                cx="18" cy="18" r="15.9"
+                                fill="none"
+                                stroke="#00639d"
+                                stroke-width="3.2"
+                                stroke-linecap="round"
+                                stroke-dasharray="0 100"
+                                transform="rotate(-90 18 18)"
+                                class="gender-arc-animate"></circle>
                     </svg>
+                    <div id="gender-chart-empty" class="dashboard-chart-empty-state dashboard-gender-empty-state" style="display:none;">
+                        <svg class="dashboard-chart-empty-illustration" viewBox="0 0 120 80" aria-hidden="true">
+                            <circle cx="60" cy="40" r="24" fill="none" stroke="#cbd5e1" stroke-width="8"></circle>
+                            <path d="M60 20v20l14 8" stroke="#00639d" stroke-width="6" stroke-linecap="round"></path>
+                            <path d="M32 64c10-12 18-18 28-18s18 6 28 18" stroke="#93c5fd" stroke-width="5" stroke-linecap="round" fill="none"></path>
+                        </svg>
+                        <p class="dashboard-chart-empty-title"><strong>No data available.</strong></p>
+                        <p class="dashboard-chart-empty-text">Please add employee records to generate chart statistics.</p>
+                    </div>
+                    <!-- Centre label -->
                     <div class="dashboard-donut-center">
                         <span class="dashboard-donut-total" id="gender-donut-total">-</span>
                         <span class="dashboard-donut-total-label">Total</span>
                     </div>
                 </div>
+
+                <!-- Legend — two columns side by side -->
                 <div class="dashboard-donut-legend">
-                    <div class="dashboard-donut-legend-item">
-                        <div class="dashboard-donut-legend-dot" style="background:#00639d;"></div>
+                    <div class="dashboard-donut-legend-item gender-legend-male">
+                        <div class="gender-legend-icon" style="background: linear-gradient(135deg, #00639d, #094cb2);">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="8" r="4"/><path d="M12 14c-5 0-8 2-8 4v1h16v-1c0-2-3-4-8-4z"/>
+                            </svg>
+                        </div>
                         <div>
                             <p class="dashboard-donut-legend-label">Male</p>
                             <p class="dashboard-donut-legend-value" id="gender-pct-male">-</p>
                         </div>
                     </div>
-                    <div class="dashboard-donut-legend-item">
-                        <div class="dashboard-donut-legend-dot" style="background:#cbd5e1;"></div>
+                    <div class="dashboard-donut-legend-item gender-legend-female">
+                        <div class="gender-legend-icon" style="background: linear-gradient(135deg, #e879a0, #c026d3);">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="8" r="4"/><path d="M12 14c-5 0-8 2-8 4v1h16v-1c0-2-3-4-8-4z"/>
+                            </svg>
+                        </div>
                         <div>
                             <p class="dashboard-donut-legend-label">Female</p>
                             <p class="dashboard-donut-legend-value" id="gender-pct-female">-</p>
                         </div>
                     </div>
                 </div>
+
+                <!-- Bar breakdown -->
+                <div class="gender-bar-breakdown">
+                    <div class="gender-bar-track">
+                        <div class="gender-bar-male" id="gender-bar-male" style="width:0%"></div>
+                        <div class="gender-bar-female" id="gender-bar-female" style="width:0%"></div>
+                    </div>
+                    <div class="gender-bar-labels">
+                        <span id="gender-bar-label-male">Male 0%</span>
+                        <span id="gender-bar-label-female">Female 0%</span>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -215,8 +289,8 @@
 
 </div>
 
-<!-- end .content-wrapper -->
+
 
 <script src="assets/js/dashboard.js"></script>
 
-<?php include 'layouts/footer.php'; ?>  
+<?php include 'layouts/footer.php'; ?>

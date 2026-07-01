@@ -472,21 +472,102 @@ body{
     z-index: 20;
     pointer-events: none;
     display: none;
-    min-width: 90px;
-    padding: 0.35rem 0.5rem;
-    border-radius: 0.35rem;
-    background: rgba(0, 51, 102, 0.95);
+    min-width: 140px;
+    max-width: 220px;
+    padding: 0.65rem 0.85rem;
+    border-radius: 0.5rem;
+    background: rgba(0, 51, 102, 0.96);
     color: #fff;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: 600;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+    line-height: 1.4;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
     transform: translate(-50%, calc(-100% - 8px));
 }
 
 .dashboard-trend-chart {
     width: 100%;
-    height: 220px;
+    height: 420px;
     display: block;
+}
+
+.dashboard-chart-line {
+    transition: stroke-width 150ms ease, opacity 150ms ease;
+}
+
+.dashboard-chart-line.active {
+    stroke-width: 4.5;
+    opacity: 1;
+}
+
+.dashboard-chart-line.dimmed {
+    opacity: 0.35;
+}
+
+.dashboard-chart-point {
+    transition: r 150ms ease, opacity 150ms ease, transform 150ms ease;
+    cursor: pointer;
+    stroke: #fff;
+    stroke-width: 1.75;
+}
+
+.dashboard-chart-point:hover,
+.dashboard-chart-point.active {
+    r: 7;
+    transform: translateZ(0);
+}
+
+.dashboard-chart-value-label {
+    font-size: 12px;
+    font-weight: 700;
+    fill: #003686;
+    pointer-events: none;
+}
+
+.dashboard-chart-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-height: 240px;
+    padding: 1.2rem 1rem;
+    border: 1px dashed #cbd5e1;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(0, 99, 157, 0.05), rgba(255, 255, 255, 0.95));
+    text-align: center;
+    color: #475569;
+}
+
+.dashboard-chart-empty-illustration {
+    width: 120px;
+    height: 80px;
+    margin-bottom: 0.2rem;
+}
+
+.dashboard-chart-empty-title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #003366;
+}
+
+.dashboard-chart-empty-text {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: #64748b;
+    max-width: 280px;
+}
+
+.dashboard-gender-empty-state {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    min-height: auto;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: inset 0 0 0 1px rgba(203, 213, 225, 0.7);
 }
 
 .dashboard-trend-chart-labels {
@@ -506,84 +587,223 @@ body{
     pointer-events: none;
 }
 
-.dashboard-donut-body {
+/* Card shell */
+.gender-chart-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.gender-chart-subtitle {
+    font-size: 11px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* Body — centre everything vertically */
+.gender-chart-card .dashboard-donut-body {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+    gap: 1.5rem;
+    padding: 1.5rem 1.25rem 1.25rem;
 }
 
-.dashboard-donut-wrap {
+/* Ring — larger, prominent */
+.gender-chart-card .dashboard-donut-wrap {
     position: relative;
-    width: 160px;
-    height: 160px;
+    width: 190px;
+    height: 190px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 4px 16px rgba(0, 99, 157, 0.12));
 }
 
-.dashboard-donut-chart {
+.gender-chart-card .dashboard-donut-chart {
     width: 100%;
     height: 100%;
 }
 
-.dashboard-donut-center {
+.dashboard-donut-wrap {
+    position: relative;
+}
+
+.dashboard-gender-tooltip {
+    position: absolute;
+    z-index: 20;
+    min-width: 110px;
+    max-width: 150px;
+    padding: 0.7rem 0.8rem;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+    opacity: 0;
+    transform: translate(-50%, -100%) scale(0.96);
+    pointer-events: none;
+    transition: opacity 180ms ease, transform 180ms ease;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.dashboard-gender-tooltip.is-visible {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1);
+}
+
+.dashboard-gender-tooltip-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 0.28rem;
+    flex-shrink: 0;
+}
+
+.dashboard-gender-tooltip-title {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.dashboard-gender-tooltip-value {
+    font-weight: 600;
+    color: #111827;
+}
+
+.dashboard-gender-tooltip-meta {
+    font-size: 0.72rem;
+    color: #64748b;
+}
+
+.gender-arc-animate {
+    cursor: pointer;
+    transition: stroke-dasharray 0.9s cubic-bezier(0.4, 0, 0.2, 1), stroke-width 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+}
+
+.gender-arc-animate.is-active {
+    stroke-width: 4.2;
+    filter: brightness(1.08) drop-shadow(0 0 6px rgba(0, 99, 157, 0.2));
+    opacity: 1;
+}
+
+.gender-arc-animate.is-dimmed {
+    opacity: 0.42;
+}
+
+/* Centre text — bolder, larger */
+.gender-chart-card .dashboard-donut-center {
     position: absolute;
     inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    pointer-events: none;
 }
 
-.dashboard-donut-total {
-    font-size: 1.25rem;
-    font-weight: 700;
+.gender-chart-card .dashboard-donut-total {
+    font-size: 2.25rem;
+    font-weight: 800;
     color: #003366;
+    line-height: 1;
+    letter-spacing: -0.03em;
 }
 
-.dashboard-donut-total-label {
-    font-size: 8px;
+.gender-chart-card .dashboard-donut-total-label {
+    font-size: 9px;
     font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.18em;
     color: #9ca3af;
+    margin-top: 4px;
 }
 
-.dashboard-donut-legend {
+/* Legend — two columns with icon badges */
+.gender-chart-card .dashboard-donut-legend {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    gap: 1rem 2rem;
     width: 100%;
-    margin-top: 2rem;
-    padding: 0 1rem;
+    margin-top: 0;
+    padding: 0;
 }
 
-.dashboard-donut-legend-item {
+.gender-chart-card .dashboard-donut-legend-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
 }
 
-.dashboard-donut-legend-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
+/* Icon badge replaces plain dot */
+.gender-legend-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
 }
 
-.dashboard-donut-legend-label {
+.gender-chart-card .dashboard-donut-legend-label {
     font-size: 10px;
     font-weight: 700;
-    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #9ca3af;
     margin: 0;
 }
 
-.dashboard-donut-legend-value {
-    font-size: 0.875rem;
-    font-weight: 700;
+.gender-chart-card .dashboard-donut-legend-value {
+    font-size: 15px;
+    font-weight: 800;
     color: #003366;
     margin: 0;
+    letter-spacing: -0.01em;
 }
 
+/* Segmented proportion bar */
+.gender-bar-breakdown {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.gender-bar-track {
+    width: 100%;
+    height: 8px;
+    border-radius: 9999px;
+    background: #e2e8f0;
+    overflow: hidden;
+    display: flex;
+}
+
+.gender-bar-male {
+    height: 100%;
+    background: linear-gradient(90deg, #003686, #00639d);
+    border-radius: 9999px 0 0 9999px;
+    transition: width 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gender-bar-female {
+    height: 100%;
+    background: linear-gradient(90deg, #e879a0, #c026d3);
+    border-radius: 0 9999px 9999px 0;
+    transition: width 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gender-bar-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    font-weight: 700;
+    color: #9ca3af;
+}
 
 /* -----------------------------
    Small utilities / helper classes (global)

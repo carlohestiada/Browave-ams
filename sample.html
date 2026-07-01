@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Browave AMS - Dashboard</title>
+<!-- Tailwind CSS v3 CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Manrope -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<style data-purpose="custom-typography">
+    body {
+      font-family: 'Manrope', sans-serif;
+      background-color: #f8f9ff;
+    }
+    .brand-text {
+      color: #003366;
+    }
+    .primary-blue {
+      color: #00639d;
+    }
+    .bg-primary-blue {
+      background-color: #00639d;
+    }
+  </style>
+<style data-purpose="layout-styles">
+    /* Sidebar specific styling */
+    .sidebar-item-active {
+      background-color: #f0f4ff;
+      border-left: 4px solid #00639d;
+      color: #00639d;
+    }
+    .sidebar-item {
+      transition: all 0.2s ease;
+    }
+    .sidebar-item:hover {
+      background-color: #f1f5f9;
+    }
+    /* Card styling based on IMAGE_3 and DESIGN_SYSTEM_1 */
+    .dashboard-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px; /* ROUND_EIGHT from DESIGN_SYSTEM_1 */
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+    /* Smooth Bezier path helper */
+    .chart-line {
+      fill: none;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  </style>
+</head>
+<body class="flex min-h-screen">
+<!-- BEGIN: LeftSidebar -->
+<aside class="w-64 bg-white border-r border-gray-200 flex flex-col fixed h-full z-10" data-purpose="main-sidebar">
+<div class="p-6">
+<h1 class="text-xl font-extrabold primary-blue uppercase tracking-tight">Browave AMS</h1>
+<p class="text-[10px] text-gray-400 font-bold mt-1 tracking-widest">MANAGEMENT CONTROL</p>
+</div>
+<nav class="flex-1 px-2 space-y-1 overflow-y-auto">
+<a class="sidebar-item-active flex items-center px-4 py-3 rounded-r-lg group" href="#">
+<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="font-bold">Dashboard</span>
+</a>
+<div class="group">
+<button class="sidebar-item w-full flex items-center justify-between px-4 py-3 rounded-lg text-gray-600 hover:text-[#00639d]">
+<div class="flex items-center">
+<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="font-semibold">Management</span>
+</div>
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+<a class="sidebar-item flex items-center px-4 py-3 rounded-lg text-gray-600 hover:text-[#00639d]" href="#">
+<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M21 15.546c-.523.344-1.114.454-1.725.33l-4.04-.808a.5.5 0 00-.595.394l-.19.953a.5.5 0 01-.655.378l-2.012-.67a.5.5 0 00-.635.342l-.248 1.117a.5.5 0 01-.762.33l-2.315-1.543a.5.5 0 00-.626.035L4.5 18.5" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="font-semibold">Meals</span>
+</a>
+<div class="group">
+<button class="sidebar-item w-full flex items-center justify-between px-4 py-3 rounded-lg text-gray-600 hover:text-[#00639d]">
+<div class="flex items-center">
+<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="font-semibold">Reports</span>
+</div>
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+<a class="sidebar-item flex items-center px-4 py-3 rounded-lg text-gray-600 hover:text-[#00639d]" href="#">
+<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="font-semibold">Users</span>
+</a>
+<div class="group">
+<button class="sidebar-item w-full flex items-center justify-between px-4 py-3 rounded-lg text-gray-600 hover:text-[#00639d]">
+<div class="flex items-center">
+<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="font-semibold">Transactions</span>
+</div>
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+<a class="sidebar-item flex items-center px-4 py-3 rounded-lg text-gray-600 hover:text-[#00639d]" href="#">
+<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="font-semibold">Room Assignments</span>
+</a>
+</nav>
+</aside>
+<!-- END: LeftSidebar -->
+<!-- Main Content Area -->
+<main class="flex-1 ml-64 min-h-screen flex flex-col" data-purpose="main-layout-container">
+<!-- BEGIN: TopNavigation -->
+<header class="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-8 sticky top-0 z-20">
+<button class="text-gray-400 hover:text-gray-600">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+<div class="flex items-center space-x-6">
+<span class="text-[11px] font-extrabold text-gray-400 uppercase tracking-[0.2em]">ROLE: ADMIN</span>
+<button class="bg-[#001f3f] text-white px-5 py-2 rounded flex items-center text-xs font-bold hover:bg-[#003366] transition-colors shadow-sm">
+<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+          Logout
+        </button>
+</div>
+</header>
+<!-- END: TopNavigation -->
+<div class="p-8 space-y-8">
+<!-- BEGIN: DashboardHeader -->
+<section class="flex justify-between items-end">
+<div>
+<h2 class="text-3xl font-extrabold primary-blue tracking-tight">Dashboard</h2>
+<p class="text-gray-400 text-sm mt-1 font-medium">Real-time overview of accommodation, staffing, and operations.</p>
+</div>
+<button class="border border-[#00639d] text-[#00639d] px-4 py-2 rounded flex items-center text-xs font-bold hover:bg-[#00639d] hover:text-white transition-all">
+<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+          Refresh
+        </button>
+</section>
+<!-- END: DashboardHeader -->
+<!-- BEGIN: KPICards (Polished based on IMAGE_3) -->
+<section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+<!-- Total Employees -->
+<div class="dashboard-card p-5 flex flex-col justify-between h-36">
+<p class="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Total Employees</p>
+<div class="flex items-end justify-between">
+<span class="text-4xl font-extrabold primary-blue">20</span>
+<span class="text-[10px] bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-bold border border-blue-100">All</span>
+</div>
+</div>
+<!-- Active Employees -->
+<div class="dashboard-card p-5 flex flex-col justify-between h-36">
+<p class="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Active Employees</p>
+<div class="flex items-end justify-between">
+<span class="text-4xl font-extrabold text-green-600">17</span>
+<span class="text-[10px] bg-green-50 text-green-600 px-2.5 py-1 rounded-full font-bold border border-green-100">85%</span>
+</div>
+</div>
+<!-- Total Rooms -->
+<div class="dashboard-card p-5 flex flex-col justify-between h-36">
+<p class="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Total Rooms</p>
+<div class="flex items-end justify-between">
+<span class="text-4xl font-extrabold primary-blue">0</span>
+<span class="text-[10px] bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-bold border border-blue-100">100%</span>
+</div>
+</div>
+<!-- Occupied -->
+<div class="dashboard-card p-5 flex flex-col justify-between h-36">
+<p class="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Occupied Rooms</p>
+<div class="flex items-end justify-between">
+<span class="text-4xl font-extrabold primary-blue">0</span>
+<span class="text-[10px] bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-bold border border-blue-100">0%</span>
+</div>
+</div>
+<!-- Available -->
+<div class="dashboard-card p-5 flex flex-col justify-between h-36">
+<p class="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Available Rooms</p>
+<div class="flex items-end justify-between">
+<span class="text-4xl font-extrabold text-green-600">0</span>
+<span class="text-[10px] bg-green-50 text-green-600 px-2.5 py-1 rounded-full font-bold border border-green-100">0%</span>
+</div>
+</div>
+<!-- Departments -->
+<div class="dashboard-card p-5 flex flex-col justify-between h-36">
+<p class="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Departments</p>
+<div class="flex items-end justify-between">
+<span class="text-4xl font-extrabold primary-blue">4</span>
+<span class="text-[10px] bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-bold border border-blue-100">Total</span>
+</div>
+</div>
+</section>
+<!-- END: KPICards -->
+<!-- BEGIN: NewChartsSection -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Department Chart (Enhanced Line Graph) -->
+<div class="lg:col-span-2 dashboard-card p-6">
+<div class="flex items-center justify-between mb-8">
+<h3 class="font-bold primary-blue text-base">Department Chart</h3>
+<div class="flex items-center space-x-1.5">
+<div class="w-3 h-3 rounded-sm bg-[#00639d]"></div>
+<span class="text-[11px] font-bold text-gray-500 uppercase">Employees</span>
+</div>
+</div>
+<div class="relative h-64 w-full px-4">
+<!-- Simulated Grid and Curves -->
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 800 200">
+<!-- Grid -->
+<line stroke="#f1f5f9" stroke-width="1" x1="0" x2="800" y1="50" y2="50"></line>
+<line stroke="#f1f5f9" stroke-width="1" x1="0" x2="800" y1="100" y2="100"></line>
+<line stroke="#f1f5f9" stroke-width="1" x1="0" x2="800" y1="150" y2="150"></line>
+<!-- Bezier Curve (Approximate based on IMAGE_3 points: 0, 1, 19, 0) -->
+<path class="chart-line" d="M 40,160 C 120,160 180,155 240,150 C 360,140 440,40 560,40 C 680,40 720,160 760,160" stroke="#00639d"></path>
+<!-- Circular Data Points -->
+<circle cx="40" cy="160" fill="#00639d" r="4"></circle>
+<circle cx="240" cy="150" fill="#00639d" r="4"></circle>
+<circle cx="560" cy="40" fill="#00639d" r="4"></circle>
+<circle cx="760" cy="160" fill="#00639d" r="4"></circle>
+<!-- Value Labels -->
+<text fill="#003366" font-size="12" font-weight="bold" x="45" y="155">0</text>
+<text fill="#003366" font-size="12" font-weight="bold" x="245" y="145">1</text>
+<text fill="#003366" font-size="12" font-weight="bold" x="565" y="35">19</text>
+<text fill="#003366" font-size="12" font-weight="bold" x="765" y="155">0</text>
+</svg>
+<div class="flex justify-between mt-4 text-[10px] text-gray-400 font-extrabold px-6 uppercase">
+<span>FA</span><span>MI</span><span>PT</span><span>QA</span>
+</div>
+</div>
+</div>
+<!-- Gender Chart (Enhanced Donut) -->
+<div class="dashboard-card p-6 flex flex-col">
+<h3 class="font-bold primary-blue text-base mb-6">Gender Chart</h3>
+<div class="flex-1 flex flex-col items-center justify-center">
+<div class="relative w-48 h-48">
+<!-- SVG Donut Chart -->
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<!-- Female Circle Background -->
+<circle cx="18" cy="18" fill="none" r="15.9" stroke="#e9ecf5" stroke-width="3.5"></circle>
+<!-- Male Segment (55%) -->
+<circle cx="18" cy="18" fill="none" r="15.9" stroke="#00639d" stroke-dasharray="55 100" stroke-linecap="round" stroke-width="3.5"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-3xl font-extrabold primary-blue">20</span>
+<span class="text-[9px] text-gray-400 uppercase font-extrabold tracking-widest">Total</span>
+</div>
+</div>
+<!-- Refined Legend based on IMAGE_3 -->
+<div class="mt-10 grid grid-cols-2 gap-12">
+<div class="flex items-center space-x-3">
+<div class="w-2.5 h-2.5 rounded-full bg-[#00639d]"></div>
+<div>
+<p class="text-[10px] text-gray-400 font-extrabold">MALE</p>
+<p class="text-sm font-bold primary-blue">55%</p>
+</div>
+</div>
+<div class="flex items-center space-x-3">
+<div class="w-2.5 h-2.5 rounded-full bg-[#d8dee9]"></div>
+<div>
+<p class="text-[10px] text-gray-400 font-extrabold">FEMALE</p>
+<p class="text-sm font-bold primary-blue">45%</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: NewChartsSection -->
+<!-- BEGIN: TableAndStatusSection -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Recent Employees Table -->
+<div class="lg:col-span-2 dashboard-card overflow-hidden">
+<div class="p-5 border-b border-gray-100 flex items-center justify-between">
+<h3 class="font-bold primary-blue text-base">Recent Employees</h3>
+<a class="text-xs font-bold text-[#00639d] hover:underline" href="#">View all →</a>
+</div>
+<table class="w-full text-left">
+<thead class="bg-[#fcfdfe] text-[10px] uppercase text-gray-400 font-extrabold tracking-wider">
+<tr>
+<th class="px-6 py-4">Name</th>
+<th class="px-6 py-4">Department</th>
+<th class="px-6 py-4">Status</th>
+</tr>
+</thead>
+<tbody class="text-sm divide-y divide-gray-100">
+<tr>
+<td class="px-6 py-4 flex items-center">
+<span class="w-8 h-8 rounded bg-[#fff0e5] text-[#ff8c3d] flex items-center justify-center text-[10px] font-extrabold mr-3">CC</span>
+<span class="font-bold text-gray-700">Clienth Carlo Hestiada</span>
+</td>
+<td class="px-6 py-4 text-gray-500 font-semibold uppercase text-[11px]">MI</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 rounded bg-[#e6fcf5] text-[#20c997] text-[10px] font-extrabold border border-[#d3f9ed]">Active</span>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4 flex items-center">
+<span class="w-8 h-8 rounded bg-[#e7f5ff] text-[#339af0] flex items-center justify-center text-[10px] font-extrabold mr-3">A</span>
+<span class="font-bold text-gray-700">a11</span>
+</td>
+<td class="px-6 py-4 text-gray-500 font-semibold uppercase text-[11px]">PT</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 rounded bg-[#e6fcf5] text-[#20c997] text-[10px] font-extrabold border border-[#d3f9ed]">Active</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Room Status Breakdown -->
+<div class="dashboard-card p-6">
+<div class="flex items-center justify-between mb-8">
+<h3 class="font-bold primary-blue text-base">Room Status</h3>
+<a class="text-xs font-bold text-[#00639d] hover:underline" href="#">View all →</a>
+</div>
+<div class="space-y-6">
+<!-- Occupied -->
+<div>
+<div class="flex justify-between text-[11px] font-bold mb-2">
+<span class="text-gray-500 font-semibold">Occupied</span>
+<span class="text-gray-700">0 <span class="text-gray-400 font-medium">(0%)</span></span>
+</div>
+<div class="w-full bg-[#f1f3f9] rounded-full h-2">
+<div class="bg-[#003366] h-2 rounded-full" style="width: 0%"></div>
+</div>
+</div>
+<!-- Available -->
+<div>
+<div class="flex justify-between text-[11px] font-bold mb-2">
+<span class="text-gray-500 font-semibold">Available</span>
+<span class="text-gray-700">0 <span class="text-gray-400 font-medium">(0%)</span></span>
+</div>
+<div class="w-full bg-[#f1f3f9] rounded-full h-2">
+<div class="bg-[#22c55e] h-2 rounded-full" style="width: 0%"></div>
+</div>
+</div>
+<!-- Reserved -->
+<div>
+<div class="flex justify-between text-[11px] font-bold mb-2">
+<span class="text-gray-500 font-semibold">Reserved</span>
+<span class="text-gray-700">0 <span class="text-gray-400 font-medium">(0%)</span></span>
+</div>
+<div class="w-full bg-[#f1f3f9] rounded-full h-2">
+<div class="bg-[#3b82f6] h-2 rounded-full" style="width: 0%"></div>
+</div>
+</div>
+<!-- Maintenance -->
+<div>
+<div class="flex justify-between text-[11px] font-bold mb-2">
+<span class="text-gray-500 font-semibold">Maintenance</span>
+<span class="text-gray-700">0 <span class="text-gray-400 font-medium">(0%)</span></span>
+</div>
+<div class="w-full bg-[#f1f3f9] rounded-full h-2">
+<div class="bg-[#f59e0b] h-2 rounded-full" style="width: 0%"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- END: TableAndStatusSection -->
+<!-- BEGIN: ScheduleSection -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-8">
+<div class="dashboard-card p-6 h-48 flex flex-col">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-bold primary-blue">Today's Arrivals</h3>
+<a class="text-[11px] font-bold text-[#00639d] hover:underline uppercase" href="#">Manage →</a>
+</div>
+<div class="flex-1 flex items-center justify-center">
+<p class="text-gray-400 text-xs font-semibold tracking-wide">No arrivals scheduled today.</p>
+</div>
+</div>
+<div class="dashboard-card p-6 h-48 flex flex-col">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-bold primary-blue">Today's Departures</h3>
+<a class="text-[11px] font-bold text-[#00639d] hover:underline uppercase" href="#">Manage →</a>
+</div>
+<div class="flex-1 flex items-center justify-center">
+<p class="text-gray-400 text-xs font-semibold tracking-wide">No departures scheduled today.</p>
+</div>
+</div>
+</section>
+<!-- END: ScheduleSection -->
+</div>
+</main>
+<script data-purpose="mock-data-loader">
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('Pro-AMS Dashboard design updated based on design system.');
+    });
+  </script>
+</body></html>

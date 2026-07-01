@@ -70,6 +70,14 @@
                     <option value="">All Departments</option>
                 </select>
             </div>
+            <div style="width:140px;">
+                <label class="ams-label">Gender</label>
+                <select id="filterGender" class="ams-input">
+                    <option value="">Any Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+            </div>
             <div style="width:150px;">
                 <label class="ams-label">Status</label>
                 <select id="filterStatus" class="ams-input">

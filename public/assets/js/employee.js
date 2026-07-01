@@ -28,11 +28,37 @@ function loadDepartments(callback)
     });
 }
 
+function applyEmployeeFiltersFromUrl()
+{
+    const params = new URLSearchParams(window.location.search);
+    const search = params.get('search');
+    const departmentId = params.get('department_id');
+    const gender = params.get('gender');
+    const status = params.get('status');
+
+    if (search) {
+        $('#searchInput').val(search);
+    }
+
+    if (departmentId) {
+        $('#filterDepartment').val(departmentId);
+    }
+
+    if (gender) {
+        $('#filterGender').val(gender);
+    }
+
+    if (status) {
+        $('#filterStatus').val(status);
+    }
+}
+
 function loadEmployees()
 {
     const params = new URLSearchParams();
     const search = $('#searchInput').val()?.trim();
     const departmentId = $('#filterDepartment').val();
+    const gender = $('#filterGender').val();
     const status = $('#filterStatus').val();
 
     if (search) {
@@ -41,6 +67,10 @@ function loadEmployees()
 
     if (departmentId) {
         params.set('department_id', departmentId);
+    }
+
+    if (gender) {
+        params.set('gender', gender);
     }
 
     if (status) {
@@ -62,6 +92,7 @@ function resetFilters()
 {
     $('#searchInput').val('');
     $('#filterDepartment').val('');
+    $('#filterGender').val('');
     $('#filterStatus').val('');
     loadEmployees();
 }
@@ -374,8 +405,10 @@ function deleteSelectedEmployees()
 }
 
 $(function() {
-    loadDepartments();
-    loadEmployees();
+    loadDepartments(function() {
+        applyEmployeeFiltersFromUrl();
+        loadEmployees();
+    });
     $('#selectAllEmployees').on('change', function() {
         toggleAllEmployees(this.checked);
     });
@@ -386,7 +419,7 @@ $(function() {
         clearTimeout(employeeSearchTimer);
         employeeSearchTimer = setTimeout(loadEmployees, 250);
     });
-    $('#filterDepartment, #filterStatus').on('change', loadEmployees);
+    $('#filterDepartment, #filterGender, #filterStatus').on('change', loadEmployees);
     $('#employeeForm').on('submit', saveEmployee);
     $('#employeeModal').on('hidden.bs.modal', function () {
         resetEmployeeForm();
