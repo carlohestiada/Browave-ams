@@ -1,16 +1,19 @@
 <?php
 
 require_once __DIR__ . '/RoomAssignment.php';
+require_once __DIR__ . '/../services/MealCalculationService.php';
 
 class Report
 {
     private $db;
     private $assignment;
+    private $mealCalculationService;
 
     public function __construct($db)
     {
         $this->db = $db;
         $this->assignment = new RoomAssignment($db);
+        $this->mealCalculationService = new MealCalculationService($db);
     }
 
     public function getHeadcountReport($startDate = null, $endDate = null)
@@ -18,13 +21,8 @@ class Report
         $startDate = $startDate ?? date('Y-m-d', strtotime('-30 days'));
         $endDate = $endDate ?? date('Y-m-d');
 
-        $stmt = $this->db->prepare(
-            "SELECT * FROM daily_headcount WHERE date BETWEEN ? AND ? ORDER BY date ASC"
-        );
-
-        $stmt->execute([$startDate, $endDate]);
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Calculate headcounts in real-time instead of reading from cached table
+        return $this->mealCalculationService->getHeadcountsForDateRange($startDate, $endDate);
     }
 
     public function getOccupancyReport()
@@ -144,11 +142,8 @@ class Report
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         $stats['departures_today'] = $result['count'];
 
-        // Meal headcount
-        $stmt = $this->db->prepare("SELECT meal_count FROM daily_headcount WHERE date=?");
-        $stmt->execute([$date]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $stats['meal_headcount'] = $result['meal_count'] ?? $stats['active_employees'];
+        // Meal headcount - calculated in real-time
+        $stats['meal_headcount'] = $this->mealCalculationService->calculateActiveCount($date);
 
         // Occupied rooms
         $stmt = $this->db->query("SELECT COUNT(*) as count FROM rooms WHERE status='Occupied'");

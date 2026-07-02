@@ -467,19 +467,6 @@ function deleteMealTransaction(transactionId, transactionType)
     });
 }
 
-function recalculateHeadcount()
-{
-    const today = getLocalDateString();
-
-    $.post(`${mealsApiUrl}/recalculate`, { date: today }, function(data) {
-        const result = parseJsonResponse(data);
-        swalSuccess(`Recalculated successfully.\nActive Employees: ${result.active_count}\nMeal Headcount: ${result.meal_count}`);
-        refreshCurrentMealView();
-    }).fail(function(xhr) {
-        swalError('Error recalculating meal headcount: ' + (xhr.responseJSON?.error || 'Unknown error'));
-    });
-}
-
 $(function() {
     $('#filterWeek').val(getLocalWeekString());
     $('#filterMonth').val(getLocalMonthString());

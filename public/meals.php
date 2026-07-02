@@ -45,13 +45,12 @@
                     </div>
                 </div>
                 <div class="col-md-5 d-flex align-items-end">
-                    <button class="btn btn-info me-2" onclick="recalculateHeadcount()">Calculate Today</button>
                     <button class="btn btn-secondary" onclick="loadMealPlans()">Reset Filter</button>
                 </div>
             </div>
             <div class="row">
                 <div class="col-12 mt-3">
-                    <div class="form-text">Select a week to view the saved totals for each day. If a meal plan already exists, saving will update the record instead of creating a duplicate.</div>
+                    <div class="form-text">Select a week to view meal headcount. The totals are calculated automatically based on employee arrivals and departures.</div>
                 </div>
             </div>
         </div>

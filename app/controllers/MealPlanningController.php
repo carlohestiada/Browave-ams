@@ -2,16 +2,19 @@
 
 require_once __DIR__ . '/../models/DailyHeadcount.php';
 require_once __DIR__ . '/../models/Employee.php';
+require_once __DIR__ . '/../services/MealCalculationService.php';
 
 class MealPlanningController
 {
     private $dailyHeadcount;
     private $employee;
+    private $calculationService;
 
     public function __construct($db)
     {
         $this->dailyHeadcount = new DailyHeadcount($db);
         $this->employee = new Employee($db);
+        $this->calculationService = new MealCalculationService($db);
     }
 
     public function index()
@@ -20,29 +23,29 @@ class MealPlanningController
         $normalized = [];
 
         foreach ($headcounts as $headcount) {
-            $headcount['active_count'] = $this->dailyHeadcount->calculateActiveCount($headcount['date']);
+            $headcount['active_count'] = $this->calculationService->calculateActiveCount($headcount['date']);
             $normalized[] = $headcount;
         }
 
-        echo json_encode(array_values($this->attachTransactions($normalized)));
+        echo json_encode(array_values($this->calculationService->attachTransactionsToHeadcounts($normalized)));
     }
 
     public function getByDate($date)
     {
         $headcount = $this->dailyHeadcount->getByDate($date);
-        $activeCount = $this->dailyHeadcount->calculateActiveCount($date);
+        $activeCount = $this->calculationService->calculateActiveCount($date);
         
         if (!$headcount) {
             $headcount = [
                 'date' => $date,
                 'active_count' => $activeCount,
-                'meal_count' => 0
+                'meal_count' => $activeCount
             ];
         } else {
             $headcount['active_count'] = $activeCount;
         }
 
-        echo json_encode($this->attachTransactions([$headcount])[$date] ?? $headcount);
+        echo json_encode($this->calculationService->attachTransactionsToHeadcounts([$headcount])[$date] ?? $headcount);
     }
 
     public function getRange($startDate, $endDate)
@@ -53,30 +56,11 @@ class MealPlanningController
             return;
         }
 
-        $savedHeadcounts = $this->dailyHeadcount->getBetween($startDate, $endDate);
-        $headcountsByDate = [];
+        // Calculate all headcounts for the date range in real-time
+        $rows = $this->calculationService->getHeadcountsForDateRange($startDate, $endDate);
 
-        foreach ($savedHeadcounts as $headcount) {
-            $headcount['active_count'] = $this->dailyHeadcount->calculateActiveCount($headcount['date']);
-            $headcountsByDate[$headcount['date']] = $headcount;
-        }
-
-        $rows = [];
-        $current = new DateTime($startDate);
-        $last = new DateTime($endDate);
-
-        while ($current <= $last) {
-            $date = $current->format('Y-m-d');
-            $rows[] = $headcountsByDate[$date] ?? [
-                'date' => $date,
-                'active_count' => $this->dailyHeadcount->calculateActiveCount($date),
-                'meal_count' => 0
-            ];
-
-            $current->modify('+1 day');
-        }
-
-        echo json_encode(array_values($this->attachTransactions($rows, $startDate, $endDate)));
+        // Attach transaction details
+        echo json_encode(array_values($this->calculationService->attachTransactionsToHeadcounts($rows, $startDate, $endDate)));
     }
 
     public function edit($id)
@@ -127,56 +111,6 @@ class MealPlanningController
         $result = $this->dailyHeadcount->delete($id);
 
         echo json_encode(['success' => $result]);
-    }
-
-    public function recalculate()
-    {
-        $date = $_POST['date'] ?? date('Y-m-d');
-
-        $activeCount = $this->dailyHeadcount->calculateActiveCount($date);
-        $mealCount = $_POST['meal_count'] ?? $activeCount;
-
-        $this->dailyHeadcount->updateHeadcount($date, $activeCount, $mealCount);
-
-        echo json_encode([
-            'success' => true,
-            'active_count' => $activeCount,
-            'meal_count' => $mealCount
-        ]);
-    }
-
-    private function attachTransactions($headcounts, $startDate = null, $endDate = null)
-    {
-        if (empty($headcounts)) {
-            return [];
-        }
-
-        $dates = array_column($headcounts, 'date');
-        $startDate = $startDate ?? min($dates);
-        $endDate = $endDate ?? max($dates);
-        $transactions = $this->dailyHeadcount->getTransactionsByDateRange($startDate, $endDate);
-        $grouped = [];
-
-        foreach ($transactions as $transaction) {
-            $date = $transaction['transaction_date'];
-            $type = $transaction['transaction_type'] === 'departure' ? 'departures' : 'arrivals';
-
-            if (!isset($grouped[$date])) {
-                $grouped[$date] = ['arrivals' => [], 'departures' => []];
-            }
-
-            $grouped[$date][$type][] = $transaction;
-        }
-
-        $withTransactions = [];
-        foreach ($headcounts as $headcount) {
-            $date = $headcount['date'];
-            $headcount['arrivals'] = $grouped[$date]['arrivals'] ?? [];
-            $headcount['departures'] = $grouped[$date]['departures'] ?? [];
-            $withTransactions[$date] = $headcount;
-        }
-
-        return $withTransactions;
     }
 
     private function isValidDate($date)

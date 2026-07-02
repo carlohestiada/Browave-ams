@@ -36,6 +36,36 @@ function renderAssignEmployeeDropdown() {
         opts += `<option value="${e.id}"${disabled}>${label}</option>`;
     });
     assignSelect.html(opts);
+
+    if ($.fn.select2) {
+        if (assignSelect.hasClass('select2-hidden-accessible') || assignSelect.data('select2')) {
+            try {
+                assignSelect.select2('destroy');
+            } catch (e) {
+                // ignore if select2 is not yet initialized or destroy fails
+            }
+        }
+
+        assignSelect.select2({
+            placeholder: 'Search and select employee',
+            allowClear: true,
+            width: '100%',
+            matcher: function(params, data) {
+                if ($.trim(params.term) === '') {
+                    return data;
+                }
+
+                const searchTerm = params.term.toLowerCase();
+                const text = data.text.toLowerCase();
+
+                if (text.indexOf(searchTerm) > -1) {
+                    return data;
+                }
+
+                return null;
+            }
+        });
+    }
 }
 
 function resetAssignForm() {
@@ -295,6 +325,17 @@ $(function() {
     initializeAssignmentDateBounds();
 
     $('#assignModal').on('hidden.bs.modal', resetAssignForm);
+    $('#assignModal').on('shown.bs.modal', function() {
+        // Properly initialize Select2 when modal is shown
+        setTimeout(function() {
+            $('#assign_employee').select2({
+                dropdownParent: $('#assignModal'),
+                placeholder: 'Search and select employee',
+                allowClear: true,
+                width: '100%'
+            });
+        }, 0);
+    });
     $('#transferModal').on('hidden.bs.modal', resetTransferForm);
     $('#selectAllAssignments').on('change', function() {
         toggleAllAssignments(this.checked);

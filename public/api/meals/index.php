@@ -35,11 +35,6 @@ if ($method === 'GET') {
 }
 
 if ($method === 'POST') {
-    if ($id === 'recalculate' || $action === 'recalculate') {
-        $controller->recalculate();
-        return;
-    }
-    
     $controller->store();
     return;
 }
