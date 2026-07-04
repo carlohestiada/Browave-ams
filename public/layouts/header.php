@@ -22,7 +22,6 @@ function getAllowedPagesForRole($role)
             'accommodations.php',
             'room-assignments.php',
             'meals.php',
-            'reports.php',
             'users.php',
             'arrivals.php',
             'departures.php'
@@ -33,13 +32,11 @@ function getAllowedPagesForRole($role)
             'departments.php',
             'meals.php',
             'room-assignments.php',
-            'reports.php',
             'arrivals.php',
             'departures.php'
         ],
         'Viewer' => [
-            'dashboard.php',
-            'reports.php'
+            'dashboard.php'
         ]
     ];
 

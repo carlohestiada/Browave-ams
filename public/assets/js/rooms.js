@@ -36,11 +36,17 @@ function loadAccommodations()
     });
 }
 
-function loadBuildingsForModal()
+function loadBuildingsForModal(selectedBuildingIdOrEvent = null, callback = null)
 {
+    let selectedBuildingId = selectedBuildingIdOrEvent;
+    if (selectedBuildingIdOrEvent && typeof selectedBuildingIdOrEvent === 'object' && selectedBuildingIdOrEvent.type) {
+        selectedBuildingId = null;
+    }
+
     const accommodationId = $('#accommodation_id').val();
     if (!accommodationId) {
         $('#building_id').html('<option value="">Select building</option>');
+        if (typeof callback === 'function') callback();
         return;
     }
 
@@ -53,6 +59,14 @@ function loadBuildingsForModal()
         });
 
         $('#building_id').html(options);
+
+        if (selectedBuildingId) {
+            $('#building_id').val(selectedBuildingId);
+        }
+
+        if (typeof callback === 'function') {
+            callback();
+        }
     });
 }
 
@@ -78,11 +92,17 @@ function loadBuildingsByAccommodation()
     });
 }
 
-function loadFloorsForModal()
+function loadFloorsForModal(selectedFloorIdOrEvent = null, callback = null)
 {
+    let selectedFloorId = selectedFloorIdOrEvent;
+    if (selectedFloorIdOrEvent && typeof selectedFloorIdOrEvent === 'object' && selectedFloorIdOrEvent.type) {
+        selectedFloorId = null;
+    }
+
     const buildingId = $('#building_id').val();
     if (!buildingId) {
         $('#floor_id').html('<option value="">Select floor</option>');
+        if (typeof callback === 'function') callback();
         return;
     }
 
@@ -95,6 +115,14 @@ function loadFloorsForModal()
         });
 
         $('#floor_id').html(options);
+
+        if (selectedFloorId) {
+            $('#floor_id').val(selectedFloorId);
+        }
+
+        if (typeof callback === 'function') {
+            callback();
+        }
     });
 }
 
@@ -344,27 +372,24 @@ function openRoomModal(room)
 
     if (room) {
         $('#roomId').val(room.id);
-        $('#accommodation_id').val(room.accommodation_id);
-        loadBuildingsForModal();
-        
-        setTimeout(() => {
-            $('#building_id').val(room.building_id);
-            loadFloorsForModal();
-            
-            setTimeout(() => {
-                $('#floor_id').val(room.floor_id);
+        $('#roomModalLabel').text('Edit Room');
+        $('#accommodation_id').val(room.accommodation_id || '');
+
+        loadBuildingsForModal(room.building_id, function() {
+            loadFloorsForModal(room.floor_id, function() {
                 $('#room_no').val(room.room_no);
                 $('#room_type').val(room.room_type);
                 $('#capacity').val(room.capacity);
                 $('#status').val(room.status);
                 $('#reserved_by_employee_id').val(room.reserved_by_employee_id || '');
                 toggleReservedEmployeeField();
-                $('#gender_restriction').val(room.gender_restriction);
-                $('#remarks').val(room.remarks);
-            }, 200);
-        }, 200);
-        
-        $('#roomModalLabel').text('Edit Room');
+                $('#gender_restriction').val(room.gender_restriction || '');
+                $('#remarks').val(room.remarks || '');
+                $('#roomModal').modal('show');
+            });
+        });
+
+        return;
     }
 
     $('#roomModal').modal('show');
@@ -373,17 +398,16 @@ function openRoomModal(room)
 function editRoom(id)
 {
     $.get(`${roomsApiUrl}/${id}`, function(data) {
-        // The returned room object is used to prefill the modal; additional room data is loaded through full room list.
+
         const room = parseJsonResponse(data);
-        
-        $.get(roomsApiUrl, function(allRooms) {
-            const allRoomsList = parseJsonResponse(allRooms);
-            const fullRoom = allRoomsList.find(r => r.id == id);
-            
-            if (fullRoom) {
-                openRoomModal(fullRoom);
-            }
-        });
+
+        if (!room || !room.id) {
+            swalError('Unable to load room details');
+            return;
+        }
+
+        openRoomModal(room);
+
     });
 }
 

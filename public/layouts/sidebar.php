@@ -92,33 +92,6 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
         </li>
         <?php endif; ?>
 
-        <?php
-            $reportPages = ['reports.php'];
-            $reportAllowed = array_values(array_filter($reportPages, function($p) use ($allowedPages) { return in_array($p, $allowedPages, true); }));
-            $isReportActive = in_array($currentPage, $reportPages, true);
-        ?>
-        <?php if (count($reportAllowed) > 0): ?>
-        <li class="nav-item mb-1">
-            <a class="nav-link d-flex justify-content-between <?= $isReportActive ? 'active' : '' ?>" data-bs-toggle="collapse" href="#reportsMenu" role="button" aria-expanded="<?= $isReportActive ? 'true' : 'false' ?>" aria-controls="reportsMenu">
-                <span><i class="bi bi-file-earmark-pdf nav-icon"></i>&nbsp;&nbsp;&nbsp;&nbsp;<span>Reports</span></span>
-                <i class="bi bi-chevron-down"></i>
-            </a>
-
-            <div class="collapse <?= $isReportActive ? 'show' : '' ?>" id="reportsMenu">
-                <ul class="nav flex-column ms-2">
-                    <?php if (in_array('reports.php', $reportAllowed, true)): ?>
-                    <li class="nav-item mb-1">
-                        <a href="reports.php" class="nav-link <?= $currentPage === 'reports.php' ? 'active' : '' ?>" title="Reports">
-                            <i class="bi bi-file-earmark-text nav-icon"></i>
-                            <span>Reports</span>
-                        </a>
-                    </li>
-                    <?php endif; ?>
-                </ul>
-            </div>
-        </li>
-        <?php endif; ?>
-
         <?php if (in_array('users.php', $allowedPages, true)): ?>
         <li class="nav-item mb-1">
             <a href="users.php" class="nav-link <?= $currentPage === 'users.php' ? 'active' : '' ?>" title="Users">

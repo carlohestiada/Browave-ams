@@ -20,7 +20,6 @@ BROWAVE AMS is a web-based workforce, accommodation, and meal management system 
 - Meal Planning
 - Department Management
 - Dashboard
-- Reports
 - User Management
 - Audit Logs
 
@@ -77,14 +76,13 @@ BROWAVE AMS is a web-based workforce, accommodation, and meal management system 
 - Record assignment details, including check-in date, expected checkout date, and status.
 - Release room on departure and update occupancy counts immediately.
 - Support transfer actions with audit trail for source and destination rooms.
-- Preserve employee assignment history for room utilization reports.
+- Preserve employee assignment history for room utilization tracking.
 
-### Availability and Reporting Features
+### Availability and Operations Features
 
 - Real-time availability dashboard for each accommodation and building.
 - Search and filter rooms by type, status, capacity, occupancy, floor, and gender restriction.
 - Occupancy indicators: available, partially occupied, full, maintenance.
-- Reports for room utilization, vacancy rates, gender mix, and accommodation capacity.
 - Integrate room occupancy data with meal planning and headcount calculations.
 
 ### User Interface Requirements
@@ -192,10 +190,9 @@ BROWAVE AMS is a web-based workforce, accommodation, and meal management system 
 - UC-04 Record Departure
 - UC-05 Assign Hotel/Dormitory
 - UC-06 Transfer Room
-- UC-07 Generate Reports
-- UC-08 View Dashboard
-- UC-09 Manage Departments
-- UC-10 Manage Rooms
+- UC-07 View Dashboard
+- UC-08 Manage Departments
+- UC-09 Manage Rooms
 
 ## API Contracts
 
@@ -212,8 +209,6 @@ BROWAVE AMS is a web-based workforce, accommodation, and meal management system 
 - POST /api/room-assignments
 - POST /api/room-transfer
 - GET /api/headcount
-- GET /api/reports/headcount
-- GET /api/reports/occupancy
 
 ## Sequence Diagram - Arrival
 
@@ -268,7 +263,7 @@ BROWAVE AMS is a web-based workforce, accommodation, and meal management system 
 - Dashboard <= 3 seconds
 - Login <= 2 seconds
 - Search <= 2 seconds
-- Reports <= 5 seconds
+- Dashboard loads and updates within 5 seconds
 - Pagination required
 - Indexed database queries
 

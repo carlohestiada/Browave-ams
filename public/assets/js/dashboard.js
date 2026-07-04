@@ -45,14 +45,22 @@ document.addEventListener('DOMContentLoaded', function () {
     } 
 
     function loadDashboardSummary() {
-        fetchJSON('api/reports.php?action=summary&date=' + today).then(data => {
-            if (!data) return;
+        Promise.all([
+            fetchJSON('api/employees.php'),
+            fetchJSON('api/rooms.php'),
+            fetchJSON('api/departments.php')
+        ]).then(([employees, rooms, departments]) => {
+            const employeeList = Array.isArray(employees) ? employees : [];
+            const roomList = Array.isArray(rooms) ? rooms : [];
+            const departmentList = Array.isArray(departments) ? departments : [];
 
-            const totalEmployees = data.total_employees ?? 0;
-            const activeEmployees = data.active_employees ?? 0;
-            const occupiedRooms = data.occupied_rooms ?? 0;
-            const availableRooms = data.available_rooms ?? 0;
-            const totalRooms = data.total_rooms ?? (occupiedRooms + availableRooms + (data.reserved_rooms ?? 0) + (data.maintenance_rooms ?? 0));
+            const totalEmployees = employeeList.length;
+            const activeEmployees = employeeList.filter(emp => String(emp.status || '').toLowerCase() === 'active').length;
+            const occupiedRooms = roomList.filter(room => String(room.status || '').toLowerCase() === 'occupied').length;
+            const availableRooms = roomList.filter(room => String(room.status || '').toLowerCase() === 'available').length;
+            const reservedRooms = roomList.filter(room => String(room.status || '').toLowerCase() === 'reserved').length;
+            const maintenanceRooms = roomList.filter(room => String(room.status || '').toLowerCase() === 'maintenance').length;
+            const totalRooms = roomList.length;
             const activePct = totalEmployees > 0 ? Math.round(activeEmployees / totalEmployees * 100) : 0;
             const occupiedPct = totalRooms > 0 ? Math.round(occupiedRooms / totalRooms * 100) : 0;
             const availablePct = totalRooms > 0 ? Math.round(availableRooms / totalRooms * 100) : 0;
@@ -66,19 +74,15 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('kpi-available').textContent = availableRooms;
             document.getElementById('kpi-occupied-pct').textContent = occupiedPct + '%';
             document.getElementById('kpi-available-pct').textContent = availablePct + '%';
+            document.getElementById('kpi-departments').textContent = departmentList.length;
 
             renderRoomStatusPanel({
                 Occupied: occupiedRooms,
                 Available: availableRooms,
-                Reserved: data.reserved_rooms ?? 0,
-                Maintenance: data.maintenance_rooms ?? 0,
+                Reserved: reservedRooms,
+                Maintenance: maintenanceRooms,
                 Other: 0
             }, totalRooms);
-        });
-
-        fetchJSON('api/departments.php').then(data => {
-            if (!Array.isArray(data)) return;
-            document.getElementById('kpi-departments').textContent = data.length;
         });
     }
 
@@ -528,10 +532,10 @@ document.addEventListener('DOMContentLoaded', function () {
     function loadCharts() {
         loadDepartmentChart();
 
-        fetchJSON('api/reports.php?action=summary&date=' + today).then(data => {
-            if (!data) return;
-            const maleCount = Number(data.male_employees ?? 0);
-            const femaleCount = Number(data.female_employees ?? 0);
+        fetchJSON('api/employees.php').then(data => {
+            const employeeList = Array.isArray(data) ? data : [];
+            const maleCount = employeeList.filter(emp => String(emp.gender || '').toLowerCase() === 'male').length;
+            const femaleCount = employeeList.filter(emp => String(emp.gender || '').toLowerCase() === 'female').length;
             renderGenderDonut(maleCount, femaleCount);
         });
     }
