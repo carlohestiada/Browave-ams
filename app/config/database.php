@@ -6,8 +6,8 @@ class Database
 {
     private $host = "localhost";
     private $dbname = "browave_ams";
-    private $username = "root";
-    private $password = "";
+    private $username = "browave_user";
+    private $password = "alwaysBrowave123";
 
     public function connect()
     {
