@@ -2,26 +2,67 @@
 
 date_default_timezone_set('Asia/Manila');
 
+require_once __DIR__ . '/environment.php';
+
+/**
+ * Load the database configuration for the active environment.
+ *
+ * Additional environments can be supported later by creating files such as:
+ * database.testing.php, database.staging.php, database.qa.php.
+ */
+function loadDatabaseConfig(?string $environment = null): array
+{
+    $environment = $environment ?? getApplicationEnvironment();
+    $environment = strtolower(trim($environment));
+
+    $configFile = __DIR__ . '/database.' . $environment . '.php';
+
+    if (!is_file($configFile)) {
+        throw new RuntimeException("Database configuration for environment '{$environment}' was not found.");
+    }
+
+    $config = require $configFile;
+
+    if (!is_array($config)) {
+        throw new RuntimeException("Database configuration for environment '{$environment}' must return an array.");
+    }
+
+    return $config;
+}
+
 class Database
 {
-    private $host = "localhost";
-    private $dbname = "browave_ams";
-    private $username = "browave_user";
-    private $password = "alwaysBrowave123";
+    private $config;
 
-    public function connect()
+    public function __construct(?string $environment = null)
     {
+        $this->config = loadDatabaseConfig($environment);
+    }
+
+    public function connect(): PDO
+    {
+        $dsn = sprintf(
+            '%s:host=%s;port=%d;dbname=%s;charset=%s',
+            $this->config['driver'],
+            $this->config['host'],
+            $this->config['port'],
+            $this->config['dbname'],
+            $this->config['charset']
+        );
+
         try {
             $pdo = new PDO(
-                "mysql:host={$this->host};dbname={$this->dbname}",
-                $this->username,
-                $this->password
+                $dsn,
+                $this->config['username'],
+                $this->config['password'],
+                $this->config['options']
             );
+
             $pdo->exec("SET time_zone = '+08:00'");
 
             return $pdo;
         } catch (PDOException $e) {
-            die($e->getMessage());
+            throw new RuntimeException('Database connection failed: ' . $e->getMessage(), (int) $e->getCode(), $e);
         }
     }
 }
