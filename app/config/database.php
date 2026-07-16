@@ -41,9 +41,14 @@ class Database
 
     public function connect(): PDO
     {
+        $driver = $this->config['driver'];
+        if ($driver === 'mariadb') {
+            $driver = 'mysql';
+        }
+
         $dsn = sprintf(
             '%s:host=%s;port=%d;dbname=%s;charset=%s',
-            $this->config['driver'],
+            $driver,
             $this->config['host'],
             $this->config['port'],
             $this->config['dbname'],
