@@ -1,2 +1,2 @@
 .env
-app/config/database.production.php
+# app/config/database.production.php

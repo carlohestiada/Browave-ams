@@ -8,7 +8,7 @@ return [
     'host' => 'localhost',
     'port' => 3306,
     'dbname' => 'browave_ams',
-    'username' => 'browave',
+    'username' => 'browave_user',
     'password' => 'alwaysBrowave123',
     'charset' => 'utf8mb4',
     'options' => [
