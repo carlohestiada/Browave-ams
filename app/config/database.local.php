@@ -1,5 +1,8 @@
 <?php
 
+// Local XAMPP database configuration.
+// Keep this file separate from production credentials to avoid editing
+// the same config on every deployment.
 return [
     'driver' => 'mysql',
     'host' => 'localhost',
