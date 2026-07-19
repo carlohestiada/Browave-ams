@@ -115,6 +115,7 @@ function renderEmployeeRow(emp)
             </td>
             <td>${displayValue(emp.employee_code)}</td>
             <td>${displayValue(emp.full_name)}</td>
+            <td>${displayValue(emp.chinese_name)}</td>
             <td>${displayValue(emp.gender)}</td>
             <td>${displayValue(emp.department_name)}</td>
             <td>${renderStatusBadge(emp.status)}</td>
@@ -292,6 +293,7 @@ function openEmployeeModal(employee)
         $('#employeeId').val(employee.id);
         $('#employee_code').val(employee.employee_code);
         $('#full_name').val(employee.full_name);
+        $('#chinese_name').val(employee.chinese_name);
         $('#gender').val(employee.gender);
         $('#department_id').val(employee.department_id);
         $('#status').val(employee.status);

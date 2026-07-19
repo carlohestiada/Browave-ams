@@ -31,7 +31,7 @@ class Employee
         }
 
         $sql = "
-            SELECT e.*, d.department_name $selectExtra
+            SELECT e.id, e.employee_code, e.full_name, e.chinese_name, e.gender, e.department_id, e.status, e.created_at, d.department_name $selectExtra
             FROM employees e
             LEFT JOIN departments d
                 ON e.department_id = d.id
@@ -52,9 +52,11 @@ class Employee
             $conditions[] = "(
                 e.employee_code LIKE ? OR
                 e.full_name LIKE ? OR
+                e.chinese_name LIKE ? OR
                 d.department_name LIKE ?
             )";
             $searchTerm = '%' . $search . '%';
+            $params[] = $searchTerm;
             $params[] = $searchTerm;
             $params[] = $searchTerm;
             $params[] = $searchTerm;
@@ -92,7 +94,7 @@ class Employee
     public function getById($id)
     {
         $stmt = $this->db->prepare(
-            "SELECT * FROM employees WHERE id=?"
+            "SELECT id, employee_code, full_name, chinese_name, gender, department_id, status, created_at FROM employees WHERE id=?"
         );
 
         $stmt->execute([$id]);
@@ -107,17 +109,22 @@ class Employee
             (
                 employee_code,
                 full_name,
+                chinese_name,
                 gender,
                 department_id,
                 status
             )
             VALUES
-            (?,?,?,?,?)
+            (?,?,?,?,?,?)
         ");
+
+        $chineseName = isset($data['chinese_name']) ? trim((string) $data['chinese_name']) : null;
+        $chineseName = $chineseName === '' ? null : $chineseName;
 
         return $stmt->execute([
             $data['employee_code'],
             $data['full_name'],
+            $chineseName,
             $data['gender'],
             $data['department_id'],
             $data['status']
@@ -131,15 +138,20 @@ class Employee
             SET
                 employee_code=?,
                 full_name=?,
+                chinese_name=?,
                 gender=?,
                 department_id=?,
                 status=?
             WHERE id=?
         ");
 
+        $chineseName = isset($data['chinese_name']) ? trim((string) $data['chinese_name']) : null;
+        $chineseName = $chineseName === '' ? null : $chineseName;
+
         return $stmt->execute([
             $data['employee_code'],
             $data['full_name'],
+            $chineseName,
             $data['gender'],
             $data['department_id'],
             $data['status'],

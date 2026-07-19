@@ -114,6 +114,7 @@
                         </th>
                         <th><button type="button" class="employee-sort-btn" data-sort-key="employee_code">Employee ID <span class="employee-sort-indicator" data-sort-indicator="employee_code"></span></button></th>
                         <th><button type="button" class="employee-sort-btn" data-sort-key="full_name">Full Name <span class="employee-sort-indicator" data-sort-indicator="full_name"></span></button></th>
+                        <th><button type="button" class="employee-sort-btn" data-sort-key="chinese_name">Chinese Name <span class="employee-sort-indicator" data-sort-indicator="chinese_name"></span></button></th>
                         <th><button type="button" class="employee-sort-btn" data-sort-key="gender">Gender <span class="employee-sort-indicator" data-sort-indicator="gender"></span></button></th>
                         <th><button type="button" class="employee-sort-btn" data-sort-key="department_name">Department <span class="employee-sort-indicator" data-sort-indicator="department_name"></span></button></th>
                         <th><button type="button" class="employee-sort-btn" data-sort-key="status">Status <span class="employee-sort-indicator" data-sort-indicator="status"></span></button></th>
@@ -122,7 +123,7 @@
                 </thead>
                 <tbody id="employeeTable">
                     <tr>
-                        <td colspan="7" style="text-align:center; padding:48px 24px; color:#737784;">
+                        <td colspan="8" style="text-align:center; padding:48px 24px; color:#737784;">
                             <span class="material-symbols-outlined" style="font-size:32px; display:block; margin-bottom:8px; opacity:0.5;">group</span>
                             Loading employees…
                         </td>
@@ -165,6 +166,11 @@
                     <div class="ams-field">
                         <label for="full_name" class="ams-label">Full Name</label>
                         <input type="text" class="ams-input" id="full_name" name="full_name" placeholder="Full legal name" required>
+                    </div>
+
+                    <div class="ams-field">
+                        <label for="chinese_name" class="ams-label">Chinese Name</label>
+                        <input type="text" class="ams-input" id="chinese_name" name="chinese_name" placeholder="Optional Chinese name">
                     </div>
 
                     <div class="ams-field">

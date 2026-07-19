@@ -85,6 +85,7 @@ CREATE TABLE `employees` (
   `id` int(11) NOT NULL,
   `employee_code` varchar(30) NOT NULL,
   `full_name` varchar(150) NOT NULL,
+  `chinese_name` varchar(150) DEFAULT NULL,
   `gender` enum('Male','Female','Other') NOT NULL,
   `department_id` int(11) NOT NULL,
   `status` varchar(30) NOT NULL DEFAULT 'Active',
