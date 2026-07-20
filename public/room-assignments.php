@@ -93,12 +93,13 @@
             <select id="assign_room" name="room_id" class="form-control"></select>
           </div>
           <div class="mb-3">
-            <label>Check-in Date</label>
+            <label>Start Date</label>
             <input id="assign_checkin_date" type="date" name="checkin_date" class="form-control" required>
           </div>
           <div class="mb-3">
-            <label>Expected Checkout Date</label>
+            <label>Check-out Date</label>
             <input id="assign_checkout_date" type="date" name="expected_checkout_date" class="form-control" required>
+            <div class="form-text">Defaults to 49 days after the start date and can be edited manually.</div>
           </div>
           <button class="btn btn-primary">Save</button>
         </form>

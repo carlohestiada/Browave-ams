@@ -4,6 +4,7 @@ let assignEmployees = [];
 let assignmentRows = [];
 let selectedAssignmentIds = new Set();
 let assignmentSearchTimer = null;
+let assignmentCheckoutManuallyEdited = false;
 
 const assignmentSortColumns = [
     { index: 1, key: function(row) { return `${row.employee_code || ''} ${row.full_name || ''}`; } },
@@ -18,6 +19,25 @@ const assignmentSortColumns = [
 
 function getTodayDate() {
     return new Date().toISOString().slice(0,10);
+}
+
+function addDaysToDate(dateString, days) {
+    const [year, month, day] = (dateString || '').split('-').map(Number);
+    if (![year, month, day].every(value => Number.isFinite(value))) {
+        return '';
+    }
+
+    const date = new Date(year, month - 1, day);
+    date.setDate(date.getDate() + days);
+
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+function calculateCheckoutDate(startDate) {
+    return addDaysToDate(startDate, 49);
 }
 
 function renderAssignEmployeeDropdown() {
@@ -70,6 +90,7 @@ function renderAssignEmployeeDropdown() {
 
 function resetAssignForm() {
     $('#assignForm')[0].reset();
+    assignmentCheckoutManuallyEdited = false;
     initializeAssignmentDateBounds();
     loadEmployeesForAssign();
     loadRoomsForAssign('#assign_room');
@@ -97,16 +118,19 @@ function initializeAssignmentDateBounds() {
         checkin.value = today;
     }
 
-    if (!checkout.value) {
-        checkout.value = checkin.value || today;
+    if (!checkout.value || !assignmentCheckoutManuallyEdited) {
+        checkout.value = calculateCheckoutDate(checkin.value || today) || (checkin.value || today);
     }
 
-    checkin.addEventListener('change', function () {
-        const minCheckout = checkin.value || today;
-        if (!checkout.value || checkout.value < minCheckout) {
-            checkout.value = minCheckout;
+    checkin.onchange = function () {
+        if (!assignmentCheckoutManuallyEdited) {
+            checkout.value = calculateCheckoutDate(checkin.value || today) || (checkin.value || today);
         }
-    });
+    };
+
+    checkout.onchange = function () {
+        assignmentCheckoutManuallyEdited = true;
+    };
 }
 
 function renderAssignmentRow(r, lookup) {
@@ -139,7 +163,7 @@ function renderAssignmentRow(r, lookup) {
             <td>${displayValue(r.room_no)}</td>
             <td>${displayValue(transferredTo)}</td>
             <td style="text-align:right; white-space:nowrap;">
-                <button type="button" class="btn btn-warning btn-sm me-1" onclick="editAssignment(${r.id})">Edit</button>
+                <button type="button" class="btn btn-warning btn-sm me-1" onclick="editAssignment(${r.id})">Transfer</button>
                 <button type="button" class="btn btn-danger btn-sm" onclick="deleteAssignment(${r.id})">Delete</button>
             </td>
         </tr>
