@@ -411,6 +411,21 @@ function editRoom(id)
     });
 }
 
+function generateRoomRangePreview()
+{
+    const startRoomNo = $('#start_room_no').val()?.trim();
+    const endRoomNo = $('#end_room_no').val()?.trim();
+
+    if (!startRoomNo || !endRoomNo) {
+        $('#roomRangePreview').text('Enter both start and end room numbers to preview the range.');
+        return;
+    }
+
+    $('#generate_range').val('1');
+    const previewText = `Will generate: ${startRoomNo} to ${endRoomNo}`;
+    $('#roomRangePreview').text(previewText);
+}
+
 function saveRoom(event)
 {
     event.preventDefault();
@@ -418,6 +433,16 @@ function saveRoom(event)
     if ($('#status').val() === 'Reserved' && !$('#reserved_by_employee_id').val()) {
         swalError('Please select the employee who reserved this room.');
         return;
+    }
+
+    const hasRange = $('#generate_range').val() === '1' && $('#start_room_no').val()?.trim() && $('#end_room_no').val()?.trim();
+    if (hasRange) {
+        const startRoomNo = $('#start_room_no').val().trim();
+        const endRoomNo = $('#end_room_no').val().trim();
+        if (!startRoomNo || !endRoomNo) {
+            swalError('Please enter both start and end room numbers for batch generation.');
+            return;
+        }
     }
 
     const id = $('#roomId').val();
@@ -428,7 +453,12 @@ function saveRoom(event)
         url: url,
         type: method,
         data: $('#roomForm').serialize(),
-        success: function() {
+        success: function(response) {
+            const payload = typeof response === 'string' ? JSON.parse(response) : response;
+            if (payload && payload.success === false) {
+                swalError(payload.error || 'Unknown error');
+                return;
+            }
             loadRooms();
             $('#roomModal').modal('hide');
             swalSuccess('Room saved successfully');

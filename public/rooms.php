@@ -150,7 +150,26 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Room Number</label>
-                        <input type="text" class="form-control" id="room_no" name="room_no" required>
+                        <input type="text" class="form-control" id="room_no" name="room_no">
+                    </div>
+
+                    <div class="border rounded p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0">Generate Room Range</label>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="generateRoomRangePreview()">Generate Rooms</button>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label small">Start Room No.</label>
+                                <input type="text" class="form-control form-control-sm" id="start_room_no" name="start_room_no" placeholder="C1">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small">End Room No.</label>
+                                <input type="text" class="form-control form-control-sm" id="end_room_no" name="end_room_no" placeholder="C5">
+                            </div>
+                        </div>
+                        <input type="hidden" id="generate_range" name="generate_range" value="0">
+                        <div id="roomRangePreview" class="small text-muted mt-2"></div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Room Type</label>

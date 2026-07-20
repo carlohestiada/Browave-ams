@@ -33,7 +33,19 @@ class RoomController
     {
         $data = $_POST;
 
-        if (empty($data['floor_id']) || empty($data['room_no']) || empty($data['room_type']) || empty($data['capacity'])) {
+        if (empty($data['floor_id']) || empty($data['room_type']) || empty($data['capacity'])) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Missing required fields']);
+            return;
+        }
+
+        if (!empty($data['generate_range']) && !empty($data['start_room_no']) && !empty($data['end_room_no'])) {
+            $result = $this->room->createRange($data, $data['start_room_no'], $data['end_room_no']);
+            echo json_encode($result);
+            return;
+        }
+
+        if (empty($data['room_no'])) {
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Missing required fields']);
             return;

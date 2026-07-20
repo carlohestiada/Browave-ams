@@ -95,6 +95,8 @@ class Room
             }
         }
 
+        $genderRestriction = $this->normalizeGenderRestriction($data['gender_restriction'] ?? '');
+
         $stmt = $this->db->prepare(
             "INSERT INTO rooms (floor_id, room_no, room_type, capacity, current_occupancy, status, reserved_by_employee_id, gender_restriction, remarks)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
@@ -108,9 +110,89 @@ class Room
             $data['current_occupancy'] ?? 0,
             $status,
             $reservedByEmployeeId,
-            $data['gender_restriction'] ?? '',
+            $genderRestriction,
             $data['remarks'] ?? ''
         ]);
+    }
+
+    public function createRange($baseData, $startRoomNo, $endRoomNo)
+    {
+        $startRoomNo = trim((string) $startRoomNo);
+        $endRoomNo = trim((string) $endRoomNo);
+
+        if ($startRoomNo === '' || $endRoomNo === '') {
+            return ['success' => false, 'error' => 'Start and end room numbers are required.'];
+        }
+
+        $parsedStart = $this->parseRoomNumber($startRoomNo);
+        $parsedEnd = $this->parseRoomNumber($endRoomNo);
+
+        if (!$parsedStart || !$parsedEnd) {
+            return ['success' => false, 'error' => 'Room numbers must use a valid numeric or alphanumeric format.'];
+        }
+
+        if ($parsedStart['prefix'] !== $parsedEnd['prefix']) {
+            return ['success' => false, 'error' => 'The prefix must match for both room numbers.'];
+        }
+
+        if ($parsedStart['number'] > $parsedEnd['number']) {
+            return ['success' => false, 'error' => 'The end room number must be greater than or equal to the start room number.'];
+        }
+
+        $roomNos = [];
+        $createdRoomNos = [];
+        $startNumber = $parsedStart['number'];
+        $endNumber = $parsedEnd['number'];
+        $padLength = max($parsedStart['padLength'], $parsedEnd['padLength']);
+        $hasLeadingZeros = strlen($parsedStart['rawNumber']) > strlen((string) $parsedStart['number']);
+
+        for ($i = $startNumber; $i <= $endNumber; $i++) {
+            $formattedNumber = $hasLeadingZeros
+                ? str_pad((string) $i, $padLength, '0', STR_PAD_LEFT)
+                : (string) $i;
+            $roomNo = $parsedStart['prefix'] . $formattedNumber;
+
+            if ($this->roomNumberExists($roomNo)) {
+                continue;
+            }
+
+            $data = $baseData;
+            $data['room_no'] = $roomNo;
+            if ($this->create($data)) {
+                $createdRoomNos[] = $roomNo;
+            }
+            $roomNos[] = $roomNo;
+        }
+
+        return [
+            'success' => true,
+            'created_count' => count($createdRoomNos),
+            'room_nos' => $createdRoomNos,
+            'skipped_room_nos' => array_values(array_diff($roomNos, $createdRoomNos))
+        ];
+    }
+
+    private function parseRoomNumber($roomNo)
+    {
+        if (preg_match('/^([A-Za-z]+)(\d+)$/', $roomNo, $matches)) {
+            $prefix = $matches[1];
+            $number = (int) $matches[2];
+            $digits = strlen($matches[2]);
+            return ['prefix' => $prefix, 'number' => $number, 'padLength' => $digits, 'rawNumber' => $matches[2]];
+        }
+
+        if (preg_match('/^([0-9]+)$/', $roomNo, $matches)) {
+            return ['prefix' => '', 'number' => (int) $matches[1], 'padLength' => strlen($matches[1]), 'rawNumber' => $matches[1]];
+        }
+
+        return null;
+    }
+
+    private function roomNumberExists($roomNo)
+    {
+        $stmt = $this->db->prepare('SELECT id FROM rooms WHERE room_no = ? LIMIT 1');
+        $stmt->execute([$roomNo]);
+        return (bool) $stmt->fetchColumn();
     }
 
     public function update($id, $data)
@@ -125,6 +207,8 @@ class Room
             }
         }
 
+        $genderRestriction = $this->normalizeGenderRestriction($data['gender_restriction'] ?? '');
+
         $stmt = $this->db->prepare(
             "UPDATE rooms SET floor_id=?, room_no=?, room_type=?, capacity=?, status=?, reserved_by_employee_id=?, gender_restriction=?, remarks=? WHERE id=?"
         );
@@ -136,7 +220,7 @@ class Room
             $data['capacity'],
             $status,
             $reservedByEmployeeId,
-            $data['gender_restriction'] ?? '',
+            $genderRestriction,
             $data['remarks'] ?? '',
             $id
         ]);
@@ -158,6 +242,25 @@ class Room
         );
         $stmt->execute([$roomId, $roomId]);
         return $stmt->fetchColumn() > 0;
+    }
+
+    private function normalizeGenderRestriction($value)
+    {
+        $normalized = trim((string) ($value ?? ''));
+
+        if ($normalized === '' || $normalized === 'None' || $normalized === 'Any') {
+            return 'Any';
+        }
+
+        if ($normalized === 'Male' || $normalized === 'Male Only') {
+            return 'Male';
+        }
+
+        if ($normalized === 'Female' || $normalized === 'Female Only') {
+            return 'Female';
+        }
+
+        return 'Any';
     }
 
     private function ensureReservationColumns()
