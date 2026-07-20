@@ -40,11 +40,6 @@ class TransactionController
         }
 
         $transactionDate = trim($data['transaction_date']);
-        $today = date('Y-m-d');
-
-        if ($transactionDate < $today) {
-            return ['valid' => false, 'statusCode' => 400, 'error' => 'Past dates are not allowed.'];
-        }
 
         $sameTypeRecord = $this->transaction->findByEmployeeAndDate($data['employee_id'], $transactionDate, $type, $excludeId);
         if ($sameTypeRecord) {

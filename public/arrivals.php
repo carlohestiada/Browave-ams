@@ -81,7 +81,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Date</label>
-                        <input type="date" id="arrival_transaction_date" class="form-control" name="transaction_date" required min="<?= date('Y-m-d') ?>">
+                        <input type="date" id="arrival_transaction_date" class="form-control" name="transaction_date" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Remarks</label>

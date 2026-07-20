@@ -17,13 +17,15 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 $_SESSION['role'] = 'HR';
 
 $today = date('Y-m-d');
-$yesterday = date('Y-m-d', strtotime('-1 day'));
+$pastDate = date('Y-m-d', strtotime('-10 days'));
+
+$db->prepare('DELETE FROM transactions WHERE employee_id = ? AND DATE(transaction_date) IN (?, ?)')->execute([$employeeId, $pastDate, $today]);
 
 $_SERVER['REQUEST_METHOD'] = 'POST';
 $_SERVER['PATH_INFO'] = '/arrival';
 $_POST = [
     'employee_id' => $employeeId,
-    'transaction_date' => $yesterday,
+    'transaction_date' => $pastDate,
     'remarks' => 'Past date test'
 ];
 
@@ -32,7 +34,7 @@ include __DIR__ . '/../public/api/transactions/index.php';
 $pastOutput = ob_get_clean();
 $pastResult = json_decode($pastOutput, true);
 
-$pastTestPassed = !empty($pastResult['success']) === false && strpos(strtolower($pastResult['error'] ?? ''), 'past') !== false;
+$pastTestPassed = !empty($pastResult['success']);
 
 $_SERVER['PATH_INFO'] = '/arrival';
 $_POST = [
@@ -60,12 +62,9 @@ include __DIR__ . '/../public/api/transactions/index.php';
 $departureOutput = ob_get_clean();
 $departureResult = json_decode($departureOutput, true);
 
-$conflictTestPassed = !empty($departureResult['success']) === false && strpos(strtolower($departureResult['error'] ?? ''), 'departure') !== false;
+$conflictTestPassed = !empty($departureResult['success']) === false && strpos(strtolower($departureResult['error'] ?? ''), 'already has a') !== false;
 
 echo "Past date test: " . ($pastTestPassed ? 'PASS' : 'FAIL') . "\n";
 echo "Same-day arrival/departure test: " . ($conflictTestPassed ? 'PASS' : 'FAIL') . "\n";
 
-if ($createdArrival) {
-    $db->prepare('DELETE FROM transactions WHERE employee_id = ? AND transaction_type = ? AND DATE(transaction_date) = ?')->execute([$employeeId, 'arrival', $today]);
-    $db->prepare('DELETE FROM transactions WHERE employee_id = ? AND transaction_type = ? AND DATE(transaction_date) = ?')->execute([$employeeId, 'departure', $today]);
-}
+$db->prepare('DELETE FROM transactions WHERE employee_id = ? AND remarks IN (?, ?, ?)')->execute([$employeeId, 'Past date test', 'Conflict test arrival', 'Conflict test departure']);

@@ -93,20 +93,16 @@ function initializeAssignmentDateBounds() {
     }
 
     const today = getTodayDate();
-    checkin.min = today;
-
-    if (!checkin.value || checkin.value < today) {
+    if (!checkin.value) {
         checkin.value = today;
     }
 
-    checkout.min = checkin.value || today;
-    if (!checkout.value || checkout.value < checkout.min) {
-        checkout.value = checkout.min;
+    if (!checkout.value) {
+        checkout.value = checkin.value || today;
     }
 
     checkin.addEventListener('change', function () {
         const minCheckout = checkin.value || today;
-        checkout.min = minCheckout;
         if (!checkout.value || checkout.value < minCheckout) {
             checkout.value = minCheckout;
         }
@@ -353,15 +349,9 @@ $(function() {
 
         const checkinDate = $('#assign_checkin_date').val();
         const checkoutDate = $('#assign_checkout_date').val();
-        const today = getTodayDate();
 
         if (!checkinDate || !checkoutDate) {
             swalError('Please select both arrival and departure dates.');
-            return;
-        }
-
-        if (checkinDate < today) {
-            swalError('Arrival date cannot be earlier than today.');
             return;
         }
 
