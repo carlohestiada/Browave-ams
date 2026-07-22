@@ -25,7 +25,7 @@ if ($method === 'GET') {
         $controller->getByDate($id);
         return;
     }
-    
+
     if ($id) {
         $controller->edit($id);
     } else {
@@ -35,6 +35,11 @@ if ($method === 'GET') {
 }
 
 if ($method === 'POST') {
+    if (!empty($_POST['mode']) && $_POST['mode'] === 'sunday_lunch_box') {
+        $controller->saveSundayLunchBox($_POST['date'] ?? '');
+        return;
+    }
+
     $controller->store();
     return;
 }

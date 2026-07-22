@@ -1115,6 +1115,87 @@ body{
 	line-height: 1;
 	color: #003686;
 }
+.meal-planner-summary {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 12px;
+}
+.meal-planner-summary__card {
+	background: #ffffff;
+	border: 1px solid #c3c6d5;
+	border-radius: 10px;
+	padding: 14px 16px;
+	box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.meal-planner-summary__label {
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #434653;
+	margin-bottom: 4px;
+}
+.meal-planner-summary__value {
+	font-size: 20px;
+	font-weight: 700;
+	color: #003686;
+}
+.meal-planner-table tbody tr.meal-planner-row--sunday {
+	background: #fff4e8;
+}
+.meal-planner-row--sunday td {
+	background: #fff4e8 !important;
+}
+.meal-planner-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 8px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	background: #f59e0b;
+	color: #fff;
+}
+.meal-planner-day-title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-weight: 700;
+}
+.meal-planner-people {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+.meal-planner-person {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	line-height: 1.4;
+}
+.meal-planner-people--arrival .meal-planner-person {
+	color: #15803d;
+}
+.meal-planner-people--departure .meal-planner-person {
+	color: #b91c1c;
+}
+.meal-planner-muted {
+	color: #6b7280;
+	font-size: 12px;
+}
+.meal-planner-lunch-box-input {
+	width: 110px;
+	min-width: 110px;
+}
+.meal-planner-remarks {
+	white-space: pre-line;
+	font-size: 12px;
+	color: #334155;
+}
 @media (max-width: 576px) {
 	.meal-headcount-summary {
 		align-items: flex-start;

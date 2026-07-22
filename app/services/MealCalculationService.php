@@ -18,8 +18,7 @@ class MealCalculationService
     public function calculateActiveCount($date)
     {
         $targetDate = date('Y-m-d', strtotime($date));
-        
-        // Fetch all employees created on or before target date
+
         $stmt = $this->db->prepare(
             "SELECT id, status, created_at FROM employees WHERE DATE(created_at) <= ?"
         );
@@ -29,7 +28,6 @@ class MealCalculationService
         $activeCount = 0;
 
         foreach ($employees as $employee) {
-            // Get the latest transaction on or before the target date
             $latestStmt = $this->db->prepare(
                 "SELECT transaction_type
                  FROM transactions
@@ -40,13 +38,11 @@ class MealCalculationService
             $latestStmt->execute([$employee['id'], $targetDate]);
             $latestTransaction = $latestStmt->fetch(PDO::FETCH_ASSOC);
 
-            // Determine if employee is active
             if ($latestTransaction) {
                 if ($latestTransaction['transaction_type'] === 'arrival') {
                     $activeCount++;
                 }
             } else {
-                // No transactions: check employee status
                 if ($employee['status'] === 'Active') {
                     $activeCount++;
                 }
@@ -56,19 +52,11 @@ class MealCalculationService
         return $activeCount;
     }
 
-    /**
-     * Calculate meal count for a specific date.
-     * Meal count is the number of active employees for that date.
-     */
     public function calculateMealCount($date)
     {
         return $this->calculateActiveCount($date);
     }
 
-    /**
-     * Get calculations for a date range.
-     * Returns data in format compatible with meal planning views.
-     */
     public function getHeadcountsForDateRange($startDate, $endDate)
     {
         if (!$this->isValidDate($startDate) || !$this->isValidDate($endDate) || $startDate > $endDate) {
@@ -76,17 +64,38 @@ class MealCalculationService
         }
 
         $rows = [];
+        $overrides = $this->getDailyHeadcountOverrides($startDate, $endDate);
         $current = new DateTime($startDate);
         $last = new DateTime($endDate);
 
         while ($current <= $last) {
             $date = $current->format('Y-m-d');
             $activeCount = $this->calculateActiveCount($date);
-            
+            $override = $overrides[$date] ?? null;
+            $isSunday = (new DateTime($date))->format('w') === '0';
+
+            $headcount = $activeCount;
+            $companyPay = $activeCount;
+            $lunchBox = $activeCount;
+
+            if ($isSunday && $override) {
+                $overrideValue = $this->resolveOverrideValue($override);
+                if ($overrideValue !== null) {
+                    $headcount = $overrideValue;
+                    $companyPay = $overrideValue;
+                    $lunchBox = $overrideValue;
+                }
+            }
+
             $rows[] = [
                 'date' => $date,
                 'active_count' => $activeCount,
-                'meal_count' => $activeCount
+                'meal_count' => $activeCount,
+                'headcount' => $headcount,
+                'company_pay' => $companyPay,
+                'lunch_box' => $lunchBox,
+                'is_sunday' => $isSunday,
+                'can_edit_lunch_box' => $isSunday,
             ];
 
             $current->modify('+1 day');
@@ -95,9 +104,6 @@ class MealCalculationService
         return $rows;
     }
 
-    /**
-     * Get transaction details for a date range (arrivals and departures).
-     */
     public function getTransactionsForDateRange($startDate, $endDate)
     {
         $stmt = $this->db->prepare(
@@ -117,10 +123,6 @@ class MealCalculationService
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Attach transaction data to headcount records.
-     * Returns array keyed by date with arrivals/departures arrays.
-     */
     public function attachTransactionsToHeadcounts($headcounts, $startDate = null, $endDate = null)
     {
         if (empty($headcounts)) {
@@ -150,15 +152,96 @@ class MealCalculationService
             $date = $headcount['date'];
             $headcount['arrivals'] = $grouped[$date]['arrivals'] ?? [];
             $headcount['departures'] = $grouped[$date]['departures'] ?? [];
+            $headcount['remarks'] = $this->buildRemarks(
+                $headcount['lunch_box'] ?? $headcount['meal_count'] ?? 0,
+                $headcount['arrivals'],
+                $headcount['departures']
+            );
             $withTransactions[$date] = $headcount;
         }
 
         return $withTransactions;
     }
 
-    /**
-     * Validate date format (YYYY-MM-DD).
-     */
+    public function saveSundayLunchBoxOverride($date, $value)
+    {
+        $normalizedDate = date('Y-m-d', strtotime($date));
+        $normalizedValue = max(0, (int) $value);
+
+        $existing = $this->getDailyHeadcountOverride($normalizedDate);
+
+        if ($existing) {
+            $stmt = $this->db->prepare(
+                "UPDATE daily_headcount SET active_count=?, meal_count=? WHERE date=?"
+            );
+            return $stmt->execute([$normalizedValue, $normalizedValue, $normalizedDate]);
+        }
+
+        $stmt = $this->db->prepare(
+            "INSERT INTO daily_headcount (date, active_count, meal_count) VALUES (?, ?, ?)"
+        );
+
+        return $stmt->execute([$normalizedDate, $normalizedValue, $normalizedValue]);
+    }
+
+    private function getDailyHeadcountOverrides($startDate, $endDate)
+    {
+        $stmt = $this->db->prepare(
+            "SELECT date, active_count, meal_count FROM daily_headcount WHERE date BETWEEN ? AND ?"
+        );
+        $stmt->execute([$startDate, $endDate]);
+
+        $rows = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $rows[$row['date']] = $row;
+        }
+
+        return $rows;
+    }
+
+    private function getDailyHeadcountOverride($date)
+    {
+        $stmt = $this->db->prepare(
+            "SELECT date, active_count, meal_count FROM daily_headcount WHERE date=?"
+        );
+        $stmt->execute([$date]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function resolveOverrideValue($override)
+    {
+        if (!$override) {
+            return null;
+        }
+
+        if (array_key_exists('meal_count', $override) && $override['meal_count'] !== null) {
+            return max(0, (int) $override['meal_count']);
+        }
+
+        if (array_key_exists('active_count', $override) && $override['active_count'] !== null) {
+            return max(0, (int) $override['active_count']);
+        }
+
+        return null;
+    }
+
+    private function buildRemarks($lunchBox, $arrivals, $departures)
+    {
+        $parts = [];
+        $parts[] = $lunchBox . ' Lunch Box';
+
+        if (!empty($arrivals)) {
+            $parts[] = '+' . count($arrivals) . ' Arrivals';
+        }
+
+        if (!empty($departures)) {
+            $parts[] = '-' . count($departures) . ' Departure' . (count($departures) > 1 ? 's' : '');
+        }
+
+        return implode("\n", $parts);
+    }
+
     private function isValidDate($date)
     {
         $parsed = DateTime::createFromFormat('Y-m-d', $date);

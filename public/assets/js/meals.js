@@ -18,22 +18,6 @@ function mealEscapeHtml(value) {
         .replace(/'/g, '&#039;');
 }
 
-function mealDisplayValue(value) {
-    const text = mealEscapeHtml(value);
-
-    return text || '-';
-}
-
-function mealHeadcountValue(meal) {
-    const mealCount = Number(meal?.meal_count);
-
-    if (meal?.id || mealCount > 0) {
-        return Number.isFinite(mealCount) ? mealCount : 0;
-    }
-
-    return Number(meal?.active_count) || 0;
-}
-
 function getLocalDateString(date = new Date()) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -63,19 +47,7 @@ function getLocalWeekString(date = new Date()) {
 
 function parseLocalDate(dateString) {
     const [year, month, day] = dateString.split('-').map(Number);
-
     return new Date(year, month - 1, day);
-}
-
-function formatMealDate(dateString) {
-    if (!dateString) {
-        return '-';
-    }
-
-    const date = parseLocalDate(dateString);
-    const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-
-    return `${mealEscapeHtml(dateString)} <span class="text-muted d-block small">${dayName}</span>`;
 }
 
 function getMonthDateRange(monthString) {
@@ -110,129 +82,117 @@ function formatMealRange(startDate, endDate) {
     return `${mealEscapeHtml(startDate)} to ${mealEscapeHtml(endDate)}`;
 }
 
+function formatPlannerDate(dateString) {
+    if (!dateString) {
+        return '-';
+    }
+
+    const date = parseLocalDate(dateString);
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+    return `${mealEscapeHtml(dateString)}<br><span class="meal-planner-muted">${mealEscapeHtml(dayName)}</span>`;
+}
+
 function updateMealHeadcountSummary(meals, label, range) {
-    const total = (meals || []).reduce((sum, meal) => {
-        return sum + mealHeadcountValue(meal);
-    }, 0);
+    const totalHeadcount = (meals || []).reduce((sum, meal) => sum + Number(meal?.headcount ?? meal?.active_count ?? 0), 0);
+    const totalCompanyPay = (meals || []).reduce((sum, meal) => sum + Number(meal?.company_pay ?? meal?.headcount ?? 0), 0);
+    const totalLunchBox = (meals || []).reduce((sum, meal) => sum + Number(meal?.lunch_box ?? meal?.meal_count ?? 0), 0);
+    const totalArrivals = (meals || []).reduce((sum, meal) => sum + (meal?.arrivals?.length || 0), 0);
+    const totalDepartures = (meals || []).reduce((sum, meal) => sum + (meal?.departures?.length || 0), 0);
+    const averageDailyHeadcount = meals.length ? Math.round(totalHeadcount / meals.length) : 0;
 
     $('#mealSummaryLabel').text(label);
     $('#mealSummaryRange').text(range);
-    $('#mealSummaryTotal').text(total.toLocaleString());
+    $('#mealSummaryTotal').text(totalLunchBox.toLocaleString());
+    $('#mealPlannerSummary').html(`
+        <div class="meal-planner-summary__card">
+            <div class="meal-planner-summary__label">Total Headcount</div>
+            <div class="meal-planner-summary__value">${totalHeadcount.toLocaleString()}</div>
+        </div>
+        <div class="meal-planner-summary__card">
+            <div class="meal-planner-summary__label">Total Company Pay</div>
+            <div class="meal-planner-summary__value">${totalCompanyPay.toLocaleString()}</div>
+        </div>
+        <div class="meal-planner-summary__card">
+            <div class="meal-planner-summary__label">Total Lunch Box</div>
+            <div class="meal-planner-summary__value">${totalLunchBox.toLocaleString()}</div>
+        </div>
+        <div class="meal-planner-summary__card">
+            <div class="meal-planner-summary__label">Total Arrivals</div>
+            <div class="meal-planner-summary__value">${totalArrivals.toLocaleString()}</div>
+        </div>
+        <div class="meal-planner-summary__card">
+            <div class="meal-planner-summary__label">Total Departures</div>
+            <div class="meal-planner-summary__value">${totalDepartures.toLocaleString()}</div>
+        </div>
+        <div class="meal-planner-summary__card">
+            <div class="meal-planner-summary__label">Average Daily Headcount</div>
+            <div class="meal-planner-summary__value">${averageDailyHeadcount.toLocaleString()}</div>
+        </div>
+    `);
 }
 
-function mealEmployeeLabel(employee) {
-    const code = employee.employee_code ? `${employee.employee_code} - ` : '';
-
-    return `${code}${employee.full_name || 'Employee'}`;
-}
-
-function loadMealEmployeeOptions(selectedEmployee) {
-    const type = $('#meal_transaction_type').val() || 'arrival';
-    const date = $('#meal_transaction_date').val() || getLocalDateString();
-    const params = new URLSearchParams();
-
-    params.set('exclude_transaction_type', type);
-    params.set('exclude_transaction_date', date);
-
-    if (type === 'departure') {
-        params.set('status', 'Active');
-    }
-
-    $.get(mealApiUrl(`api/employees/index.php?${params.toString()}`), function(data) {
-        const employees = parseJsonResponse(data);
-        const selectedId = selectedEmployee?.id ? String(selectedEmployee.id) : $('#meal_employee_id').val();
-        let options = '<option value="">Select employee</option>';
-        let hasSelected = false;
-
-        employees.forEach(employee => {
-            const employeeId = String(employee.id);
-            const selected = employeeId === String(selectedId) ? ' selected' : '';
-
-            if (selected) {
-                hasSelected = true;
-            }
-
-            options += `<option value="${employeeId}"${selected}>${mealEscapeHtml(mealEmployeeLabel(employee))}</option>`;
-        });
-
-        if (selectedEmployee?.id && !hasSelected) {
-            options += `<option value="${selectedEmployee.id}" selected>${mealEscapeHtml(mealEmployeeLabel(selectedEmployee))}</option>`;
-        }
-
-        $('#meal_employee_id').html(options);
-    });
-}
-
-function renderMealTransactions(transactions, type) {
-    if (!transactions || !transactions.length) {
-        return '<span class="text-muted">-</span>';
+function renderPlannerPeople(people, type) {
+    if (!people || !people.length) {
+        return '<span class="meal-planner-muted">—</span>';
     }
 
     return `
-        <div class="d-flex flex-column gap-1">
-            ${transactions.map(tx => {
-                const name = tx.full_name || tx.employee_code || 'Employee';
-                const code = tx.employee_code && tx.full_name ? `${mealEscapeHtml(tx.employee_code)} - ` : '';
-
-                return `
-                    <div class="d-flex align-items-center justify-content-between gap-2">
-                        <span>${code}${mealEscapeHtml(name)}</span>
-                        <span class="d-inline-flex gap-1">
-                            <button
-                                type="button"
-                                class="btn btn-outline-warning btn-sm py-0 px-1"
-                                onclick="editMealTransaction(${tx.id}, '${type}')">
-                                Edit
-                            </button>
-                            <button
-                                type="button"
-                                class="btn btn-outline-danger btn-sm py-0 px-1"
-                                onclick="deleteMealTransaction(${tx.id}, '${type}')">
-                                Remove
-                            </button>
-                        </span>
-                    </div>
-                `;
+        <div class="meal-planner-people meal-planner-people--${type}">
+            ${people.map((person) => {
+                const name = person.full_name || person.employee_code || 'Employee';
+                return `<div class="meal-planner-person">• ${mealEscapeHtml(name)}</div>`;
             }).join('')}
         </div>
     `;
 }
 
-function renderMealRow(meal) {
-    const mealCount = mealHeadcountValue(meal);
-    const action = meal.id ? `
-        <button class="btn btn-primary btn-sm" onclick="openMealModal({date: '${meal.date}'})">Create Plan</button>
-    ` : `
-        <button class="btn btn-primary btn-sm me-1" onclick="openMealModal({date: '${meal.date}'})">Create Plan</button>
-    `;
+function renderMealPlannerRow(meal) {
+    const rowClass = meal?.is_sunday ? 'meal-planner-row--sunday' : '';
+    const dayLabel = parseLocalDate(meal.date).toLocaleDateString('en-US', { weekday: 'long' });
+    const lunchValue = Number(meal?.lunch_box ?? meal?.meal_count ?? 0);
+
+    let lunchCell = `<div class="meal-planner-muted">${lunchValue} Lunch Box</div>`;
+
+    if (meal?.is_sunday) {
+        lunchCell = `
+            <div class="d-flex align-items-center gap-2">
+                <input type="number" min="0" class="form-control form-control-sm meal-planner-lunch-box-input" value="${lunchValue}" data-date="${meal.date}">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="saveSundayLunchBoxValue('${meal.date}', this.previousElementSibling.value)">Save</button>
+            </div>
+        `;
+    }
 
     return `
-        <tr class="${meal.id ? '' : 'table-warning'}">
-            <td>${formatMealDate(meal.date)}</td>
-            <td>${mealDisplayValue(meal.active_count)}</td>
-            <td>${mealDisplayValue(mealCount)}</td>
-            <td>${renderMealTransactions(meal.arrivals, 'arrival')}</td>
-            <td>${renderMealTransactions(meal.departures, 'departure')}</td>
+        <tr class="${rowClass}">
             <td>
-                ${action}
+                <div class="meal-planner-day-title">
+                    <span>${mealEscapeHtml(dayLabel)}</span>
+                    ${meal?.is_sunday ? '<span class="meal-planner-badge">Rest Day</span>' : ''}
+                </div>
             </td>
+            <td>${formatPlannerDate(meal.date)}</td>
+            <td>${mealEscapeHtml(meal?.headcount ?? meal?.active_count ?? 0)}</td>
+            <td>${mealEscapeHtml(meal?.company_pay ?? meal?.headcount ?? 0)}</td>
+            <td>${lunchCell}</td>
+            <td>${renderPlannerPeople(meal?.arrivals, 'arrival')}</td>
+            <td>${renderPlannerPeople(meal?.departures, 'departure')}</td>
+            <td><div class="meal-planner-remarks">${mealEscapeHtml(meal?.remarks || `${lunchValue} Lunch Box`)}</div></td>
         </tr>
     `;
 }
 
-function getMealSortColumns()
-{
-    return [
-        { index: 0, key: 'date' },
-        { index: 1, key: 'active_count' },
-        { index: 2, key: 'meal_count' },
-        { index: 3, key: 'arrivals' },
-        { index: 4, key: 'departures' }
-    ];
+function renderMealPlannerTable(meals) {
+    window.currentMealPlannerRows = meals || [];
+
+    if (!meals || !meals.length) {
+        $('#mealTable').html('<tr><td colspan="8" class="text-center text-muted">No meal data available.</td></tr>');
+        return;
+    }
+
+    $('#mealTable').html(meals.map(renderMealPlannerRow).join(''));
 }
 
-function loadMealPlans()
-{
+function loadMealPlans() {
     $('#mealViewMode').val('weekly');
     $('.meal-weekly-filter').removeClass('d-none');
     $('.meal-monthly-filter').addClass('d-none');
@@ -241,62 +201,35 @@ function loadMealPlans()
     loadMealsByWeek();
 }
 
-function loadMealsByWeek()
-{
+function loadMealsByWeek() {
     const week = $('#filterWeek').val() || getLocalWeekString();
     const range = getWeekDateRange(week);
 
     $('#filterWeek').val(week);
 
-    $.get(`${mealsApiUrl}/range?start_date=${range.startDate}&end_date=${range.endDate}`, function(data) {
+    $.get(mealApiUrl(`api/meals.php/range?start_date=${range.startDate}&end_date=${range.endDate}`), function(data) {
         const meals = parseJsonResponse(data);
 
-        updateMealHeadcountSummary(
-            meals,
-            'Weekly Meal Headcount',
-            formatMealRange(range.startDate, range.endDate)
-        );
-
-        renderPaginatedTable({
-            data: meals,
-            tableSelector: '#mealTable',
-            currentPage: 1,
-            perPage: 7,
-            renderRow: renderMealRow,
-            sortColumns: getMealSortColumns()
-        });
+        updateMealHeadcountSummary(meals, `Week ${week.split('-W')[1]}`, formatMealRange(range.startDate, range.endDate));
+        renderMealPlannerTable(meals);
     });
 }
 
-function loadMealsByMonth()
-{
+function loadMealsByMonth() {
     const month = $('#filterMonth').val() || getLocalMonthString();
     const range = getMonthDateRange(month);
 
     $('#filterMonth').val(month);
 
-    $.get(`${mealsApiUrl}/range?start_date=${range.startDate}&end_date=${range.endDate}`, function(data) {
+    $.get(mealApiUrl(`api/meals.php/range?start_date=${range.startDate}&end_date=${range.endDate}`), function(data) {
         const meals = parseJsonResponse(data);
 
-        updateMealHeadcountSummary(
-            meals,
-            'Monthly Meal Headcount',
-            formatMealRange(range.startDate, range.endDate)
-        );
-
-        renderPaginatedTable({
-            data: meals,
-            tableSelector: '#mealTable',
-            currentPage: 1,
-            perPage: 31,
-            renderRow: renderMealRow,
-            sortColumns: getMealSortColumns()
-        });
+        updateMealHeadcountSummary(meals, month, formatMealRange(range.startDate, range.endDate));
+        renderMealPlannerTable(meals);
     });
 }
 
-function changeMealViewMode()
-{
+function changeMealViewMode() {
     const mode = $('#mealViewMode').val();
 
     if (mode === 'monthly') {
@@ -313,8 +246,7 @@ function changeMealViewMode()
     loadMealsByWeek();
 }
 
-function changeMealWeek(offset)
-{
+function changeMealWeek(offset) {
     const weekValue = $('#filterWeek').val() || getLocalWeekString();
     const range = getWeekDateRange(weekValue);
     const nextWeek = parseLocalDate(range.startDate);
@@ -324,8 +256,7 @@ function changeMealWeek(offset)
     loadMealsByWeek();
 }
 
-function changeMealMonth(offset)
-{
+function changeMealMonth(offset) {
     const monthValue = $('#filterMonth').val() || getLocalMonthString();
     const [year, month] = monthValue.split('-').map(Number);
     const nextMonth = new Date(year, month - 1 + offset, 1);
@@ -334,105 +265,35 @@ function changeMealMonth(offset)
     loadMealsByMonth();
 }
 
-function resetMealForm()
-{
-    $('#mealForm')[0].reset();
-    $('#mealTransactionId').val('');
-    $('#mealModalLabel').text('Add Meal Plan');
-    $('#meal_transaction_type').val('arrival').prop('disabled', false);
-    $('#meal_transaction_date').val(getLocalDateString());
-    $('#meal_employee_id').html('<option value="">Select employee</option>');
-}
+function saveSundayLunchBoxValue(date, value) {
+    const payload = {
+        date: date,
+        lunch_box: value,
+        mode: 'sunday_lunch_box'
+    };
 
-function openMealModal(meal)
-{
-    resetMealForm();
+    $.post(mealApiUrl('api/meals.php'), payload, function(response) {
+        const result = parseJsonResponse(response);
 
-    if (meal?.date) {
-        $('#meal_transaction_date').val(meal.date);
-    }
-
-    loadMealEmployeeOptions();
-    $('#mealModal').modal('show');
-}
-
-function editMealTransaction(id, type)
-{
-    $.get(mealApiUrl(`api/transactions/index.php/${id}`), function(data) {
-        const transaction = parseJsonResponse(data);
-        const selectedEmployee = {
-            id: transaction.employee_id,
-            employee_code: transaction.employee_code,
-            full_name: transaction.full_name
-        };
-
-        resetMealForm();
-        $('#mealTransactionId').val(transaction.id);
-        $('#meal_transaction_type').val(type || transaction.transaction_type).prop('disabled', true);
-        $('#meal_transaction_date').val(transaction.transaction_date);
-        $('#mealModalLabel').text('Edit Meal Plan');
-        loadMealEmployeeOptions(selectedEmployee);
-        $('#mealModal').modal('show');
-    }).fail(function() {
-        swalError('Failed to load meal plan transaction');
-    });
-}
-
-function saveMeal(event)
-{
-    event.preventDefault();
-
-    if (!$('#meal_employee_id').val()) {
-        swalError('Please select an employee');
-        return;
-    }
-
-    const id = $('#mealTransactionId').val();
-    const type = $('#meal_transaction_type').val();
-    const url = id
-        ? mealApiUrl(`api/transactions/index.php/${id}`)
-        : mealApiUrl(`api/transactions/index.php/${type}`);
-    const method = id ? 'PUT' : 'POST';
-
-    $.ajax({
-        url: url,
-        type: method,
-        data: $('#mealForm').serialize(),
-        success: function() {
+        if (result.success) {
             refreshCurrentMealView();
-            $('#mealModal').modal('hide');
-            swalSuccess('Meal plan saved successfully');
-        },
-        error: function(xhr) {
-            swalError((xhr.responseJSON?.error || 'Unknown error'));
+            if (typeof swalSuccess === 'function') {
+                swalSuccess('Sunday lunch box updated');
+            }
+            return;
+        }
+
+        if (typeof swalError === 'function') {
+            swalError(result.error || 'Unable to save Sunday lunch box');
+        }
+    }).fail(function(xhr) {
+        if (typeof swalError === 'function') {
+            swalError(xhr.responseJSON?.error || 'Unable to save Sunday lunch box');
         }
     });
 }
 
-function deleteMeal(id)
-{
-    if (id === 0) {
-        swalError('Cannot delete unsaved meal plan.');
-        return;
-    }
-
-    swalConfirm('Delete meal plan?', function() {
-        $.ajax({
-            url: `${mealsApiUrl}/${id}`,
-            type: 'DELETE',
-            success: function() {
-                refreshCurrentMealView();
-                swalSuccess('Meal plan deleted successfully');
-            },
-            error: function(xhr) {
-                swalError('Error: ' + (xhr.responseJSON?.error || 'Unknown error'));
-            }
-        });
-    });
-}
-
-function refreshCurrentMealView()
-{
+function refreshCurrentMealView() {
     if ($('#mealViewMode').val() === 'monthly') {
         loadMealsByMonth();
         return;
@@ -441,39 +302,8 @@ function refreshCurrentMealView()
     loadMealsByWeek();
 }
 
-function deleteMealTransaction(transactionId, transactionType)
-{
-    const label = transactionType === 'arrival' ? 'arrival' : 'departure';
-
-    swalConfirm(`Remove this ${label} employee from the meal view?`, function() {
-        $.ajax({
-            url: mealApiUrl(`api/transactions/index.php/${transactionId}`),
-            type: 'DELETE',
-            success: function(response) {
-                const result = parseJsonResponse(response);
-
-                if (result.success) {
-                    refreshCurrentMealView();
-                    swalSuccess('Removed successfully');
-                    return;
-                }
-
-                swalError(result.error || 'Unable to remove record');
-            },
-            error: function(xhr) {
-                swalError('Error: ' + (xhr.responseJSON?.error || 'Request failed'));
-            }
-        });
-    });
-}
-
 $(function() {
     $('#filterWeek').val(getLocalWeekString());
     $('#filterMonth').val(getLocalMonthString());
     loadMealPlans();
-    $('#mealForm').on('submit', saveMeal);
-    $('#meal_transaction_type, #meal_transaction_date').on('change', function() {
-        $('#meal_employee_id').val('');
-        loadMealEmployeeOptions();
-    });
 });

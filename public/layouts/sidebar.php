@@ -92,12 +92,38 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
         </li>
         <?php endif; ?>
 
-        <?php if (in_array('users.php', $allowedPages, true)): ?>
+        <?php
+            $settingsPages = ['users.php'];
+            $settingsAllowed = array_values(array_filter($settingsPages, function($p) use ($allowedPages) { return in_array($p, $allowedPages, true); }));
+            $isSettingsActive = in_array($currentPage, $settingsPages, true);
+            $showSettings = count($settingsAllowed) > 0;
+        ?>
+        <?php if ($showSettings): ?>
         <li class="nav-item mb-1">
-            <a href="users.php" class="nav-link <?= $currentPage === 'users.php' ? 'active' : '' ?>" title="Users">
-                <i class="bi bi-person-circle nav-icon"></i>
-                <span>Users</span>
+            <a class="nav-link d-flex justify-content-between <?= $isSettingsActive ? 'active' : '' ?>" data-bs-toggle="collapse" href="#settingsMenu" role="button" aria-expanded="<?= $isSettingsActive ? 'true' : 'false' ?>" aria-controls="settingsMenu">
+                <span><i class="bi bi-gear nav-icon"></i>&nbsp;&nbsp;&nbsp;&nbsp;<span>Settings</span></span>
+                <i class="bi bi-chevron-down chev" data-target="settingsMenu"></i>
             </a>
+
+            <div class="collapse <?= $isSettingsActive ? 'show' : '' ?>" id="settingsMenu">
+                <ul class="nav flex-column ms-2">
+                    <?php if (in_array('users.php', $settingsAllowed, true)): ?>
+                    <li class="nav-item mb-1">
+                        <a href="users.php" class="nav-link <?= $currentPage === 'users.php' ? 'active' : '' ?>" title="Users">
+                            <i class="bi bi-person-circle nav-icon"></i>
+                            <span>Users</span>
+                        </a>
+                    </li>
+                    <?php endif; ?>
+
+                    <li class="nav-item mb-1">
+                        <a href="#" class="nav-link text-muted" title="Guide">
+                            <i class="bi bi-journal-text nav-icon"></i>
+                            <span>Guide</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </li>
         <?php endif; ?>
 

@@ -43,13 +43,15 @@ class TransactionController
 
         $sameTypeRecord = $this->transaction->findByEmployeeAndDate($data['employee_id'], $transactionDate, $type, $excludeId);
         if ($sameTypeRecord) {
-            return ['valid' => false, 'statusCode' => 400, 'error' => 'Employee already has a ' . $type . ' record on this date'];
+            $label = $type === 'arrival' ? 'an arrival' : 'a departure';
+            return ['valid' => false, 'statusCode' => 400, 'error' => 'This employee already has ' . $label . ' on this date.'];
         }
 
         $otherType = $type === 'arrival' ? 'departure' : 'arrival';
         $otherTypeRecord = $this->transaction->findByEmployeeAndDate($data['employee_id'], $transactionDate, $otherType, $excludeId);
         if ($otherTypeRecord) {
-            return ['valid' => false, 'statusCode' => 400, 'error' => 'Employee already has a ' . $otherType . ' record on this date'];
+            $label = $otherType === 'arrival' ? 'an arrival' : 'a departure';
+            return ['valid' => false, 'statusCode' => 400, 'error' => 'This employee already has ' . $label . ' on this date.'];
         }
 
         return ['valid' => true, 'statusCode' => 200, 'transactionDate' => $transactionDate];

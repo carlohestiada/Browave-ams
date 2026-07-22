@@ -34,7 +34,7 @@ class MealPlanningController
     {
         $headcount = $this->dailyHeadcount->getByDate($date);
         $activeCount = $this->calculationService->calculateActiveCount($date);
-        
+
         if (!$headcount) {
             $headcount = [
                 'date' => $date,
@@ -56,11 +56,23 @@ class MealPlanningController
             return;
         }
 
-        // Calculate all headcounts for the date range in real-time
         $rows = $this->calculationService->getHeadcountsForDateRange($startDate, $endDate);
 
-        // Attach transaction details
         echo json_encode(array_values($this->calculationService->attachTransactionsToHeadcounts($rows, $startDate, $endDate)));
+    }
+
+    public function saveSundayLunchBox($date)
+    {
+        if (!$this->isValidDate($date)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Invalid date']);
+            return;
+        }
+
+        $value = isset($_POST['lunch_box']) ? (int) $_POST['lunch_box'] : 0;
+        $saved = $this->calculationService->saveSundayLunchBoxOverride($date, $value);
+
+        echo json_encode(['success' => $saved]);
     }
 
     public function edit($id)

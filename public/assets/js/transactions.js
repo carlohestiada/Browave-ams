@@ -334,13 +334,17 @@ function submitTransaction(formSelector, url) {
                     $('#arrival_employee_search, #departure_employee_search').val('');
                     $('#arrival_employee_id, #departure_employee_id').val('');
                     $('#arrival_transaction_id, #departure_transaction_id').val('');
+                    if (typeof window.updateTxBadges === 'function') {
+                        window.updateTxBadges();
+                    }
                     swalSuccess('Saved successfully');
                 } else {
                     swalError(res.error || 'Unknown error', 'Save failed');
                 }
             },
-            error: function() {
-                swalError('Request failed', 'Error');
+            error: function(xhr) {
+                const message = xhr.responseJSON?.error || xhr.responseText || 'Request failed';
+                swalError(message, 'Save failed');
             }
         });
     });
@@ -364,13 +368,17 @@ function deleteTransaction(transactionId, transactionType) {
                     loadTransactionOptions(arrivalDate, 'arrival');
                     loadTransactionOptions(departureDate, 'departure');
 
+                    if (typeof window.updateTxBadges === 'function') {
+                        window.updateTxBadges();
+                    }
                     swalSuccess('Deleted successfully');
                 } else {
                     swalError(res.error || 'Unknown error', 'Delete failed');
                 }
             },
-            error: function() {
-                swalError('Request failed', 'Error');
+            error: function(xhr) {
+                const message = xhr.responseJSON?.error || xhr.responseText || 'Request failed';
+                swalError(message, 'Delete failed');
             }
         });
     });

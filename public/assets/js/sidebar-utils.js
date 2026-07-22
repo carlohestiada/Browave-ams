@@ -378,6 +378,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }).catch(()=>{});
     }
 
+    window.updateTxBadges = updateTxBadges;
     updateTxBadges();
     // refresh every 30 seconds
     setInterval(updateTxBadges, 30000);
