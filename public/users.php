@@ -114,6 +114,6 @@
     </div>
 </div>
 
-<script src="assets/js/users.js"></script>
+<script src="assets/js/users.js?v=<?= filemtime(__DIR__ . '/assets/js/users.js') ?>"></script>
 
 <?php include 'layouts/footer.php'; ?>

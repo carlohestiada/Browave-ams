@@ -141,5 +141,5 @@
   </div>
 </div>
 
-<script src="assets/js/room_assignments.js"></script>
+<script src="assets/js/room_assignments.js?v=<?= filemtime(__DIR__ . '/assets/js/room_assignments.js') ?>"></script>
 <?php include 'layouts/footer.php'; ?>

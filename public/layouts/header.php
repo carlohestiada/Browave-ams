@@ -72,10 +72,10 @@ if (!in_array($currentPage, $allowedPages, true)) {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-    <script src="assets/js/swal-utils.js"></script>
-    <script src="assets/js/sidebar-utils.js"></script>
+    <script src="assets/js/swal-utils.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/swal-utils.js') ?>"></script>
+    <script src="assets/js/sidebar-utils.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/sidebar-utils.js') ?>"></script>
 
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/style.css') ?>">
 </head>
 <body>
 

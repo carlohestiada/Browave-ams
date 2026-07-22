@@ -1,7 +1,7 @@
 <?php include 'layouts/header.php'; ?>
 <?php include 'layouts/sidebar.php'; ?>
 
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
 
 <div class="content-wrapper">
 

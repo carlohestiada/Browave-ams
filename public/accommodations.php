@@ -194,6 +194,6 @@
     </div>
 </div>
 
-<script src="assets/js/accommodations.js"></script>
+<script src="assets/js/accommodations.js?v=<?= filemtime(__DIR__ . '/assets/js/accommodations.js') ?>"></script>
 
 <?php include 'layouts/footer.php'; ?>

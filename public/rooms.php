@@ -223,6 +223,6 @@
     </div>
 </div>
 
-<script src="assets/js/rooms.js"></script>
+<script src="assets/js/rooms.js?v=<?= filemtime(__DIR__ . '/assets/js/rooms.js') ?>"></script>
 
 <?php include 'layouts/footer.php'; ?>

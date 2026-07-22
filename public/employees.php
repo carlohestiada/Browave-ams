@@ -270,7 +270,7 @@
 </div>
 
 
-<script src="assets/js/employee.js"></script>
-<script src="assets/js/bulk-upload.js"></script>
+<script src="assets/js/employee.js?v=<?= filemtime(__DIR__ . '/assets/js/employee.js') ?>"></script>
+<script src="assets/js/bulk-upload.js?v=<?= filemtime(__DIR__ . '/assets/js/bulk-upload.js') ?>"></script>
 
 <?php include 'layouts/footer.php'; ?>

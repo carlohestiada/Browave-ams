@@ -95,5 +95,5 @@
     </div>
 </div>
 
-<script src="assets/js/transactions.js"></script>
+<script src="assets/js/transactions.js?v=<?= filemtime(__DIR__ . '/assets/js/transactions.js') ?>"></script>
 <?php include 'layouts/footer.php'; ?>
