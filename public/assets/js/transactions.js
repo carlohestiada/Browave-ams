@@ -109,7 +109,9 @@ function renderEmployeeList(searchTerm, employees, options) {
 }
 
 let departureRows = [];
+let arrivalRows = [];
 let selectedDepartureIds = new Set();
+let selectedArrivalIds = new Set();
 let departureSearchTimer = null;
 
 function filterDepartureRows(rows) {
@@ -146,6 +148,22 @@ function updateDepartureSelectionControls()
     }
 }
 
+function updateArrivalSelectionControls()
+{
+    const selectedCount = selectedArrivalIds.size;
+    const rowCheckboxes = $('.arrival-select-checkbox');
+    const checkedCount = rowCheckboxes.filter(':checked').length;
+    const selectAll = document.getElementById('selectAllArrivals');
+
+    $('#selectedArrivalsText').text(`${selectedCount} selected`);
+    $('#bulkDeleteArrivalsBtn').prop('disabled', selectedCount === 0);
+
+    if (selectAll) {
+        selectAll.checked = rowCheckboxes.length > 0 && checkedCount === rowCheckboxes.length;
+        selectAll.indeterminate = checkedCount > 0 && checkedCount < rowCheckboxes.length;
+    }
+}
+
 function toggleDepartureSelection(id, checked)
 {
     if (checked) {
@@ -155,6 +173,17 @@ function toggleDepartureSelection(id, checked)
     }
 
     updateDepartureSelectionControls();
+}
+
+function toggleArrivalSelection(id, checked)
+{
+    if (checked) {
+        selectedArrivalIds.add(String(id));
+    } else {
+        selectedArrivalIds.delete(String(id));
+    }
+
+    updateArrivalSelectionControls();
 }
 
 function toggleAllDepartures(checked)
@@ -170,6 +199,71 @@ function toggleAllDepartures(checked)
     });
 
     updateDepartureSelectionControls();
+}
+
+function toggleAllArrivals(checked)
+{
+    $('.arrival-select-checkbox').each(function() {
+        this.checked = checked;
+
+        if (checked) {
+            selectedArrivalIds.add(String(this.value));
+        } else {
+            selectedArrivalIds.delete(String(this.value));
+        }
+    });
+
+    updateArrivalSelectionControls();
+}
+
+function deleteSelectedDepartures()
+{
+    const ids = Array.from(selectedDepartureIds);
+
+    if (ids.length === 0) {
+        swalInfo('Select at least one departure to delete.');
+        return;
+    }
+
+    swalConfirm(`Delete ${ids.length} selected departure${ids.length === 1 ? '' : 's'}?`, function() {
+        $('#bulkDeleteDeparturesBtn').prop('disabled', true).text('Deleting...');
+
+        const deletePromises = ids.map(id => new Promise(resolve => {
+            $.ajax({
+                url: apiUrl(`api/transactions/index.php/${id}`),
+                type: 'DELETE',
+                success: function() {
+                    resolve({ success: true, id });
+                },
+                error: function(xhr) {
+                    const message = xhr.responseJSON?.error || xhr.responseText || 'Unknown error';
+                    resolve({ success: false, id, error: message });
+                }
+            });
+        }));
+
+        Promise.all(deletePromises).then(results => {
+            const failed = results.filter(result => !result.success);
+            const deletedCount = results.length - failed.length;
+
+            selectedDepartureIds.clear();
+            loadTransactions('departure', '#departureTable');
+            const departureDate = $('#departure_transaction_date').val() || '';
+            loadTransactionOptions(departureDate, 'departure');
+            if (typeof window.updateTxBadges === 'function') {
+                window.updateTxBadges();
+            }
+            $('#bulkDeleteDeparturesBtn').text('Delete Selected');
+
+            if (failed.length > 0) {
+                const firstError = failed[0].error;
+                swalError(`${deletedCount} deleted. ${failed.length} could not be deleted. ${firstError}`, 'Bulk delete incomplete');
+                return;
+            }
+
+            swalSuccess(`${deletedCount} departure${deletedCount === 1 ? '' : 's'} deleted successfully.`);
+        });
+    });
 }
 
 function resetDepartureFilters()
@@ -201,6 +295,9 @@ function loadTransactions(type, tableSelector) {
         if (transactionType === 'departure') {
             departureRows = transactions;
             selectedDepartureIds.clear();
+        } else {
+            arrivalRows = transactions;
+            selectedArrivalIds.clear();
         }
 
         renderTransactionTable(transactionType, tableSelector, transactions);
@@ -217,8 +314,10 @@ function renderTransactionTable(transactionType, tableSelector, transactions) {
         currentPage: 1,
         perPage: 10,
         renderRow: function(tx) {
-            const selected = selectedDepartureIds.has(String(tx.id)) ? 'checked' : '';
-            const departureSelectCell = isDeparture ? `
+            const selected = isDeparture
+                ? (selectedDepartureIds.has(String(tx.id)) ? 'checked' : '')
+                : (selectedArrivalIds.has(String(tx.id)) ? 'checked' : '');
+            const selectionCell = isDeparture ? `
                 <td style="text-align:center;">
                     <input
                         type="checkbox"
@@ -228,11 +327,21 @@ function renderTransactionTable(transactionType, tableSelector, transactions) {
                         onchange="toggleDepartureSelection(${tx.id}, this.checked)"
                         ${selected}>
                 </td>
-            ` : '';
+            ` : `
+                <td style="text-align:center;">
+                    <input
+                        type="checkbox"
+                        class="arrival-select-checkbox"
+                        value="${tx.id}"
+                        aria-label="Select arrival"
+                        onchange="toggleArrivalSelection(${tx.id}, this.checked)"
+                        ${selected}>
+                </td>
+            `;
 
             return `
                 <tr>
-                    ${departureSelectCell}
+                    ${selectionCell}
                     <td>${displayValue(tx.transaction_date)}</td>
                     <td>${displayValue(tx.employee_code)} - ${displayValue(tx.full_name)}</td>
                     <td>${displayValue(tx.department_name)}</td>
@@ -254,10 +363,10 @@ function renderTransactionTable(transactionType, tableSelector, transactions) {
             { index: 3, key: 'department_name' },
             { index: 4, key: 'remarks' }
         ] : [
-            { index: 0, key: 'transaction_date' },
-            { index: 1, key: function(row) { return `${row.employee_code || ''} ${row.full_name || ''}`; } },
-            { index: 2, key: 'department_name' },
-            { index: 3, key: 'remarks' }
+            { index: 1, key: 'transaction_date' },
+            { index: 2, key: function(row) { return `${row.employee_code || ''} ${row.full_name || ''}`; } },
+            { index: 3, key: 'department_name' },
+            { index: 4, key: 'remarks' }
         ]
     });
 
@@ -275,6 +384,8 @@ function renderTransactionTable(transactionType, tableSelector, transactions) {
 
     if (isDeparture) {
         updateDepartureSelectionControls();
+    } else {
+        updateArrivalSelectionControls();
     }
 }
 
@@ -384,6 +495,56 @@ function deleteTransaction(transactionId, transactionType) {
     });
 }
 
+function deleteSelectedArrivals()
+{
+    const ids = Array.from(selectedArrivalIds);
+
+    if (ids.length === 0) {
+        swalInfo('Select at least one arrival to delete.');
+        return;
+    }
+
+    swalConfirm(`Delete ${ids.length} selected arrival${ids.length === 1 ? '' : 's'}?`, function() {
+        $('#bulkDeleteArrivalsBtn').prop('disabled', true).text('Deleting...');
+
+        const deletePromises = ids.map(id => new Promise(resolve => {
+            $.ajax({
+                url: apiUrl(`api/transactions/index.php/${id}`),
+                type: 'DELETE',
+                success: function() {
+                    resolve({ success: true, id });
+                },
+                error: function(xhr) {
+                    const message = xhr.responseJSON?.error || xhr.responseText || 'Unknown error';
+                    resolve({ success: false, id, error: message });
+                }
+            });
+        }));
+
+        Promise.all(deletePromises).then(results => {
+            const failed = results.filter(result => !result.success);
+            const deletedCount = results.length - failed.length;
+
+            selectedArrivalIds.clear();
+            loadTransactions('arrival', '#arrivalTable');
+            const arrivalDate = $('#arrival_transaction_date').val() || '';
+            loadTransactionOptions(arrivalDate, 'arrival');
+            if (typeof window.updateTxBadges === 'function') {
+                window.updateTxBadges();
+            }
+            $('#bulkDeleteArrivalsBtn').text('Delete Selected');
+
+            if (failed.length > 0) {
+                const firstError = failed[0].error;
+                swalError(`${deletedCount} deleted. ${failed.length} could not be deleted. ${firstError}`, 'Bulk delete incomplete');
+                return;
+            }
+
+            swalSuccess(`${deletedCount} arrival${deletedCount === 1 ? '' : 's'} deleted successfully.`);
+        });
+    });
+}
+
 $(function() {
     if ($('#arrivalForm').length) {
         const today = $('#arrival_transaction_date').val() || '';
@@ -416,6 +577,16 @@ $(function() {
             $('#departure_employee_search').val('');
             $('#departure_employee_id').val('');
             loadTransactionOptions($('#departure_transaction_date').val(), 'departure');
+        });
+
+        $('#selectAllDepartures').on('change', function() {
+            toggleAllDepartures(this.checked);
+        });
+    }
+
+    if ($('#arrivalForm').length) {
+        $('#selectAllArrivals').on('change', function() {
+            toggleAllArrivals(this.checked);
         });
     }
 });

@@ -108,27 +108,36 @@
                 <div id="scheduleCount" class="text-muted small">0 trips found</div>
             </div>
             <div class="dashboard-card-body dashboard-card-table-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Employee</th>
-                                <th>Department</th>
-                                <th>Departure Date</th>
-                                <th>Pickup Time</th>
-                                <th>Transportation</th>
-                                <th>Driver</th>
-                                <th>Vehicle</th>
-                                <th>Pickup Location</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="companyCarTableBody">
-                            <tr><td colspan="10" class="text-center text-muted">Loading requests...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+               <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 0 12px;">
+                   <div id="selectedTransportationText" class="text-muted small">0 selected</div>
+                   <button type="button" class="btn btn-danger btn-sm" id="bulkDeleteTransportationBtn" onclick="deleteSelectedTransportation()" disabled>
+                       Delete Selected
+                   </button>
+               </div>
+               <div class="table-responsive">
+                   <table class="table table-hover align-middle">
+                       <thead class="table-light">
+                           <tr>
+                               <th style="width:44px; text-align:center;">
+                                   <input type="checkbox" id="selectAllTransportation" aria-label="Select all transportation requests">
+                               </th>
+                               <th>Employee</th>
+                               <th>Department</th>
+                               <th>Departure Date</th>
+                               <th>Pickup Time</th>
+                               <th>Transportation</th>
+                               <th>Driver</th>
+                               <th>Vehicle</th>
+                               <th>Pickup Location</th>
+                               <th>Status</th>
+                               <th>Action</th>
+                           </tr>
+                       </thead>
+                       <tbody id="companyCarTableBody">
+                           <tr><td colspan="11" class="text-center text-muted">Loading requests...</td></tr>
+                       </tbody>
+                   </table>
+               </div>
             </div>
             <div class="d-flex justify-content-between align-items-center p-3 border-top">
                 <div id="tableSummary" class="text-muted small">Showing 0 of 0 records</div>

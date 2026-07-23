@@ -53,10 +53,24 @@
 
     <!-- User Table -->
     <div class="ams-card" style="padding:0; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; border-bottom:1px solid #e5e7eb;">
+            <div id="selectedUsersText" style="font-size:13px; color:#434653;">0 selected</div>
+            <button
+                type="button"
+                class="btn btn-danger btn-sm"
+                id="bulkDeleteUsersBtn"
+                onclick="deleteSelectedUsers()"
+                disabled>
+                Delete Selected
+            </button>
+        </div>
         <div style="overflow-x:auto;">
             <table class="table table-bordered">
                 <thead>
                     <tr>
+                        <th style="width:44px; text-align:center;">
+                            <input type="checkbox" id="selectAllUsers" aria-label="Select all users">
+                        </th>
                         <th>Username</th>
                         <th>Role</th>
                         <th>Status</th>

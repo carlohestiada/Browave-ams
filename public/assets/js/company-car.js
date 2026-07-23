@@ -11,6 +11,7 @@ let currentPage = 1;
 let employeeSearchTimer = null;
 let filterEmployeeData = [];
 let modalMode = 'create';
+let selectedTransportationIds = new Set();
 
 function formatBadge(status) {
     const key = status.toLowerCase().replace(/ /g, '-');
@@ -174,11 +175,51 @@ function loadTransportationSchedule() {
 
     $.get(url, function(data) {
         transportationRows = typeof data === 'string' ? JSON.parse(data) : data;
+        selectedTransportationIds.clear();
         currentPage = 1;
         renderTable();
         renderTimeline();
         $('#scheduleCount').text(`${transportationRows.length} trips found`);
     });
+}
+
+function updateTransportationSelectionControls() {
+    const selectedCount = selectedTransportationIds.size;
+    const rowCheckboxes = $('.transportation-select-checkbox');
+    const checkedCount = rowCheckboxes.filter(':checked').length;
+    const selectAll = document.getElementById('selectAllTransportation');
+
+    $('#selectedTransportationText').text(`${selectedCount} selected`);
+    $('#bulkDeleteTransportationBtn').prop('disabled', selectedCount === 0);
+
+    if (selectAll) {
+        selectAll.checked = rowCheckboxes.length > 0 && checkedCount === rowCheckboxes.length;
+        selectAll.indeterminate = checkedCount > 0 && checkedCount < rowCheckboxes.length;
+    }
+}
+
+function toggleTransportationSelection(id, checked) {
+    if (checked) {
+        selectedTransportationIds.add(String(id));
+    } else {
+        selectedTransportationIds.delete(String(id));
+    }
+
+    updateTransportationSelectionControls();
+}
+
+function toggleAllTransportation(checked) {
+    $('.transportation-select-checkbox').each(function() {
+        this.checked = checked;
+
+        if (checked) {
+            selectedTransportationIds.add(String(this.value));
+        } else {
+            selectedTransportationIds.delete(String(this.value));
+        }
+    });
+
+    updateTransportationSelectionControls();
 }
 
 function renderTable() {
@@ -189,8 +230,18 @@ function renderTable() {
 
     rows.forEach(row => {
         const overdue = isRowOverdue(row) ? 'overdue-row' : '';
+        const checked = selectedTransportationIds.has(String(row.id)) ? 'checked' : '';
         html += `
             <tr class="${overdue}">
+                <td style="text-align:center;">
+                    <input
+                        type="checkbox"
+                        class="transportation-select-checkbox"
+                        value="${row.id}"
+                        aria-label="Select transportation request"
+                        onchange="toggleTransportationSelection(${row.id}, this.checked)"
+                        ${checked}>
+                </td>
                 <td>${formatEmployeeName(row)}</td>
                 <td>${row.department_name || ''}</td>
                 <td>${row.pickup_date || ''}</td>
@@ -210,10 +261,11 @@ function renderTable() {
         `;
     });
 
-    body.html(html || '<tr><td colspan="10" class="text-center text-muted">No transportation requests found.</td></tr>');
+    body.html(html || '<tr><td colspan="11" class="text-center text-muted">No transportation requests found.</td></tr>');
     renderPagination();
     $('#tableSummary').text(`Showing ${rows.length} of ${transportationRows.length} records`);
     bindRowActions();
+    updateTransportationSelectionControls();
 }
 
 function renderPagination() {
@@ -319,6 +371,7 @@ function confirmDelete(id) {
             success: function(response) {
                 const result = typeof response === 'string' ? JSON.parse(response) : response;
                 if (result.success) {
+                    selectedTransportationIds.delete(String(id));
                     loadTransportationSchedule();
                     loadStats();
                     swalSuccess('Request deleted successfully');
@@ -329,6 +382,52 @@ function confirmDelete(id) {
             error: function(xhr) {
                 swalError(xhr.responseJSON?.error || xhr.responseText || 'Unable to delete request');
             }
+        });
+    });
+}
+
+function deleteSelectedTransportation() {
+    const ids = Array.from(selectedTransportationIds);
+
+    if (ids.length === 0) {
+        swalInfo('Select at least one transportation request to delete.');
+        return;
+    }
+
+    swalConfirm(`Delete ${ids.length} selected transportation request${ids.length === 1 ? '' : 's'}?`, function() {
+        $('#bulkDeleteTransportationBtn').prop('disabled', true).text('Deleting...');
+
+        const deletePromises = ids.map(id => new Promise(resolve => {
+            $.ajax({
+                url: apiUrl(`api/company-car/index.php/${id}`),
+                type: 'DELETE',
+                success: function(response) {
+                    const result = typeof response === 'string' ? JSON.parse(response) : response;
+                    resolve({ success: result.success !== false, id, error: result.error });
+                },
+                error: function(xhr) {
+                    const message = xhr.responseJSON?.error || xhr.responseText || 'Unknown error';
+                    resolve({ success: false, id, error: message });
+                }
+            });
+        }));
+
+        Promise.all(deletePromises).then(results => {
+            const failed = results.filter(result => !result.success);
+            const deletedCount = results.length - failed.length;
+
+            selectedTransportationIds.clear();
+            loadTransportationSchedule();
+            loadStats();
+            $('#bulkDeleteTransportationBtn').text('Delete Selected');
+
+            if (failed.length > 0) {
+                const firstError = failed[0].error;
+                swalError(`${deletedCount} deleted. ${failed.length} could not be deleted. ${firstError}`, 'Bulk delete incomplete');
+                return;
+            }
+
+            swalSuccess(`${deletedCount} transportation request${deletedCount === 1 ? '' : 's'} deleted successfully.`);
         });
     });
 }
@@ -583,6 +682,7 @@ $(function() {
         $('#filterVehicle').val('');
         $('#filterDriver').val('');
         $('#filterStatus').val('');
+        selectedTransportationIds.clear();
         loadTransportationSchedule();
     });
 
@@ -610,4 +710,7 @@ $(function() {
     });
 
     $('#exportScheduleBtn').on('click', exportToCsv);
+    $('#selectAllTransportation').on('change', function() {
+        toggleAllTransportation(this.checked);
+    });
 });

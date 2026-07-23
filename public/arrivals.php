@@ -14,6 +14,8 @@
         <strong>Important:</strong> If an employee is not showing in the dropdown, they need to be added to the <a href="employees.php" style="text-decoration: underline; font-weight: 600; color: inherit;">Employees</a> page first. Employees with existing arrivals on the selected date will not appear in the list.
     </div>
 
+    
+
     <div class="card mb-3">
         <div class="card-body">
             <form id="arrivalFilterForm" class="row g-3 align-items-end">
@@ -40,10 +42,24 @@
     </div>
 
     <div class="ams-card" style="padding:0; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; border-bottom:1px solid #e5e7eb;">
+            <div id="selectedArrivalsText" style="font-size:13px; color:#434653;">0 selected</div>
+            <button
+                type="button"
+                class="btn btn-danger btn-sm"
+                id="bulkDeleteArrivalsBtn"
+                onclick="deleteSelectedArrivals()"
+                disabled>
+                Delete Selected
+            </button>
+        </div>
         <div style="overflow-x:auto;">
             <table class="table table-bordered" data-export-title="Arrivals Data">
                 <thead>
                     <tr>
+                        <th style="width:44px; text-align:center;">
+                            <input type="checkbox" id="selectAllArrivals" aria-label="Select all arrivals">
+                        </th>
                         <th>Date</th>
                         <th>Employee</th>
                         <th>Department</th>
