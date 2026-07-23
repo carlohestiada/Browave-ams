@@ -48,7 +48,10 @@ class Vehicle
         }
 
         try {
-            $plateNumber = $data['license_plate'] !== '' ? $data['license_plate'] : null;
+            // Ensure we never insert NULL into `plate_number` when the schema requires NOT NULL.
+            // Use empty string when license plate is not provided so production schemas
+            // with NOT NULL constraints do not throw an error.
+            $plateNumber = $data['license_plate'] !== '' ? $data['license_plate'] : '';
             $stmt = $this->db->prepare(
                 "INSERT INTO vehicles (vehicle_name, license_plate, plate_number, status) VALUES (?, ?, ?, ?)"
             );
