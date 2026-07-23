@@ -28,7 +28,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
         <?php $role = currentUserRole(); ?>
 
         <?php
-            $managementPages = ['employees.php','departments.php','rooms.php','accommodations.php'];
+            $managementPages = ['employees.php','departments.php','rooms.php','accommodations.php','company-car.php'];
             // only include management pages that are allowed for this user
             $managementAllowed = array_values(array_filter($managementPages, function($p) use ($allowedPages) { return in_array($p, $allowedPages, true); }));
             $isManagementActive = in_array($currentPage, $managementPages, true);
@@ -43,6 +43,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
 
             <div class="collapse <?= $isManagementActive ? 'show' : '' ?>" id="managementMenu">
                 <ul class="nav flex-column ms-2">
+                    <!-- EMPLOYEE SIDEBAR MODULE -->
                     <?php if (in_array('employees.php', $managementAllowed, true)): ?>
                     <li class="nav-item mb-1">
                         <a href="employees.php" class="nav-link <?= $currentPage === 'employees.php' ? 'active' : '' ?>" title="Employees">
@@ -52,6 +53,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
                     </li>
                     <?php endif; ?>
 
+                    <!-- DEPARTMENT SIDEBAR MODULE -->
                     <?php if (in_array('departments.php', $managementAllowed, true)): ?>
                     <li class="nav-item mb-1">
                         <a href="departments.php" class="nav-link <?= $currentPage === 'departments.php' ? 'active' : '' ?>" title="Departments">
@@ -61,6 +63,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
                     </li>
                     <?php endif; ?>
 
+                    <!-- ROOMS SIDEBAR MODULE -->
                     <?php if (in_array('rooms.php', $managementAllowed, true)): ?>
                     <li class="nav-item mb-1">
                         <a href="rooms.php" class="nav-link <?= $currentPage === 'rooms.php' ? 'active' : '' ?>" title="Rooms">
@@ -70,6 +73,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
                     </li>
                     <?php endif; ?>
 
+                    <!-- ACCOMMODATIONS SIDEBAR MODULE -->
                     <?php if (in_array('accommodations.php', $managementAllowed, true)): ?>
                     <li class="nav-item mb-1">
                         <a href="accommodations.php" class="nav-link <?= $currentPage === 'accommodations.php' ? 'active' : '' ?>" title="Accommodations">
@@ -78,11 +82,22 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
                         </a>
                     </li>
                     <?php endif; ?>
+
+                    <!-- COMPANY CAR SIDEBAR MODULE -->
+                    <?php if (in_array('company-car.php', $managementAllowed, true)): ?>
+                    <li class="nav-item mb-1">
+                        <a href="company-car.php" class="nav-link <?= $currentPage === 'company-car.php' ? 'active' : '' ?>" title="Company Car">
+                            <i class="bi bi-car-front nav-icon"></i>
+                            <span>Company Car</span>
+                        </a>
+                    </li>
+                    <?php endif; ?>
                 </ul>
             </div>
         </li>
         <?php endif; ?>
 
+        <!-- MEALS SIDEBAR MODULE -->
         <?php if (in_array('meals.php', $allowedPages, true)): ?>
         <li class="nav-item mb-1">
             <a href="meals.php" class="nav-link <?= $currentPage === 'meals.php' ? 'active' : '' ?>" title="Meals">
@@ -92,6 +107,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
         </li>
         <?php endif; ?>
 
+        <!-- SETTINGS SIDEBAR MODULE -->
         <?php
             $settingsPages = ['users.php'];
             $settingsAllowed = array_values(array_filter($settingsPages, function($p) use ($allowedPages) { return in_array($p, $allowedPages, true); }));
@@ -107,6 +123,8 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
 
             <div class="collapse <?= $isSettingsActive ? 'show' : '' ?>" id="settingsMenu">
                 <ul class="nav flex-column ms-2">
+
+                    <!-- USERS -->
                     <?php if (in_array('users.php', $settingsAllowed, true)): ?>
                     <li class="nav-item mb-1">
                         <a href="users.php" class="nav-link <?= $currentPage === 'users.php' ? 'active' : '' ?>" title="Users">
@@ -116,6 +134,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
                     </li>
                     <?php endif; ?>
 
+                    <!-- GUIDE -->
                     <li class="nav-item mb-1">
                         <a href="#" class="nav-link text-muted" title="Guide">
                             <i class="bi bi-journal-text nav-icon"></i>
@@ -142,6 +161,8 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
 
             <div class="collapse <?= $isTxActive ? 'show' : '' ?>" id="transactionsMenu">
                 <ul class="nav flex-column ms-2">
+
+                <!-- ARRIVALS MODULE -->
                     <?php if (in_array('arrivals.php', $allowedPages, true)): ?>
                     <li class="nav-item mb-1">
                         <a href="arrivals.php" class="nav-link <?= $currentPage === 'arrivals.php' ? 'active' : '' ?>" title="Arrivals">
@@ -153,6 +174,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
 
                     <?php endif; ?>
 
+                    <!-- DEPARTURES MODULE -->
                     <?php if (in_array('departures.php', $allowedPages, true)): ?>
                     <li class="nav-item mb-1">
                         <a href="departures.php" class="nav-link <?= $currentPage === 'departures.php' ? 'active' : '' ?>" title="Departures">
@@ -167,6 +189,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
         </li>
         <?php endif; ?>
 
+        <!-- ROOM ASSIGNMENTS SIDEBAR MODULE -->
         <?php if (in_array('room-assignments.php', $allowedPages, true)): ?>
         <li class="nav-item mb-1">
             <a href="room-assignments.php" class="nav-link <?= $currentPage === 'room-assignments.php' ? 'active' : '' ?>" title="Room Assignments">

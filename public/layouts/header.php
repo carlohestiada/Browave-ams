@@ -20,6 +20,7 @@ function getAllowedPagesForRole($role)
             'departments.php',
             'rooms.php',
             'accommodations.php',
+            'company-car.php',
             'room-assignments.php',
             'meals.php',
             'users.php',
@@ -31,6 +32,7 @@ function getAllowedPagesForRole($role)
             'employees.php',
             'departments.php',
             'meals.php',
+            'company-car.php',
             'room-assignments.php',
             'arrivals.php',
             'departures.php'
