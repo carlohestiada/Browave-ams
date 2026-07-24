@@ -81,6 +81,132 @@ function loadVehicles() {
     });
 }
 
+function openManageDrivers() {
+    $('#driverManageList').html('Loading drivers...');
+    $.get(apiUrl('api/drivers/index.php'), function(data) {
+        const drivers = typeof data === 'string' ? JSON.parse(data) : data;
+        renderDriverManageList(drivers);
+        const modal = new bootstrap.Modal(document.getElementById('driverManageModal'));
+        modal.show();
+    }).fail(function() {
+        swalError('Unable to load drivers');
+    });
+}
+
+function renderDriverManageList(drivers) {
+    if (!drivers || drivers.length === 0) {
+        $('#driverManageList').html('<div class="text-muted">No drivers found.</div>');
+        return;
+    }
+
+    let html = '<div class="list-group">';
+    drivers.forEach(d => {
+        html += `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="fw-semibold">${d.driver_name || ''}</div>
+                    <div class="text-muted small">${d.phone || ''} ${d.status ? ' • ' + d.status : ''}</div>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-sm btn-danger" data-id="${d.id}" data-action="delete-driver">Delete</button>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    $('#driverManageList').html(html);
+
+    $('#driverManageList button[data-action="delete-driver"]').on('click', function() {
+        const id = $(this).data('id');
+        deleteDriver(id);
+    });
+}
+
+function deleteDriver(id) {
+    swalConfirm('Delete this driver?', function() {
+        $.ajax({
+            url: apiUrl(`api/drivers/index.php/${id}`),
+            type: 'DELETE',
+            success: function(response) {
+                const result = typeof response === 'string' ? JSON.parse(response) : response;
+                if (result.success) {
+                    loadDrivers();
+                    swalSuccess('Driver deleted successfully');
+                    openManageDrivers();
+                } else {
+                    swalError(result.error || 'Unable to delete driver');
+                }
+            },
+            error: function(xhr) {
+                swalError(xhr.responseJSON?.error || xhr.responseText || 'Unable to delete driver');
+            }
+        });
+    });
+}
+
+function openManageVehicles() {
+    $('#vehicleManageList').html('Loading vehicles...');
+    $.get(apiUrl('api/vehicles/index.php'), function(data) {
+        const vehicles = typeof data === 'string' ? JSON.parse(data) : data;
+        renderVehicleManageList(vehicles);
+        const modal = new bootstrap.Modal(document.getElementById('vehicleManageModal'));
+        modal.show();
+    }).fail(function() {
+        swalError('Unable to load vehicles');
+    });
+}
+
+function renderVehicleManageList(vehicles) {
+    if (!vehicles || vehicles.length === 0) {
+        $('#vehicleManageList').html('<div class="text-muted">No vehicles found.</div>');
+        return;
+    }
+
+    let html = '<div class="list-group">';
+    vehicles.forEach(v => {
+        html += `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="fw-semibold">${v.vehicle_name || ''}</div>
+                    <div class="text-muted small">${v.license_plate || ''} ${v.status ? ' • ' + v.status : ''}</div>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-sm btn-danger" data-id="${v.id}" data-action="delete-vehicle">Delete</button>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    $('#vehicleManageList').html(html);
+
+    $('#vehicleManageList button[data-action="delete-vehicle"]').on('click', function() {
+        const id = $(this).data('id');
+        deleteVehicle(id);
+    });
+}
+
+function deleteVehicle(id) {
+    swalConfirm('Delete this vehicle?', function() {
+        $.ajax({
+            url: apiUrl(`api/vehicles/index.php/${id}`),
+            type: 'DELETE',
+            success: function(response) {
+                const result = typeof response === 'string' ? JSON.parse(response) : response;
+                if (result.success) {
+                    loadVehicles();
+                    swalSuccess('Vehicle deleted successfully');
+                    openManageVehicles();
+                } else {
+                    swalError(result.error || 'Unable to delete vehicle');
+                }
+            },
+            error: function(xhr) {
+                swalError(xhr.responseJSON?.error || xhr.responseText || 'Unable to delete vehicle');
+            }
+        });
+    });
+}
+
 function loadEmployees(search = '', targetList = '#filterEmployeeList', inputId = '#filterEmployeeSearch', hiddenId = '#filterEmployeeId') {
     const params = [];
     const query = search.trim();
@@ -671,6 +797,14 @@ $(function() {
         $('#vehicleForm')[0].reset();
         const modal = bootstrap.Modal.getInstance(document.getElementById('vehicleModal')) || new bootstrap.Modal(document.getElementById('vehicleModal'));
         modal.show();
+    });
+
+    $('#manageDriverBtn').on('click', function() {
+        openManageDrivers();
+    });
+
+    $('#manageVehicleBtn').on('click', function() {
+        openManageVehicles();
     });
 
     $('#applyFilters').on('click', loadTransportationSchedule);

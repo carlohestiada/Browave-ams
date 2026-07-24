@@ -216,18 +216,28 @@
                             <label class="ams-label" for="companyCar_driver_id">Driver</label>
                             <div class="d-flex gap-2">
                                 <select id="companyCar_driver_id" name="driver_id" class="ams-input flex-grow-1"></select>
-                                <button type="button" class="btn btn-outline-secondary" id="addDriverBtn" title="Add driver">
-                                    <i class="bi bi-plus-lg"></i>
-                                </button>
+                                <div class="d-flex">
+                                    <button type="button" class="btn btn-outline-secondary me-1" id="addDriverBtn" title="Add driver">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" id="manageDriverBtn" title="Manage drivers">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <label class="ams-label" for="companyCar_vehicle_id">Vehicle</label>
                             <div class="d-flex gap-2">
                                 <select id="companyCar_vehicle_id" name="vehicle_id" class="ams-input flex-grow-1"></select>
-                                <button type="button" class="btn btn-outline-secondary" id="addVehicleBtn" title="Add vehicle">
-                                    <i class="bi bi-plus-lg"></i>
-                                </button>
+                                <div class="d-flex">
+                                    <button type="button" class="btn btn-outline-secondary me-1" id="addVehicleBtn" title="Add vehicle">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" id="manageVehicleBtn" title="Manage vehicles">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -328,6 +338,36 @@
                         <button type="submit" class="btn btn-primary">Save Vehicle</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Manage Drivers Modal -->
+<div class="modal fade" id="driverManageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Manage Drivers</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="driverManageList">Loading drivers...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Manage Vehicles Modal -->
+<div class="modal fade" id="vehicleManageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Manage Vehicles</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="vehicleManageList">Loading vehicles...</div>
             </div>
         </div>
     </div>
