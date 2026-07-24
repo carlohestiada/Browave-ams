@@ -160,6 +160,45 @@ function updateRoomStatusSummary(rooms) {
     document.getElementById('roomSummaryMaintenance').textContent = maintenance;
 }
 
+function updateRoomTypeSummary(rooms) {
+    const container = document.getElementById('roomTypeSummaryList');
+    if (!container) return;
+
+    const typeCounts = rooms.reduce((acc, room) => {
+        const type = String(room.room_type || '').trim();
+        if (!type) return acc;
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+    }, {});
+
+    const orderedTypes = ['Single', 'Double', 'Triple', 'Quadruple', 'Suit'];
+    const normalizedTypeCounts = Object.entries(typeCounts).reduce((acc, [type, count]) => {
+        const normalizedType = type === 'Suite' ? 'Suit' : type;
+        acc[normalizedType] = (acc[normalizedType] || 0) + count;
+        return acc;
+    }, {});
+
+    const entries = orderedTypes
+        .filter(type => normalizedTypeCounts[type])
+        .map(type => ({ type, count: normalizedTypeCounts[type] }))
+        .concat(Object.entries(normalizedTypeCounts)
+            .filter(([type]) => !orderedTypes.includes(type))
+            .map(([type, count]) => ({ type, count }))
+            .sort((a, b) => a.type.localeCompare(b.type)));
+
+    if (entries.length === 0) {
+        container.innerHTML = '<div class="text-muted">No room types found.</div>';
+        return;
+    }
+
+    container.innerHTML = entries.map(({ type, count }) => `
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <span>${type}</span>
+            <span class="fw-semibold text-dark">${count}</span>
+        </div>
+    `).join('');
+}
+
 function renderRoomRow(room) {
     const roomId = String(room.id);
     const checked = selectedRoomIds.has(roomId) ? 'checked' : '';
@@ -238,6 +277,7 @@ function renderRooms() {
     });
 
     updateRoomStatusSummary(filteredRooms);
+    updateRoomTypeSummary(filteredRooms);
     updateRoomSelectionControls();
 }
 

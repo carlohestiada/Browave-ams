@@ -23,26 +23,32 @@
     <div class="row g-3 mb-3">
         <div class="col-md-3">
             <div class="card p-3 h-100">
-                <p class="text-uppercase text-muted small mb-2">Total Rooms</p>
+                <p class="text-uppercase text-muted small mb-2"><i class="bi bi-door-open-fill me-2 text-primary"></i>Total Rooms</p>
                 <h3 id="roomSummaryTotal" class="mb-0">—</h3>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card p-3 h-100">
-                <p class="text-uppercase text-muted small mb-2">Occupied</p>
+                <p class="text-uppercase text-muted small mb-2"><i class="bi bi-house-fill me-2 text-warning"></i>Occupied</p>
                 <h3 id="roomSummaryOccupied" class="mb-0">—</h3>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card p-3 h-100">
-                <p class="text-uppercase text-muted small mb-2">Available</p>
+                <p class="text-uppercase text-muted small mb-2"><i class="bi bi-check-circle-fill me-2 text-success"></i>Available</p>
                 <h3 id="roomSummaryAvailable" class="mb-0">—</h3>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card p-3 h-100">
-                <p class="text-uppercase text-muted small mb-2">Maintenance</p>
+                <p class="text-uppercase text-muted small mb-2"><i class="bi bi-tools me-2 text-secondary"></i>Maintenance</p>
                 <h3 id="roomSummaryMaintenance" class="mb-0">—</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 h-100">
+                <p class="text-uppercase text-muted small mb-2"><i class="bi bi-grid-3x3-gap-fill me-2 text-info"></i>Room Types</p>
+                <div id="roomTypeSummaryList" class="small text-muted"></div>
             </div>
         </div>
     </div>
@@ -179,7 +185,7 @@
                             <option value="Double">Double</option>
                             <option value="Triple">Triple</option>
                             <option value="Quadruple">Quadruple</option>
-                            <option value="Suite">Suite</option>
+                            <option value="Suit">Suit</option>
                         </select>
                     </div>
                     <div class="mb-3">
