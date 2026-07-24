@@ -1483,6 +1483,13 @@ body{
 	letter-spacing: 0.06em;
 	margin: 0 0 6px;
 	font-family: 'Inter', sans-serif;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+.kpi-label i {
+	font-size: 1rem;
+	color: #00639d;
 }
 .kpi-value-row {
 	display: flex;

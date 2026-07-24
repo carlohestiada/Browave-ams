@@ -21,7 +21,7 @@
     <div class="kpi-grid dashboard-kpi-grid">
 
         <a href="employees.php" class="kpi-card kpi-card--link">
-            <p class="kpi-label">Total Employees</p>
+            <p class="kpi-label"><i class="bi bi-people-fill"></i> Total Employees</p>
             <div class="kpi-value-row">
                 <p class="kpi-value kpi-value--primary" id="kpi-total-employees">-</p>
                 <span class="kpi-badge badge-default">All</span>
@@ -29,7 +29,7 @@
         </a>
 
         <a href="employees.php" class="kpi-card kpi-card--link">
-            <p class="kpi-label">Active Employees</p>
+            <p class="kpi-label"><i class="bi bi-person-check-fill"></i> Active Employees</p>
             <div class="kpi-value-row">
                 <p class="kpi-value kpi-value--success" id="kpi-active-employees">-</p>
                 <span class="kpi-badge badge-active" id="kpi-active-pct">-</span>
@@ -37,7 +37,7 @@
         </a>
 
         <a href="rooms.php" class="kpi-card kpi-card--link">
-            <p class="kpi-label">Total Rooms</p>
+            <p class="kpi-label"><i class="bi bi-door-open-fill"></i> Total Rooms</p>
             <div class="kpi-value-row">
                 <p class="kpi-value kpi-value--neutral" id="kpi-total-rooms">-</p>
                 <span class="kpi-badge badge-default">100%</span>
@@ -45,7 +45,7 @@
         </a>
 
         <a href="rooms.php" class="kpi-card kpi-card--link">
-            <p class="kpi-label">Occupied Rooms</p>
+            <p class="kpi-label"><i class="bi bi-house-fill"></i> Occupied Rooms</p>
             <div class="kpi-value-row">
                 <p class="kpi-value kpi-value--primary" id="kpi-occupied">-</p>
                 <span class="kpi-badge badge-default" id="kpi-occupied-pct">-</span>
@@ -53,7 +53,7 @@
         </a>
 
         <a href="rooms.php" class="kpi-card kpi-card--link">
-            <p class="kpi-label">Available Rooms</p>
+            <p class="kpi-label"><i class="bi bi-door-open-fill"></i> Available Rooms</p>
             <div class="kpi-value-row">
                 <p class="kpi-value kpi-value--success" id="kpi-available">-</p>
                 <span class="kpi-badge badge-active" id="kpi-available-pct">-</span>
@@ -61,10 +61,34 @@
         </a>
 
         <a href="departments.php" class="kpi-card kpi-card--link">
-            <p class="kpi-label">Departments</p>
+            <p class="kpi-label"><i class="bi bi-diagram-3-fill"></i> Departments</p>
             <div class="kpi-value-row">
                 <p class="kpi-value kpi-value--primary" id="kpi-departments">-</p>
                 <span class="kpi-badge badge-default">Total</span>
+            </div>
+        </a>
+
+        <a href="company-car.php" class="kpi-card kpi-card--link">
+            <p class="kpi-label"><i class="bi bi-car-front-fill"></i> Company Car Requests</p>
+            <div class="kpi-value-row">
+                <p class="kpi-value kpi-value--primary" id="kpi-companycar-total">-</p>
+                <span class="kpi-badge badge-default">Total</span>
+            </div>
+        </a>
+
+        <a href="company-car.php" class="kpi-card kpi-card--link">
+            <p class="kpi-label"><i class="bi bi-calendar-check-fill"></i> Scheduled Today</p>
+            <div class="kpi-value-row">
+                <p class="kpi-value kpi-value--success" id="kpi-companycar-scheduled">-</p>
+                <span class="kpi-badge badge-active">Today</span>
+            </div>
+        </a>
+
+        <a href="company-car.php" class="kpi-card kpi-card--link">
+            <p class="kpi-label"><i class="bi bi-truck"></i> Available Vehicles</p>
+            <div class="kpi-value-row">
+                <p class="kpi-value kpi-value--neutral" id="kpi-companycar-available">-</p>
+                <span class="kpi-badge badge-default">Available</span>
             </div>
         </a>
 
@@ -121,34 +145,34 @@
                     <svg class="dashboard-donut-chart" viewBox="0 0 36 36">
                         <!-- Decorative outer glow ring -->
                         <circle cx="18" cy="18" r="15.9"
-                                fill="none"
-                                stroke="#eef4ff"
-                                stroke-width="5"></circle>
+                            fill="none"
+                            stroke="#eef4ff"
+                            stroke-width="5"></circle>
                         <!-- Track ring -->
                         <circle cx="18" cy="18" r="15.9"
-                                fill="none"
-                                stroke="#e2e8f0"
-                                stroke-width="3.2"></circle>
+                            fill="none"
+                            stroke="#e2e8f0"
+                            stroke-width="3.2"></circle>
                         <!-- Female arc (background, rendered first) -->
                         <circle id="gender-donut-arc-female"
-                                cx="18" cy="18" r="15.9"
-                                fill="none"
-                                stroke="#e879a0"
-                                stroke-width="3.2"
-                                stroke-linecap="round"
-                                stroke-dasharray="0 100"
-                                transform="rotate(-90 18 18)"
-                                class="gender-arc-animate"></circle>
+                            cx="18" cy="18" r="15.9"
+                            fill="none"
+                            stroke="#e879a0"
+                            stroke-width="3.2"
+                            stroke-linecap="round"
+                            stroke-dasharray="0 100"
+                            transform="rotate(-90 18 18)"
+                            class="gender-arc-animate"></circle>
                         <!-- Male arc (rendered on top) -->
                         <circle id="gender-donut-arc"
-                                cx="18" cy="18" r="15.9"
-                                fill="none"
-                                stroke="#00639d"
-                                stroke-width="3.2"
-                                stroke-linecap="round"
-                                stroke-dasharray="0 100"
-                                transform="rotate(-90 18 18)"
-                                class="gender-arc-animate"></circle>
+                            cx="18" cy="18" r="15.9"
+                            fill="none"
+                            stroke="#00639d"
+                            stroke-width="3.2"
+                            stroke-linecap="round"
+                            stroke-dasharray="0 100"
+                            transform="rotate(-90 18 18)"
+                            class="gender-arc-animate"></circle>
                     </svg>
                     <div id="gender-chart-empty" class="dashboard-chart-empty-state dashboard-gender-empty-state" style="display:none;">
                         <svg class="dashboard-chart-empty-illustration" viewBox="0 0 120 80" aria-hidden="true">
@@ -171,7 +195,8 @@
                     <div class="dashboard-donut-legend-item gender-legend-male">
                         <div class="gender-legend-icon" style="background: linear-gradient(135deg, #00639d, #094cb2);">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="8" r="4"/><path d="M12 14c-5 0-8 2-8 4v1h16v-1c0-2-3-4-8-4z"/>
+                                <circle cx="12" cy="8" r="4" />
+                                <path d="M12 14c-5 0-8 2-8 4v1h16v-1c0-2-3-4-8-4z" />
                             </svg>
                         </div>
                         <div>
@@ -182,7 +207,8 @@
                     <div class="dashboard-donut-legend-item gender-legend-female">
                         <div class="gender-legend-icon" style="background: linear-gradient(135deg, #e879a0, #c026d3);">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="8" r="4"/><path d="M12 14c-5 0-8 2-8 4v1h16v-1c0-2-3-4-8-4z"/>
+                                <circle cx="12" cy="8" r="4" />
+                                <path d="M12 14c-5 0-8 2-8 4v1h16v-1c0-2-3-4-8-4z" />
                             </svg>
                         </div>
                         <div>

@@ -14,6 +14,13 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(() => null);
     }
 
+    function setKpiValue(id, value, fallback = '-') {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const numericValue = Number(value);
+        el.textContent = Number.isFinite(numericValue) ? numericValue : (fallback ?? 0);
+    }
+
     function renderRoomStatusPanel(statusCounts, total) {
         const panel = document.getElementById('dashboard-room-status');
         const palette = {
@@ -65,16 +72,17 @@ document.addEventListener('DOMContentLoaded', function () {
             const occupiedPct = totalRooms > 0 ? Math.round(occupiedRooms / totalRooms * 100) : 0;
             const availablePct = totalRooms > 0 ? Math.round(availableRooms / totalRooms * 100) : 0;
 
-            document.getElementById('kpi-total-employees').textContent = totalEmployees;
-            document.getElementById('kpi-active-employees').textContent = activeEmployees;
+            setKpiValue('kpi-total-employees', totalEmployees, 0);
+            setKpiValue('kpi-active-employees', activeEmployees, 0);
             document.getElementById('kpi-active-pct').textContent = activePct + '%';
 
-            document.getElementById('kpi-total-rooms').textContent = totalRooms;
-            document.getElementById('kpi-occupied').textContent = occupiedRooms;
-            document.getElementById('kpi-available').textContent = availableRooms;
+            setKpiValue('kpi-total-rooms', totalRooms, 0);
+            setKpiValue('kpi-occupied', occupiedRooms, 0);
+            setKpiValue('kpi-available', availableRooms, 0);
             document.getElementById('kpi-occupied-pct').textContent = occupiedPct + '%';
             document.getElementById('kpi-available-pct').textContent = availablePct + '%';
-            document.getElementById('kpi-departments').textContent = departmentList.length;
+            setKpiValue('kpi-departments', departmentList.length, 0);
+            loadCompanyCarKPIs();
 
             renderRoomStatusPanel({
                 Occupied: occupiedRooms,
@@ -83,6 +91,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 Maintenance: maintenanceRooms,
                 Other: 0
             }, totalRooms);
+        });
+    }
+
+    function loadCompanyCarKPIs() {
+        fetchJSON('api/company-car/index.php?stats=1').then(stats => {
+            if (!stats) return;
+            setKpiValue('kpi-companycar-total', stats.todays_requests, 0);
+            setKpiValue('kpi-companycar-scheduled', stats.scheduled_today, 0);
+            setKpiValue('kpi-companycar-available', stats.available_vehicles, 0);
         });
     }
 
@@ -119,6 +136,16 @@ document.addEventListener('DOMContentLoaded', function () {
         Object.entries(filters || {}).forEach(([key, value]) => {
             if (value !== null && value !== undefined && value !== '') {
                 params.set(key, String(value));
+
+            function loadCompanyCarKPIs() {
+                fetchJSON('api/company-car/index.php?stats=1').then(stats => {
+                    if (!stats) return;
+                    // total requests for today not necessarily same as total; API provides todays_requests and scheduled_today
+                    document.getElementById('kpi-companycar-total').textContent = stats.todays_requests ?? 0;
+                    document.getElementById('kpi-companycar-scheduled').textContent = stats.scheduled_today ?? 0;
+                    document.getElementById('kpi-companycar-available').textContent = stats.available_vehicles ?? 0;
+                });
+            }
             }
         });
 
