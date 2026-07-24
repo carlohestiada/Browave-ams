@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 24, 2026 at 01:32 AM
+-- Generation Time: Jul 24, 2026 at 04:31 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -187,7 +187,8 @@ INSERT INTO `drivers` (`id`, `driver_name`, `phone`, `status`, `contact_number`,
 (2, 'Test Driver', '09999999999', 'Active', NULL, NULL, NULL, 1, '2026-07-23 01:09:47', '2026-07-23 01:09:47'),
 (3, 'Carlo', '091212121', 'Active', NULL, NULL, NULL, 1, '2026-07-23 01:12:03', '2026-07-23 01:12:03'),
 (4, 'dasdasd', 'asdasdsa', 'Active', NULL, NULL, NULL, 1, '2026-07-23 07:18:34', '2026-07-23 07:18:34'),
-(5, 'adas', '3212313', 'Active', NULL, NULL, NULL, 1, '2026-07-23 23:19:35', '2026-07-23 23:19:35');
+(5, 'adas', '3212313', 'Active', NULL, NULL, NULL, 1, '2026-07-23 23:19:35', '2026-07-23 23:19:35'),
+(6, 'asdsadas', 'sadsadasdsa', 'Active', NULL, NULL, NULL, 1, '2026-07-24 01:47:07', '2026-07-24 01:47:07');
 
 -- --------------------------------------------------------
 
@@ -486,7 +487,8 @@ INSERT INTO `vehicles` (`id`, `plate_number`, `vehicle_name`, `license_plate`, `
 (19, 'ASD-12312', 'TOYOTA', 'ASD-12312', 'Available', NULL, NULL, 4, NULL, 1, '2026-07-23 01:23:31', '2026-07-23 01:23:31'),
 (20, 'asdasd', 'sadasd', 'asdasd', 'Available', NULL, NULL, 4, NULL, 1, '2026-07-23 07:18:29', '2026-07-23 07:18:29'),
 (21, 'adsadas', 'qwq123', 'adsadas', 'Available', NULL, NULL, 4, NULL, 1, '2026-07-23 23:19:44', '2026-07-23 23:19:44'),
-(22, 'adasd', 'adsd', 'adasd', 'Available', NULL, NULL, 4, NULL, 1, '2026-07-23 23:29:13', '2026-07-23 23:29:13');
+(22, 'adasd', 'adsd', 'adasd', 'Available', NULL, NULL, 4, NULL, 1, '2026-07-23 23:29:13', '2026-07-23 23:29:13'),
+(23, 'zAWQ', 'ZXzXz', 'zAWQ', 'Available', NULL, NULL, 4, NULL, 1, '2026-07-24 01:47:18', '2026-07-24 01:47:18');
 
 --
 -- Indexes for dumped tables
@@ -658,7 +660,7 @@ ALTER TABLE `departments`
 -- AUTO_INCREMENT for table `drivers`
 --
 ALTER TABLE `drivers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `employees`
@@ -712,7 +714,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `vehicles`
 --
 ALTER TABLE `vehicles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- Constraints for dumped tables

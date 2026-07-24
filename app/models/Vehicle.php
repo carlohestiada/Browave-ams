@@ -48,9 +48,7 @@ class Vehicle
         }
 
         try {
-            // Ensure we never insert NULL into `plate_number` when the schema requires NOT NULL.
-            // Use empty string when license plate is not provided so production schemas
-            // with NOT NULL constraints do not throw an error.
+            // First attempt: include `plate_number` column (newer schemas).
             $plateNumber = $data['license_plate'] !== '' ? $data['license_plate'] : '';
             $stmt = $this->db->prepare(
                 "INSERT INTO vehicles (vehicle_name, license_plate, plate_number, status) VALUES (?, ?, ?, ?)"
@@ -64,6 +62,29 @@ class Vehicle
             ]);
         } catch (PDOException $e) {
             $message = $e->getMessage();
+
+            // If the production DB doesn't have `plate_number`, retry without it.
+            if (stripos($message, "Unknown column 'plate_number'") !== false || stripos($message, '1054') !== false) {
+                try {
+                    $stmt = $this->db->prepare(
+                        "INSERT INTO vehicles (vehicle_name, license_plate, status) VALUES (?, ?, ?)"
+                    );
+
+                    $success = $stmt->execute([
+                        $data['vehicle_name'],
+                        $data['license_plate'],
+                        $data['status'],
+                    ]);
+                } catch (PDOException $inner) {
+                    $innerMsg = $inner->getMessage();
+                    if (stripos($innerMsg, 'Duplicate entry') !== false) {
+                        return ['success' => false, 'error' => 'A vehicle with this license plate already exists.'];
+                    }
+
+                    return ['success' => false, 'error' => 'Unable to save vehicle. ' . $innerMsg];
+                }
+            }
+
             if (stripos($message, 'Duplicate entry') !== false) {
                 return ['success' => false, 'error' => 'A vehicle with this license plate already exists.'];
             }
