@@ -18,36 +18,34 @@
     </div>
 
     <div class="dashboard-kpi-grid">
-        <div class="ams-card p-4 kpi-card">
-            <div>
-                <div class="text-uppercase text-muted small">Today's Requests</div>
-                <div id="kpiTodayRequests" class="h2 mb-0">0</div>
+        <a href="company-car.php" class="kpi-card kpi-card--link">
+            <p class="kpi-label"><i class="bi bi-car-front-fill"></i> Company Car Request</p>
+            <div class="kpi-value-row">
+                <p class="kpi-value kpi-value--primary" id="kpiCompanyCarRequest">0</p>
+                <span class="kpi-badge badge-default">Live</span>
             </div>
-        </div>
-        <div class="ams-card p-4 kpi-card">
-            <div>
-                <div class="text-uppercase text-muted small">Scheduled Today</div>
-                <div id="kpiScheduledToday" class="h2 mb-0">0</div>
+        </a>
+        <a href="company-car.php" class="kpi-card kpi-card--link">
+            <p class="kpi-label"><i class="bi bi-calendar-check-fill"></i> Scheduled Today</p>
+            <div class="kpi-value-row">
+                <p class="kpi-value kpi-value--success" id="kpi-companycar-scheduled">-</p>
+                <span class="kpi-badge badge-active">Today</span>
             </div>
-        </div>
-        <div class="ams-card p-4 kpi-card">
-            <div>
-                <div class="text-uppercase text-muted small">Completed</div>
-                <div id="kpiCompleted" class="h2 mb-0">0</div>
+        </a>
+        <a href="company-car.php" class="kpi-card kpi-card--link">
+            <p class="kpi-label"><i class="bi bi-truck"></i> Available Vehicles</p>
+            <div class="kpi-value-row">
+                <p class="kpi-value kpi-value--neutral" id="kpiAvailableVehicles">0</p>
+                <span class="kpi-badge badge-default">Ready</span>
             </div>
-        </div>
-        <div class="ams-card p-4 kpi-card">
-            <div>
-                <div class="text-uppercase text-muted small">Pending Assignment</div>
-                <div id="kpiPending" class="h2 mb-0">0</div>
+        </a>
+        <a href="company-car.php" class="kpi-card kpi-card--link">
+            <p class="kpi-label"><i class="bi bi-person-badge-fill"></i> Available Driver</p>
+            <div class="kpi-value-row">
+                <p class="kpi-value kpi-value--success" id="kpiAvailableDrivers">0</p>
+                <span class="kpi-badge badge-active">Ready</span>
             </div>
-        </div>
-        <div class="ams-card p-4 kpi-card">
-            <div>
-                <div class="text-uppercase text-muted small">Available Vehicles</div>
-                <div id="kpiAvailableVehicles" class="h2 mb-0">0</div>
-            </div>
-        </div>
+        </a>
     </div>
 
     <div class="ams-card p-4 mb-4">

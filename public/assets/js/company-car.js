@@ -39,10 +39,9 @@ function isRowOverdue(row) {
 function loadStats() {
     $.get(apiUrl('api/company-car/index.php?stats=1'), function(data) {
         const stats = typeof data === 'string' ? JSON.parse(data) : data;
-        $('#kpiTodayRequests').text(stats.todays_requests ?? 0);
+        $('#kpiCompanyCarRequest').text(stats.todays_requests ?? 0);
+        $('#kpi-companycar-scheduled').text(stats.scheduled_today ?? 0);
         $('#kpiScheduledToday').text(stats.scheduled_today ?? 0);
-        $('#kpiCompleted').text(stats.completed ?? 0);
-        $('#kpiPending').text(stats.pending_assignment ?? 0);
         $('#kpiAvailableVehicles').text(stats.available_vehicles ?? 0);
     });
 }
@@ -52,8 +51,9 @@ function loadDrivers() {
         const drivers = typeof data === 'string' ? JSON.parse(data) : data;
         let options = '<option value="">All drivers</option>';
         let modalOptions = '<option value="">Select driver</option>';
+        const activeDrivers = drivers.filter(driver => String(driver.status || '').toLowerCase() === 'active');
 
-        drivers.forEach(driver => {
+        activeDrivers.forEach(driver => {
             const label = `${driver.driver_name}${driver.phone ? ' (' + driver.phone + ')' : ''}`;
             options += `<option value="${driver.id}">${label}</option>`;
             modalOptions += `<option value="${driver.id}">${label}</option>`;
@@ -61,6 +61,7 @@ function loadDrivers() {
 
         $('#filterDriver').html(options);
         $('#companyCar_driver_id').html(modalOptions);
+        $('#kpiAvailableDrivers').text(activeDrivers.length);
     });
 }
 
