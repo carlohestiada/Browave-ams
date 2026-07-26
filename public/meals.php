@@ -47,10 +47,10 @@
 
     <div class="meal-headcount-summary mb-3">
         <div>
-            <div class="meal-headcount-summary__label" id="mealSummaryLabel">Weekly Meal Planner</div>
+            <div class="meal-headcount-summary__label" id="mealSummaryLabel"><i class="bi bi-calendar2-week me-2"></i>Weekly Meal Planner</div>
             <div class="meal-headcount-summary__range" id="mealSummaryRange">-</div>
         </div>
-        <div class="meal-headcount-summary__value" id="mealSummaryTotal">0</div>
+        <div class="meal-headcount-summary__value" id="mealSummaryTotal"><i class="bi bi-basket3-fill me-2"></i>0</div>
     </div>
 
     <div class="meal-planner-summary mb-3" id="mealPlannerSummary"></div>

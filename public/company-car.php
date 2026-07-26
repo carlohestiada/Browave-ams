@@ -109,6 +109,17 @@
                 <div id="scheduleCount" class="text-muted small">0 trips found</div>
             </div>
             <div class="dashboard-card-body dashboard-card-table-body">
+               <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                   <ul class="nav nav-tabs" id="scheduleViewTabs">
+                       <li class="nav-item">
+                           <button class="nav-link schedule-view-tab active" type="button" data-view="active">Active</button>
+                       </li>
+                       <li class="nav-item">
+                           <button class="nav-link schedule-view-tab" type="button" data-view="archive">Archive</button>
+                       </li>
+                   </ul>
+                   <div id="scheduleViewSummary" class="text-muted small">Showing active requests</div>
+               </div>
                <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 0 12px;">
                    <div id="selectedTransportationText" class="text-muted small">0 selected</div>
                    <button type="button" class="btn btn-danger btn-sm" id="bulkDeleteTransportationBtn" onclick="deleteSelectedTransportation()" disabled>

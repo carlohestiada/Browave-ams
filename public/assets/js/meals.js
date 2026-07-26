@@ -105,27 +105,27 @@ function updateMealHeadcountSummary(meals, label, range) {
     $('#mealSummaryTotal').text(totalLunchBox.toLocaleString());
     $('#mealPlannerSummary').html(`
         <div class="meal-planner-summary__card">
-            <div class="meal-planner-summary__label">Total Headcount</div>
+            <div class="meal-planner-summary__label"><i class="bi bi-people-fill me-2 text-primary"></i>Total Headcount</div>
             <div class="meal-planner-summary__value">${totalHeadcount.toLocaleString()}</div>
         </div>
         <div class="meal-planner-summary__card">
-            <div class="meal-planner-summary__label">Total Company Pay</div>
+            <div class="meal-planner-summary__label"><i class="bi bi-cash-stack me-2 text-success"></i>Total Company Pay</div>
             <div class="meal-planner-summary__value">${totalCompanyPay.toLocaleString()}</div>
         </div>
         <div class="meal-planner-summary__card">
-            <div class="meal-planner-summary__label">Total Lunch Box</div>
+            <div class="meal-planner-summary__label"><i class="bi bi-box2-heart me-2 text-warning"></i>Total Lunch Box</div>
             <div class="meal-planner-summary__value">${totalLunchBox.toLocaleString()}</div>
         </div>
         <div class="meal-planner-summary__card">
-            <div class="meal-planner-summary__label">Total Arrivals</div>
+            <div class="meal-planner-summary__label"><i class="bi bi-box-arrow-in-right me-2 text-info"></i>Total Arrivals</div>
             <div class="meal-planner-summary__value">${totalArrivals.toLocaleString()}</div>
         </div>
         <div class="meal-planner-summary__card">
-            <div class="meal-planner-summary__label">Total Departures</div>
+            <div class="meal-planner-summary__label"><i class="bi bi-box-arrow-right me-2 text-danger"></i>Total Departures</div>
             <div class="meal-planner-summary__value">${totalDepartures.toLocaleString()}</div>
         </div>
         <div class="meal-planner-summary__card">
-            <div class="meal-planner-summary__label">Average Daily Headcount</div>
+            <div class="meal-planner-summary__label"><i class="bi bi-graph-up me-2 text-secondary"></i>Average Daily Headcount</div>
             <div class="meal-planner-summary__value">${averageDailyHeadcount.toLocaleString()}</div>
         </div>
     `);

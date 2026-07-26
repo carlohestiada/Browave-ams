@@ -7,7 +7,9 @@ const requestStatuses = ['Pending', 'Scheduled', 'Picked Up', 'Completed', 'Canc
 const transportationTypes = ['Company Car', 'Airport Transfer', 'Shuttle Service', 'Private Hire', 'Other'];
 const pageSize = 12;
 let transportationRows = [];
+let allTransportationRows = [];
 let currentPage = 1;
+let currentScheduleView = 'active';
 let employeeSearchTimer = null;
 let filterEmployeeData = [];
 let modalMode = 'create';
@@ -288,6 +290,35 @@ function clearEmployeeDetails() {
     $('#companyCar_accommodation_room').val('');
 }
 
+function getViewStatusFilter() {
+    if (currentScheduleView === 'archive') {
+        return ['Completed', 'Cancelled'];
+    }
+
+    return ['Pending', 'Scheduled', 'Picked Up'];
+}
+
+function applyScheduleViewFilter(rows) {
+    const allowedStatuses = getViewStatusFilter();
+    return rows.filter(row => allowedStatuses.includes(row.status));
+}
+
+function setScheduleView(view) {
+    currentScheduleView = view;
+
+    $('.schedule-view-tab').removeClass('active');
+    $(`.schedule-view-tab[data-view="${view}"]`).addClass('active');
+
+    transportationRows = applyScheduleViewFilter(allTransportationRows);
+    selectedTransportationIds.clear();
+    currentPage = 1;
+    renderTable();
+    renderTimeline();
+
+    $('#scheduleCount').text(`${transportationRows.length} trips found`);
+    $('#scheduleViewSummary').text(currentScheduleView === 'archive' ? 'Showing completed and cancelled requests' : 'Showing active requests');
+}
+
 function loadTransportationSchedule() {
     const params = [];
     const employeeId = $('#filterEmployeeId').val();
@@ -307,12 +338,15 @@ function loadTransportationSchedule() {
     const url = apiUrl('api/company-car/index.php' + (params.length ? '?' + params.join('&') : ''));
 
     $.get(url, function(data) {
-        transportationRows = typeof data === 'string' ? JSON.parse(data) : data;
+        const rows = typeof data === 'string' ? JSON.parse(data) : data;
+        allTransportationRows = rows || [];
+        transportationRows = applyScheduleViewFilter(allTransportationRows);
         selectedTransportationIds.clear();
         currentPage = 1;
         renderTable();
         renderTimeline();
         $('#scheduleCount').text(`${transportationRows.length} trips found`);
+        $('#scheduleViewSummary').text(currentScheduleView === 'archive' ? 'Showing completed and cancelled requests' : 'Showing active requests');
     });
 }
 
@@ -899,6 +933,10 @@ $(function() {
         $('#filterStatus').val('');
         selectedTransportationIds.clear();
         loadTransportationSchedule();
+    });
+
+    $('.schedule-view-tab').on('click', function() {
+        setScheduleView($(this).data('view'));
     });
 
     $('#filterEmployeeSearch').on('input', function() {
