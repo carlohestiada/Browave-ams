@@ -50,6 +50,20 @@ class TransportationController
         echo json_encode(['success' => true, 'id' => $result['id']]);
     }
 
+    public function storeBulk()
+    {
+        $data = $_POST;
+        $result = $this->transportation->createBulk($data);
+
+        if (!isset($result['success']) || !$result['success']) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => $result['error'] ?? 'Unable to save bulk transportation requests.']);
+            return;
+        }
+
+        echo json_encode(['success' => true, 'count' => $result['count'] ?? 0, 'ids' => $result['ids'] ?? []]);
+    }
+
     public function update($id)
     {
         parse_str(file_get_contents('php://input'), $data);

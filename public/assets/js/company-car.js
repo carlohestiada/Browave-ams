@@ -51,16 +51,19 @@ function loadDrivers() {
         const drivers = typeof data === 'string' ? JSON.parse(data) : data;
         let options = '<option value="">All drivers</option>';
         let modalOptions = '<option value="">Select driver</option>';
+        let bulkOptions = '<option value="">Select driver</option>';
         const activeDrivers = drivers.filter(driver => String(driver.status || '').toLowerCase() === 'active');
 
         activeDrivers.forEach(driver => {
             const label = `${driver.driver_name}${driver.phone ? ' (' + driver.phone + ')' : ''}`;
             options += `<option value="${driver.id}">${label}</option>`;
             modalOptions += `<option value="${driver.id}">${label}</option>`;
+            bulkOptions += `<option value="${driver.id}">${label}</option>`;
         });
 
         $('#filterDriver').html(options);
         $('#companyCar_driver_id').html(modalOptions);
+        $('#bulkDriverId').html(bulkOptions);
         $('#kpiAvailableDrivers').text(activeDrivers.length);
     });
 }
@@ -70,15 +73,18 @@ function loadVehicles() {
         const vehicles = typeof data === 'string' ? JSON.parse(data) : data;
         let options = '<option value="">All vehicles</option>';
         let modalOptions = '<option value="">Select vehicle</option>';
+        let bulkOptions = '<option value="">Select vehicle</option>';
 
         vehicles.forEach(vehicle => {
             const label = `${vehicle.vehicle_name}${vehicle.license_plate ? ' (' + vehicle.license_plate + ')' : ''}`;
             options += `<option value="${vehicle.id}">${label}</option>`;
             modalOptions += `<option value="${vehicle.id}">${label}</option>`;
+            bulkOptions += `<option value="${vehicle.id}">${label}</option>`;
         });
 
         $('#filterVehicle').html(options);
         $('#companyCar_vehicle_id').html(modalOptions);
+        $('#bulkVehicleId').html(bulkOptions);
     });
 }
 
@@ -666,6 +672,26 @@ function submitVehicleForm() {
     });
 }
 
+function loadBulkAssignmentEmployees() {
+    $.get(apiUrl('api/employees/index.php?status=Active'), function(data) {
+        const employees = typeof data === 'string' ? JSON.parse(data) : data;
+        let html = '';
+
+        employees.forEach(employee => {
+            html += `
+                <div class="form-check">
+                    <input class="form-check-input bulk-employee-checkbox" type="checkbox" value="${employee.id}" id="bulkEmployee_${employee.id}">
+                    <label class="form-check-label" for="bulkEmployee_${employee.id}">
+                        ${employee.employee_code || ''} - ${employee.full_name || ''}
+                    </label>
+                </div>
+            `;
+        });
+
+        $('#bulkEmployeeIds').html(html || '<div class="text-muted">No active employees found.</div>');
+    });
+}
+
 function submitCompanyCarForm() {
     $('#companyCarForm').on('submit', function(event) {
         event.preventDefault();
@@ -701,6 +727,48 @@ function submitCompanyCarForm() {
                 const error = getAjaxErrorMessage(xhr, 'Unable to save transportation request.');
                 const details = error.includes('SQLSTATE') ? 'The server could not save the transportation request. Please check the fields and try again.' : error;
                 swalError(details);
+            }
+        });
+    });
+}
+
+function submitBulkCompanyCarForm() {
+    $('#bulkCompanyCarForm').on('submit', function(event) {
+        event.preventDefault();
+
+        const selectedEmployees = $('.bulk-employee-checkbox:checked').map(function() {
+            return $(this).val();
+        }).get();
+
+        if (!selectedEmployees.length) {
+            swalError('Please select at least one employee for the bulk assignment.');
+            return;
+        }
+
+        const formData = $(this).serializeArray();
+        formData.push(...selectedEmployees.map(id => ({ name: 'employee_ids[]', value: id })));
+
+        $.ajax({
+            url: apiUrl('api/company-car/index.php/bulk'),
+            type: 'POST',
+            data: formData,
+            success: function(response) {
+                const result = typeof response === 'string' ? JSON.parse(response) : response;
+                if (result.success) {
+                    const modalElement = document.getElementById('bulkCompanyCarModal');
+                    const bsModal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+                    bsModal.hide();
+                    $('#bulkCompanyCarForm')[0].reset();
+                    loadTransportationSchedule();
+                    loadStats();
+                    swalSuccess(`${result.count || selectedEmployees.length} transportation request${(result.count || selectedEmployees.length) === 1 ? '' : 's'} saved successfully`);
+                } else {
+                    swalError(result.error || 'Unable to save bulk transportation requests');
+                }
+            },
+            error: function(xhr) {
+                const error = getAjaxErrorMessage(xhr, 'Unable to save bulk transportation requests.');
+                swalError(error);
             }
         });
     });
@@ -783,10 +851,12 @@ $(function() {
     loadStats();
     loadDrivers();
     loadVehicles();
+    loadBulkAssignmentEmployees();
     loadTransportationSchedule();
     submitDriverForm();
     submitVehicleForm();
     submitCompanyCarForm();
+    submitBulkCompanyCarForm();
 
     $('#addDriverBtn').on('click', function() {
         $('#driverForm')[0].reset();
@@ -797,6 +867,16 @@ $(function() {
     $('#addVehicleBtn').on('click', function() {
         $('#vehicleForm')[0].reset();
         const modal = bootstrap.Modal.getInstance(document.getElementById('vehicleModal')) || new bootstrap.Modal(document.getElementById('vehicleModal'));
+        modal.show();
+    });
+
+    $('#bulkAssignmentBtn').on('click', function() {
+        $('#bulkCompanyCarForm')[0].reset();
+        $('#bulkPickupDate').val(new Date().toISOString().slice(0, 10));
+        $('#bulkPickupTime').val('08:00');
+        $('#bulkStatus').val('Scheduled');
+        $('#bulkTransportationType').val('Company Car');
+        const modal = bootstrap.Modal.getInstance(document.getElementById('bulkCompanyCarModal')) || new bootstrap.Modal(document.getElementById('bulkCompanyCarModal'));
         modal.show();
     });
 

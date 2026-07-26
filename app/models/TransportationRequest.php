@@ -127,6 +127,61 @@ class TransportationRequest
         return ['success' => true, 'id' => (int) $this->db->lastInsertId()];
     }
 
+    public function createBulk(array $data)
+    {
+        $employeeIds = $this->extractEmployeeIds($data);
+        if (empty($employeeIds)) {
+            return ['success' => false, 'error' => 'Select at least one employee.'];
+        }
+
+        $baseData = $this->normalizeInput($data);
+        $createdIds = [];
+
+        $this->db->beginTransaction();
+
+        try {
+            foreach ($employeeIds as $employeeId) {
+                $rowData = $baseData;
+                $rowData['employee_id'] = (int) $employeeId;
+
+                $validation = $this->validate($rowData, null, true);
+                if (!$validation['success']) {
+                    throw new Exception($validation['error']);
+                }
+
+                $stmt = $this->db->prepare(
+                    "INSERT INTO transportation_requests
+                     (employee_id, transportation_type, driver_id, vehicle_id, pickup_date, pickup_time, pickup_location, status, remarks)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                );
+
+                $success = $stmt->execute([
+                    $rowData['employee_id'],
+                    $rowData['transportation_type'],
+                    $rowData['driver_id'],
+                    $rowData['vehicle_id'],
+                    $rowData['pickup_date'],
+                    $rowData['pickup_time'],
+                    $rowData['pickup_location'],
+                    $rowData['status'],
+                    $rowData['remarks']
+                ]);
+
+                if (!$success) {
+                    throw new Exception('Unable to save transportation request.');
+                }
+
+                $createdIds[] = (int) $this->db->lastInsertId();
+            }
+
+            $this->db->commit();
+            return ['success' => true, 'count' => count($createdIds), 'ids' => $createdIds];
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
     public function update($id, array $data)
     {
         $validation = $this->validate($data, $id);
@@ -232,7 +287,7 @@ class TransportationRequest
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    private function validate(array $data, ?int $excludeId = null): array
+    private function validate(array $data, ?int $excludeId = null, bool $skipConflicts = false): array
     {
         $required = ['employee_id', 'transportation_type', 'pickup_date', 'pickup_time', 'pickup_location', 'status'];
 
@@ -254,6 +309,10 @@ class TransportationRequest
             return ['success' => false, 'error' => 'Employee is not valid'];
         }
 
+        if ($skipConflicts) {
+            return ['success' => true];
+        }
+
         $conflict = $this->checkAssignmentConflicts($data, $excludeId);
         if ($conflict !== null) {
             return ['success' => false, 'error' => $conflict];
@@ -265,16 +324,30 @@ class TransportationRequest
     private function normalizeInput(array $data): array
     {
         return [
-            'employee_id' => (int) $data['employee_id'],
-            'transportation_type' => trim($data['transportation_type']),
+            'employee_id' => isset($data['employee_id']) ? (int) $data['employee_id'] : 0,
+            'transportation_type' => trim($data['transportation_type'] ?? ''),
             'driver_id' => empty($data['driver_id']) ? null : (int) $data['driver_id'],
             'vehicle_id' => empty($data['vehicle_id']) ? null : (int) $data['vehicle_id'],
-            'pickup_date' => trim($data['pickup_date']),
-            'pickup_time' => trim($data['pickup_time']),
-            'pickup_location' => trim($data['pickup_location']),
-            'status' => trim($data['status']),
+            'pickup_date' => trim($data['pickup_date'] ?? ''),
+            'pickup_time' => trim($data['pickup_time'] ?? ''),
+            'pickup_location' => trim($data['pickup_location'] ?? ''),
+            'status' => trim($data['status'] ?? ''),
             'remarks' => trim($data['remarks'] ?? ''),
         ];
+    }
+
+    private function extractEmployeeIds(array $data): array
+    {
+        $rawIds = $data['employee_ids'] ?? [];
+        if (!is_array($rawIds)) {
+            $rawIds = array_filter(array_map('trim', explode(',', (string) $rawIds)), static fn($value) => $value !== '');
+        }
+
+        return array_values(array_unique(array_filter(array_map(static function ($value) {
+            return is_numeric($value) ? (int) $value : null;
+        }, $rawIds), static function ($value) {
+            return $value !== null && $value > 0;
+        })));
     }
 
     private function employeeExists($employeeId): bool

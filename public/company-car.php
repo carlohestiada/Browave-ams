@@ -11,6 +11,9 @@
             <button type="button" id="exportScheduleBtn" class="btn btn-outline-secondary">
                 <i class="bi bi-file-earmark-arrow-down"></i> Export
             </button>
+            <button type="button" class="btn btn-outline-primary" id="bulkAssignmentBtn">
+                <i class="bi bi-people-fill"></i> Bulk Assignment
+            </button>
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#companyCarModal" id="newTransportationBtn">
                 <i class="bi bi-plus-lg"></i> New Transportation
             </button>
@@ -268,6 +271,77 @@
 
                     <div class="mt-4 text-end">
                         <button type="submit" id="companyCarSaveButton" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="bulkCompanyCarModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bulk Assignment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bulkCompanyCarForm">
+                    <div class="mb-3">
+                        <label class="ams-label">Employees</label>
+                        <div id="bulkEmployeeIds" class="border rounded p-2" style="max-height: 260px; overflow:auto;"></div>
+                        <div class="form-text">Select multiple employees for one shared trip.</div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="ams-label" for="bulkTransportationType">Transportation Type</label>
+                            <select id="bulkTransportationType" name="transportation_type" class="ams-input">
+                                <option value="Company Car">Company Car</option>
+                                <option value="Airport Transfer">Airport Transfer</option>
+                                <option value="Shuttle Service">Shuttle Service</option>
+                                <option value="Private Hire">Private Hire</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="ams-label" for="bulkStatus">Status</label>
+                            <select id="bulkStatus" name="status" class="ams-input">
+                                <option value="Pending">Pending</option>
+                                <option value="Scheduled">Scheduled</option>
+                                <option value="Picked Up">Picked Up</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="ams-label" for="bulkDriverId">Driver</label>
+                            <select id="bulkDriverId" name="driver_id" class="ams-input"></select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="ams-label" for="bulkVehicleId">Vehicle</label>
+                            <select id="bulkVehicleId" name="vehicle_id" class="ams-input"></select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="ams-label" for="bulkPickupDate">Pickup Date</label>
+                            <input id="bulkPickupDate" name="pickup_date" type="date" class="ams-input" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="ams-label" for="bulkPickupTime">Pickup Time</label>
+                            <input id="bulkPickupTime" name="pickup_time" type="time" class="ams-input" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="ams-label" for="bulkPickupLocation">Pickup Location</label>
+                            <input id="bulkPickupLocation" name="pickup_location" type="text" class="ams-input" placeholder="Airport / Station / Terminal" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="ams-label" for="bulkRemarks">Remarks</label>
+                            <textarea id="bulkRemarks" name="remarks" class="ams-input" rows="3" placeholder="Add notes for the shared trip"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 text-end">
+                        <button type="submit" class="btn btn-primary">Save Bulk Assignment</button>
                     </div>
                 </form>
             </div>

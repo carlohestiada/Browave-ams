@@ -26,6 +26,13 @@ if (count($segments) > 0 && $segments[0] === 'stats') {
     }
 }
 
+if (count($segments) > 0 && $segments[0] === 'bulk') {
+    if ($method === 'POST') {
+        $controller->storeBulk();
+        return;
+    }
+}
+
 $id = isset($segments[0]) && is_numeric($segments[0]) ? $segments[0] : null;
 
 switch ($method) {
