@@ -4,6 +4,8 @@ const buildingsApiUrl = 'api/buildings.php';
 let roomRows = [];
 let selectedRoomIds = new Set();
 let roomSearchTimer = null;
+let currentRoomTab = 'all';
+let availableRoomPrefixes = [];
 
 const roomSortColumns = [
     { index: 1, key: 'room_no' },
@@ -148,6 +150,33 @@ function loadFloorsByBuilding()
     });
 }
 
+function getDefaultCapacityByRoomType(roomType) {
+    switch (String(roomType || '').trim()) {
+        case 'Single':
+            return 1;
+        case 'Double':
+            return 2;
+        case 'Triple':
+            return 3;
+        case 'Quadruple':
+            return 4;
+        case 'Suit':
+            return 5;
+        default:
+            return '';
+    }
+}
+
+function applyRoomTypeCapacity(roomType) {
+    const capacityInput = $('#capacity');
+    if (!capacityInput.length) return;
+
+    const defaultCapacity = getDefaultCapacityByRoomType(roomType);
+    if (defaultCapacity !== '') {
+        capacityInput.val(defaultCapacity);
+    }
+}
+
 function updateRoomStatusSummary(rooms) {
     const total = rooms.length;
     const occupied = rooms.filter(r => r.status === 'Occupied').length;
@@ -242,14 +271,77 @@ function renderRoomRow(room) {
     `;
 }
 
+function getRoomPrefix(roomNo) {
+    const value = String(roomNo || '').trim();
+    if (!value) return '';
+
+    const match = value.match(/^([A-Za-z]+)/);
+    return match ? match[1].toUpperCase() : '';
+}
+
+function naturalSortRooms(rooms) {
+    return rooms.slice().sort((a, b) => {
+        const aValue = String(a.room_no || '').trim();
+        const bValue = String(b.room_no || '').trim();
+        const aMatch = aValue.match(/^([A-Za-z]+)(\d+)/i);
+        const bMatch = bValue.match(/^([A-Za-z]+)(\d+)/i);
+
+        if (aMatch && bMatch && aMatch[1].toLowerCase() === bMatch[1].toLowerCase()) {
+            const aNumber = Number(aMatch[2]);
+            const bNumber = Number(bMatch[2]);
+            if (aNumber !== bNumber) {
+                return aNumber - bNumber;
+            }
+        }
+
+        return aValue.localeCompare(bValue, undefined, { numeric: true, sensitivity: 'base' });
+    });
+}
+
+function buildRoomPrefixTabs(rooms) {
+    const prefixes = new Set();
+    prefixes.add('all');
+
+    rooms.forEach(room => {
+        const prefix = getRoomPrefix(room.room_no);
+        if (prefix) {
+            prefixes.add(prefix);
+        }
+    });
+
+    availableRoomPrefixes = Array.from(prefixes).filter(prefix => prefix !== 'all').sort((a, b) => a.localeCompare(b));
+
+    const tabsContainer = $('#roomPrefixTabs');
+    if (!tabsContainer.length) return;
+
+    const activePrefix = currentRoomTab || 'all';
+    const tabsHtml = [
+        `<li class="nav-item"><button class="nav-link ${activePrefix === 'all' ? 'active' : ''}" type="button" data-room-tab="all">ALL</button></li>`,
+        ...availableRoomPrefixes.map(prefix => `<li class="nav-item"><button class="nav-link ${activePrefix === prefix ? 'active' : ''}" type="button" data-room-tab="${prefix}">${prefix}</button></li>`)
+    ].join('');
+
+    tabsContainer.html(tabsHtml);
+
+    tabsContainer.find('[data-room-tab]').on('click', function() {
+        currentRoomTab = $(this).data('room-tab');
+        renderRooms();
+    });
+}
+
 function filterRoomRows(rooms) {
     const search = ($('#roomSearchInput').val() || '').trim().toLowerCase();
+    const activeRooms = rooms.filter(room => String(room.status || '').toLowerCase() !== 'archived');
+    let tabFilteredRooms = activeRooms;
 
-    if (!search) {
-        return rooms.slice();
+    if (currentRoomTab && currentRoomTab !== 'all') {
+        tabFilteredRooms = activeRooms.filter(room => getRoomPrefix(room.room_no) === currentRoomTab);
     }
 
-    return rooms.filter(room => {
+    if (!search) {
+        return naturalSortRooms(tabFilteredRooms.slice());
+    }
+
+    const searchedRooms = tabFilteredRooms.filter(room => {
         return [
             room.room_no,
             room.accommodation_name,
@@ -262,10 +354,14 @@ function filterRoomRows(rooms) {
             room.gender_restriction
         ].some(value => String(value ?? '').toLowerCase().includes(search));
     });
+
+    return naturalSortRooms(searchedRooms);
 }
 
 function renderRooms() {
     const filteredRooms = filterRoomRows(roomRows);
+
+    buildRoomPrefixTabs(roomRows);
 
     renderPaginatedTable({
         data: filteredRooms,
@@ -311,6 +407,7 @@ function resetRoomFilters()
     $('#filterAccommodation').val('');
     $('#filterBuilding').html('<option value="">All Buildings</option>');
     $('#filterFloor').html('<option value="">All Floors</option>');
+    currentRoomTab = 'all';
     loadRooms();
 }
 
@@ -374,6 +471,7 @@ function resetRoomForm()
     $('#accommodation_id').val('');
     $('#building_id').html('<option value="">Select building</option>');
     $('#floor_id').html('<option value="">Select floor</option>');
+    $('#capacity').val('');
     $('#reservedEmployeeGroup').hide();
     $('#reserved_by_employee_id').html('<option value="">Select employee</option>');
 }
@@ -501,6 +599,7 @@ function saveRoom(event)
             }
             loadRooms();
             $('#roomModal').modal('hide');
+            currentRoomTab = 'all';
             swalSuccess('Room saved successfully');
         },
         error: function(xhr) {
@@ -593,4 +692,7 @@ $(function() {
     $('#accommodation_id').on('change', loadBuildingsForModal);
     $('#building_id').on('change', loadFloorsForModal);
     $('#status').on('change', toggleReservedEmployeeField);
+    $('#room_type').on('change', function() {
+        applyRoomTypeCapacity($(this).val());
+    });
 });

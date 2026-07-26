@@ -53,6 +53,13 @@
         </div>
     </div>
 
+    <!-- Room Tabs -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <ul class="nav nav-tabs" id="roomPrefixTabs"></ul>
+        </div>
+    </div>
+
     <!-- Filters -->
     <div class="card mb-3">
         <div class="card-body">
@@ -181,11 +188,11 @@
                         <label class="form-label">Room Type</label>
                         <select class="form-select" id="room_type" name="room_type" required>
                             <option value="">Select type</option>
-                            <option value="Single">Single</option>
-                            <option value="Double">Double</option>
-                            <option value="Triple">Triple</option>
-                            <option value="Quadruple">Quadruple</option>
-                            <option value="Suit">Suit</option>
+                            <option value="Single">Single Room</option>
+                            <option value="Double">Double Room</option>
+                            <option value="Triple">Triple Room</option>
+                            <option value="Quadruple">Quad Room</option>
+                            <option value="Suit">Suit Room</option>
                         </select>
                     </div>
                     <div class="mb-3">
