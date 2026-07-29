@@ -1,4 +1,4 @@
-<footer class="text-center py-3 border-top mt-5">
+<footer class="ams-footer text-center py-3 border-top mt-5">
     © <?= date('Y') ?> BROWAVE AMS
 </footer>
 

@@ -316,6 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.querySelector('.sidebar');
             if (!sidebar || !sidebar.classList.contains('collapsed')) return; // default behaviour when expanded
             ev.preventDefault();
+            ev.stopPropagation();
 
             // find target collapse element
             const href = link.getAttribute('href') || link.getAttribute('data-target');
@@ -333,6 +334,11 @@ document.addEventListener('DOMContentLoaded', function() {
             clone.classList.remove('collapse','collapsing');
             clone.classList.add('floating-submenu');
             clone.removeAttribute('id');
+
+            // prevent clicks inside the floating submenu from bubbling out
+            clone.addEventListener('click', function(childEvent) {
+                childEvent.stopPropagation();
+            });
 
             // position near the clicked link
             const rect = link.getBoundingClientRect();

@@ -144,17 +144,44 @@
             font-weight: 600;
             border-left-color: #003686;
         }
+
+        /* Tailwind's `collapse` utility conflicts with Bootstrap's sidebar
+           collapse component. Keep the Bootstrap menus visible when open. */
+        .sidebar .collapse.show,
+        .sidebar .collapsing {
+            visibility: visible !important;
+        }
+
+        .guide-toc {
+            display: none;
+        }
+
+        @media (min-width: 1280px) {
+            .guide-main {
+                margin-right: 304px;
+            }
+
+            .guide-toc {
+                display: block;
+                position: fixed;
+                top: 88px;
+                right: 24px;
+                bottom: 24px;
+                width: 280px;
+                overflow-y: auto;
+            }
+        }
     </style>
 
     <div class="bg-background text-on-surface">
         <!-- Main Content Canvas -->
-        <main class="flex flex-1 overflow-hidden">
+        <main class="flex flex-1 overflow-visible">
             <!-- Content Area -->
-            <div class="flex-1 p-10 max-w-[1200px] mx-auto overflow-y-auto">
+            <div class="guide-main flex-1 p-0 overflow-y-auto">
                 <section class="mb-16 scroll-mt-24" id="introduction">
-                    <h1 class="text-display-lg font-display-lg text-primary mb-4">User Guide &amp; Operations Manual</h1>
+                    <h1 class="ams-page-title mb-1">User Guide &amp; Operations Manual</h1>
                     <p class="text-body-lg text-on-surface-variant leading-relaxed max-w-3xl">
-                        Welcome to the BROWAVE AMS central knowledge base. This guide provides comprehensive operational workflows to help hospitality administrators master workforce logistics, room inventories, and site occupancy.
+                        Welcome to the BROWAVE AMS. This guide provides comprehensive operational workflows to help hospitality administrators master workforce logistics, room inventories, and site occupancy.
                     </p>
                     <div class="mt-8 grid grid-cols-3 gap-6">
                         <div class="bg-white border border-outline-variant p-6 rounded-xl">
@@ -206,7 +233,7 @@
                                         <span class="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">2</span>
                                         <div>
                                             <p class="font-bold text-on-surface">Click 'Add New'</p>
-                                            <p class="text-body-md text-on-surface-variant">Input the Department Name, Code, and assigned Manager.</p>
+                                            <p class="text-body-md text-on-surface-variant">Input the Department Name.</p>
                                         </div>
                                     </li>
                                 </ol>
@@ -305,11 +332,11 @@
                             <ul class="space-y-3">
                                 <li class="flex items-start gap-2 text-body-md">
                                     <span class="material-symbols-outlined text-primary text-sm" data-icon="check_circle">check_circle</span>
-                                    <span><span class="font-bold">Active Tab:</span> Manage currently assigned vehicles and fuel cards.</span>
+                                    <span><span class="font-bold">Active Tab:</span> Manage currently assigned vehicles.</span>
                                 </li>
                                 <li class="flex items-start gap-2 text-body-md">
                                     <span class="material-symbols-outlined text-primary text-sm" data-icon="check_circle">check_circle</span>
-                                    <span><span class="font-bold">Archive Tab:</span> History of decommissioned assets and maintenance logs.</span>
+                                    <span><span class="font-bold">Archive Tab:</span> History of completed transportation records.</span>
                                 </li>
                             </ul>
                         </div>
@@ -396,7 +423,7 @@
                 </section>
             </div>
             <!-- Table of Contents Sticky Sub-nav -->
-            <aside class="w-[280px] bg-white border-l border-outline-variant p-8 hidden xl:block sticky top-[64px] h-[calc(100vh-64px)] overflow-y-auto">
+            <aside class="guide-toc bg-white border-l border-outline-variant p-8">
                 <h4 class="text-label-md font-bold text-on-surface-variant uppercase tracking-wider mb-6">In this guide</h4>
                 <nav class="space-y-1">
                     <a class="block py-2 px-3 text-body-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors border-l-2 border-transparent" href="#introduction">Introduction</a>
@@ -445,5 +472,3 @@
     </script>
     </div>
 </div>
-
-<?php include 'layouts/footer.php'; ?>
