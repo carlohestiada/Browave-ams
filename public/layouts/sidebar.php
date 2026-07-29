@@ -109,7 +109,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
 
         <!-- SETTINGS SIDEBAR MODULE -->
         <?php
-            $settingsPages = ['users.php'];
+            $settingsPages = ['users.php', 'guide.php'];
             $settingsAllowed = array_values(array_filter($settingsPages, function($p) use ($allowedPages) { return in_array($p, $allowedPages, true); }));
             $isSettingsActive = in_array($currentPage, $settingsPages, true);
             $showSettings = count($settingsAllowed) > 0;
@@ -135,12 +135,14 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
                     <?php endif; ?>
 
                     <!-- GUIDE -->
+                    <?php if (in_array('guide.php', $settingsAllowed, true)): ?>
                     <li class="nav-item mb-1">
-                        <a href="#" class="nav-link text-muted" title="Guide">
+                        <a href="guide.php" class="nav-link <?= $currentPage === 'guide.php' ? 'active' : '' ?>" title="Guide">
                             <i class="bi bi-journal-text nav-icon"></i>
                             <span>Guide</span>
                         </a>
                     </li>
+                    <?php endif; ?>
                 </ul>
             </div>
         </li>

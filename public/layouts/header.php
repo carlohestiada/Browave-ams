@@ -24,6 +24,7 @@ function getAllowedPagesForRole($role)
             'room-assignments.php',
             'meals.php',
             'users.php',
+            'guide.php',
             'arrivals.php',
             'departures.php'
         ],
