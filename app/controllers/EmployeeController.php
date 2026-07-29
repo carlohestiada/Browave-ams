@@ -40,10 +40,31 @@ class EmployeeController
     {
         $data = $_POST;
 
-        $result = $this->employee->create($data);
+        try {
+            $result = $this->employee->create($data);
+        } catch (Exception $e) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+            return;
+        }
+
+        if ($result === false) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Unable to create employee. Please check the required fields and try again.'
+            ]);
+            return;
+        }
 
         echo json_encode([
-            'success'=>$result
+            'success' => true,
+            'id' => (int) $result,
+            'employee_code' => $data['employee_code'] ?? '',
+            'full_name' => $data['full_name'] ?? ''
         ]);
     }
 

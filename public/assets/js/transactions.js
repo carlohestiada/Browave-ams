@@ -417,13 +417,29 @@ function editTransaction(transactionId, transactionType) {
     });
 }
 
+function getTransactionErrorDetails(message) {
+    const normalizedMessage = String(message || '').toLowerCase();
+
+    if (normalizedMessage.includes('already has') || normalizedMessage.includes('conflicting record') || normalizedMessage.includes('duplicate')) {
+        return {
+            title: 'Duplicate record found',
+            message: message || 'A duplicate arrival or departure record was found for this employee on the selected date. Please choose another date or select a different employee before saving.'
+        };
+    }
+
+    return {
+        title: 'Unable to save record',
+        message: message || 'The record could not be saved. Please check the information and try again.'
+    };
+}
+
 function submitTransaction(formSelector, url) {
     $(formSelector).on('submit', function(event) {
         event.preventDefault();
 
         const employeeIdField = $(this).find('input[name="employee_id"]');
         if (!employeeIdField.val()) {
-            swalError('Please select or create an employee', 'Employee Required');
+            swalError('Please select an employee from the list or create a new one before saving this arrival or departure record.', 'Employee required');
             return false;
         }
 
@@ -448,14 +464,16 @@ function submitTransaction(formSelector, url) {
                     if (typeof window.updateTxBadges === 'function') {
                         window.updateTxBadges();
                     }
-                    swalSuccess('Saved successfully');
+                    swalSuccess('The arrival or departure record was saved successfully.', 'Saved successfully');
                 } else {
-                    swalError(res.error || 'Unknown error', 'Save failed');
+                    const errorDetails = getTransactionErrorDetails(res.error);
+                    swalError(errorDetails.message, errorDetails.title);
                 }
             },
             error: function(xhr) {
                 const message = xhr.responseJSON?.error || xhr.responseText || 'Request failed';
-                swalError(message, 'Save failed');
+                const errorDetails = getTransactionErrorDetails(message);
+                swalError(errorDetails.message, errorDetails.title);
             }
         });
     });
@@ -679,33 +697,76 @@ function loadDepartmentsForNewEmployee() {
     });
 }
 
+function getEmployeeCreationErrorDetails(message) {
+    const normalizedMessage = String(message || '').toLowerCase();
+
+    if (normalizedMessage.includes('already exists') || normalizedMessage.includes('duplicate') || normalizedMessage.includes('employee code')) {
+        return {
+            title: 'Duplicate employee found',
+            message: message || 'This employee already exists. Please check the employee code or name and use a different value before saving.'
+        };
+    }
+
+    return {
+        title: 'Unable to create employee',
+        message: message || 'The employee could not be created. Please check the information and try again.'
+    };
+}
+
 // Handle create employee form submission
 $(function() {
     loadDepartmentsForNewEmployee();
-    
+
     $('#createEmployeeForm').on('submit', function(e) {
         e.preventDefault();
-        
-        $.post(apiUrl('api/employees/index.php'), {
-            employee_code: $('#new_employee_code').val(),
-            full_name: $('#new_employee_name').val(),
-            gender: $('#new_employee_gender').val(),
-            department_id: $('#new_employee_department').val(),
-            status: 'Active'
-        }, function(response) {
-            const res = typeof response === 'string' ? JSON.parse(response) : response;
-            if (res.success) {
-                // Close modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('createEmployeeModal'));
-                modal.hide();
-                
-                // Reload dropdown
-                const date = $('#arrival_transaction_date').val() || '';
-                loadTransactionOptions(date, 'arrival');
-                
-                swalSuccess('Employee created successfully!');
-            } else {
-                swalError('Error creating employee: ' + (res.error || 'Unknown error'));
+
+        const form = $(this);
+        const submitButton = form.find('button[type="submit"]');
+        const originalText = submitButton.text();
+        submitButton.prop('disabled', true).text('Creating...');
+
+        $.ajax({
+            url: apiUrl('api/employees/index.php'),
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                employee_code: $('#new_employee_code').val(),
+                full_name: $('#new_employee_name').val(),
+                gender: $('#new_employee_gender').val(),
+                department_id: $('#new_employee_department').val(),
+                status: 'Active'
+            },
+            success: function(response) {
+                const res = typeof response === 'string' ? JSON.parse(response) : response;
+                if (res.success) {
+                    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('createEmployeeModal'));
+                    modal.hide();
+                    form[0].reset();
+
+                    const date = $('#arrival_transaction_date').val() || '';
+                    loadTransactionOptions(date, 'arrival');
+
+                    if (res.id) {
+                        $('#arrival_employee_id').val(res.id);
+                        const label = `${res.employee_code || ''}${res.employee_code && res.full_name ? ' - ' : ''}${res.full_name || ''}`.trim();
+                        if (label) {
+                            $('#arrival_employee_search').val(label);
+                        }
+                    }
+
+                    swalSuccess('The new employee was created successfully and is ready to use in the arrival form.', 'Employee created');
+                } else {
+                    const errorDetails = getEmployeeCreationErrorDetails(res.error);
+                    swalError(errorDetails.message, errorDetails.title);
+                }
+            },
+            error: function(xhr) {
+                const message = xhr.responseJSON?.error || xhr.responseText || 'Unknown error';
+                const errorDetails = getEmployeeCreationErrorDetails(message);
+                swalError(errorDetails.message, errorDetails.title);
+            },
+            complete: function() {
+                submitButton.prop('disabled', false).text(originalText);
             }
         });
     });

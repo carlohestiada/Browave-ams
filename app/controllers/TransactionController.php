@@ -44,14 +44,14 @@ class TransactionController
         $sameTypeRecord = $this->transaction->findByEmployeeAndDate($data['employee_id'], $transactionDate, $type, $excludeId);
         if ($sameTypeRecord) {
             $label = $type === 'arrival' ? 'an arrival' : 'a departure';
-            return ['valid' => false, 'statusCode' => 400, 'error' => 'This employee already has ' . $label . ' on this date.'];
+            return ['valid' => false, 'statusCode' => 400, 'error' => 'This employee already has ' . $label . ' on ' . $transactionDate . '. Please choose a different date or employee.'];
         }
 
         $otherType = $type === 'arrival' ? 'departure' : 'arrival';
         $otherTypeRecord = $this->transaction->findByEmployeeAndDate($data['employee_id'], $transactionDate, $otherType, $excludeId);
         if ($otherTypeRecord) {
             $label = $otherType === 'arrival' ? 'an arrival' : 'a departure';
-            return ['valid' => false, 'statusCode' => 400, 'error' => 'This employee already has ' . $label . ' on this date.'];
+            return ['valid' => false, 'statusCode' => 400, 'error' => 'This employee already has ' . $label . ' on ' . $transactionDate . '. A conflicting record already exists, so this action cannot be saved.'];
         }
 
         return ['valid' => true, 'statusCode' => 200, 'transactionDate' => $transactionDate];

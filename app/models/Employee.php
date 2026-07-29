@@ -121,14 +121,29 @@ class Employee
         $chineseName = isset($data['chinese_name']) ? trim((string) $data['chinese_name']) : null;
         $chineseName = $chineseName === '' ? null : $chineseName;
 
-        return $stmt->execute([
-            $data['employee_code'],
-            $data['full_name'],
-            $chineseName,
-            $data['gender'],
-            $data['department_id'],
-            $data['status']
-        ]);
+        try {
+            $success = $stmt->execute([
+                $data['employee_code'],
+                $data['full_name'],
+                $chineseName,
+                $data['gender'],
+                $data['department_id'],
+                $data['status']
+            ]);
+        } catch (PDOException $e) {
+            $dbMessage = $e->getMessage();
+            if (stripos($dbMessage, 'duplicate') !== false || stripos($dbMessage, 'unique') !== false || stripos($dbMessage, '1062') !== false || stripos($dbMessage, '23000') !== false) {
+                throw new Exception('This employee already exists. Please use a different employee code or name and try again.');
+            }
+
+            throw $e;
+        }
+
+        if (!$success) {
+            return false;
+        }
+
+        return $this->db->lastInsertId();
     }
 
     public function update($id,$data)
