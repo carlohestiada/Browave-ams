@@ -180,34 +180,12 @@
             <div class="guide-main flex-1 p-0 overflow-y-auto">
                 <section class="mb-16 scroll-mt-24" id="introduction">
                     <h1 class="ams-page-title mb-1">User Guide &amp; Operations Manual</h1>
-                    <p class="text-body-lg text-on-surface-variant leading-relaxed max-w-3xl">
-                        Welcome to the BROWAVE AMS. This guide provides comprehensive operational workflows to help hospitality administrators master workforce logistics, room inventories, and site occupancy.
+                    <p class="text-body-lg text-on-surface-variant leading-relaxed">
+                        Welcome to BROWAVE Accommodation Management System (AMS) — a centralized platform designed to simplify employee accommodation management, room assignments, and daily monitoring.
+                        This guide will help administrators and authorized users efficiently operate the system by providing step-by-step instructions for every module and feature.
                     </p>
-                    <div class="mt-8 grid grid-cols-3 gap-6">
-                        <div class="bg-white border border-outline-variant p-6 rounded-xl">
-                            <span class="material-symbols-outlined text-primary-container mb-3" data-icon="precision_manufacturing">precision_manufacturing</span>
-                            <h3 class="text-headline-sm font-headline-sm mb-2">Precision Control</h3>
-                            <p class="text-body-sm text-on-surface-variant">Manage complex employee rotations and meal plans with mathematical accuracy.</p>
-                        </div>
-                        <div class="bg-white border border-outline-variant p-6 rounded-xl">
-                            <span class="material-symbols-outlined text-primary-container mb-3" data-icon="architecture">architecture</span>
-                            <h3 class="text-headline-sm font-headline-sm mb-2">Scalable Setup</h3>
-                            <p class="text-body-sm text-on-surface-variant">Deploy thousand-room facilities in minutes using hierarchical bulk-generation tools.</p>
-                        </div>
-                        <div class="bg-white border border-outline-variant p-6 rounded-xl">
-                            <span class="material-symbols-outlined text-primary-container mb-3" data-icon="security">security</span>
-                            <h3 class="text-headline-sm font-headline-sm mb-2">Mission Critical</h3>
-                            <p class="text-body-sm text-on-surface-variant">Ensure compliance and duty-of-care with integrated logistics tracking.</p>
-                        </div>
-                    </div>
                 </section>
-                <div class="w-full h-64 rounded-2xl overflow-hidden mb-16 relative">
-                    <div class="absolute inset-0 z-0" data-alt="A panoramic high-angle view of a large-scale modern corporate campus or worker housing facility at dusk. The architecture is modular and sleek, illuminated by warm internal lights that contrast with a cool blue twilight sky. The scene conveys organization, scale, and high-stakes infrastructure management in a professional corporate style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCF7JWPPQz8uJwqY5BH8ZJavJSPqYsFfgE7ovKopWWFvRhOec4JAxyHNRFgWSMfbiEdPEwAPm-XLlS2sib1KEnwd-VLBdLp2mj5vBJfw0ZjkBOW_8mTHclbFrxxgp2tM7MOr4g1nwjkOLu2c31dq7y1GsknyaSOKGmSnRMWYfeSS5SAXXVq_KpkSTnOFbtGF_qjISIem6LxrEToOGjOPfLXLIOCTJhD0AfeGevt_sFdUG6YACwDMTJA9g')"></div>
-                    <div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent flex items-end p-8">
-                        <span class="text-white text-headline-md font-headline-md">System Infrastructure &amp; Hierarchies</span>
-                    </div>
-                </div>
-                <section class="mb-20 scroll-mt-24" id="departments">
+                <section class="mb-10 scroll-mt-24" id="departments">
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-10 h-10 rounded bg-primary-fixed flex items-center justify-center">
                             <span class="material-symbols-outlined text-primary" data-icon="business">business</span>
@@ -470,5 +448,5 @@
             btn.addEventListener('mouseleave', () => btn.classList.remove('scale-95'));
         });
     </script>
-    </div>
+</div>
 </div>
