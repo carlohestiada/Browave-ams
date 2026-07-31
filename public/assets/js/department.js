@@ -257,3 +257,90 @@ $(function() {
     });
     $('#departmentForm').on('submit', saveDepartment);
 });
+
+// Department CSV importer. It reuses the existing department POST endpoint so all
+// required-field and duplicate checks continue to be handled by the server.
+$(function() {
+    const modal = document.getElementById('departmentBulkUploadModal');
+    const input = document.getElementById('departmentBulkUploadFile');
+    if (!modal || !input) return;
+
+    const dropzone = document.getElementById('departmentDropzone');
+    const empty = document.getElementById('departmentUploadEmpty');
+    const fileState = document.getElementById('departmentUploadFileState');
+    const preview = document.getElementById('departmentUploadPreview');
+    const previewHead = document.getElementById('departmentPreviewHead');
+    const previewBody = document.getElementById('departmentPreviewBody');
+    const importButton = document.getElementById('departmentBulkUploadBtn');
+    const progress = document.getElementById('departmentUploadProgress');
+    const resultBox = document.getElementById('departmentUploadResults');
+    let departmentNames = [];
+
+    const parseCsv = text => {
+        const rows = []; let row = []; let value = ''; let quoted = false;
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            if (char === '"') { if (quoted && text[i + 1] === '"') { value += char; i++; } else quoted = !quoted; }
+            else if (char === ',' && !quoted) { row.push(value.trim()); value = ''; }
+            else if ((char === '\n' || char === '\r') && !quoted) { if (char === '\r' && text[i + 1] === '\n') i++; row.push(value.trim()); if (row.some(cell => cell)) rows.push(row); row = []; value = ''; }
+            else value += char;
+        }
+        row.push(value.trim()); if (row.some(cell => cell)) rows.push(row);
+        return rows;
+    };
+    const resetUpload = () => {
+        input.value = ''; departmentNames = []; empty.style.display = ''; fileState.classList.remove('visible'); preview.classList.remove('visible'); progress.style.display = 'none'; resultBox.classList.remove('visible'); resultBox.innerHTML = ''; importButton.disabled = false; importButton.textContent = 'Import Departments';
+    };
+    const renderPreview = () => {
+        previewHead.innerHTML = '<tr><th class="px-3 py-2">Department Name</th></tr>';
+        previewBody.innerHTML = departmentNames.slice(0, 100).map(name => `<tr><td class="px-3 py-2">${$('<div>').text(name).html()}</td></tr>`).join('');
+        document.getElementById('departmentPreviewCount').textContent = `${departmentNames.length} department${departmentNames.length === 1 ? '' : 's'} found${departmentNames.length > 100 ? ' · showing first 100' : ''}`;
+        preview.classList.toggle('visible', departmentNames.length > 0);
+    };
+    const showFile = file => {
+        if (!file) { resetUpload(); return; }
+        empty.style.display = 'none'; fileState.classList.add('visible');
+        document.getElementById('departmentUploadFileName').textContent = file.name;
+        document.getElementById('departmentUploadFileSize').textContent = `${(file.size / 1024).toFixed(1)} KB`;
+        if (!file.name.toLowerCase().endsWith('.csv') || file.size > 10 * 1024 * 1024) { departmentNames = []; preview.classList.remove('visible'); return; }
+        const reader = new FileReader();
+        reader.onload = event => {
+            const rows = parseCsv(event.target.result);
+            const header = (rows.shift()?.[0] || '').replace(/^\uFEFF/, '').trim().toLowerCase();
+            departmentNames = header === 'department name' || header === 'department_name' ? rows.map(row => row[0]).filter(Boolean) : [];
+            renderPreview();
+        };
+        reader.readAsText(file);
+    };
+    const importDepartments = async () => {
+        if (!input.files[0]) { swalError('Please select a CSV file to upload.'); return; }
+        if (!departmentNames.length) { swalError('The CSV must have a Department Name header and at least one department.'); return; }
+        importButton.disabled = true; importButton.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Importing...'; progress.style.display = 'block'; resultBox.classList.remove('visible');
+        const successes = []; const failures = [];
+        for (let index = 0; index < departmentNames.length; index++) {
+            const name = departmentNames[index];
+            try {
+                const response = await $.ajax({ url: departmentApiUrl, type: 'POST', data: { department_name: name } });
+                const data = typeof response === 'string' ? JSON.parse(response) : response;
+                if (data.success) successes.push(name); else failures.push({ name, error: data.error || 'Unable to save department' });
+            } catch (xhr) {
+                failures.push({ name, error: xhr.responseJSON?.error || xhr.responseText || 'Unable to save department' });
+            }
+            const completed = index + 1;
+            document.getElementById('departmentUploadProgressBar').style.width = `${(completed / departmentNames.length) * 100}%`;
+            document.getElementById('departmentUploadProgressCount').textContent = `${completed} / ${departmentNames.length}`;
+        }
+        importButton.disabled = false; importButton.textContent = 'Import Departments'; loadDepartments();
+        resultBox.innerHTML = `<strong style="color:${failures.length ? '#b45309' : '#15803d'};">${successes.length} of ${departmentNames.length} departments imported.</strong>${failures.length ? `<div class="mt-2 text-danger">${failures.slice(0, 20).map(item => `${$('<div>').text(item.name).html()}: ${$('<div>').text(item.error).html()}`).join('<br>')}${failures.length > 20 ? `<br>…and ${failures.length - 20} more.` : ''}</div>` : ''}`;
+        resultBox.classList.add('visible');
+        if (!failures.length) swalSuccess(`${successes.length} department${successes.length === 1 ? '' : 's'} imported successfully.`);
+    };
+
+    input.addEventListener('change', () => showFile(input.files[0]));
+    document.getElementById('departmentClearUploadFile').addEventListener('click', resetUpload);
+    ['dragenter', 'dragover'].forEach(type => dropzone.addEventListener(type, event => { event.preventDefault(); dropzone.classList.add('is-dragging'); }));
+    ['dragleave', 'drop'].forEach(type => dropzone.addEventListener(type, event => { event.preventDefault(); dropzone.classList.remove('is-dragging'); }));
+    dropzone.addEventListener('drop', event => { const file = event.dataTransfer.files[0]; if (!file) return; const transfer = new DataTransfer(); transfer.items.add(file); input.files = transfer.files; input.dispatchEvent(new Event('change')); });
+    importButton.addEventListener('click', importDepartments);
+    $('#departmentBulkUploadModal').on('hidden.bs.modal', resetUpload);
+});

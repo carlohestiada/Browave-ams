@@ -1,6 +1,20 @@
 <?php include 'layouts/header.php'; ?>
 <?php include 'layouts/sidebar.php'; ?>
 
+<style>
+    .department-upload-dialog { max-width: 720px; }
+    .department-upload-dialog .modal-content { border: 1px solid #dbe2ee; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 36px rgba(18,28,40,.16); }
+    .department-dropzone { position:relative; padding: 28px; border: 2px dashed #aeb8c9; border-radius: 14px; background: #f8faff; text-align: center; transition: .2s ease; }
+    .bulk-upload-template { color:#003686; font-size:12px; font-weight:700; text-decoration:none; }
+    .department-dropzone.is-dragging { border-color: #003686; background: #eaf2ff; transform: scale(1.015); }
+    .department-dropzone input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .department-upload-icon { display: inline-flex; align-items:center; justify-content:center; width:52px; height:52px; border-radius:50%; background:#e5eeff; color:#003686; font-size:24px; margin-bottom:8px; }
+    .department-upload-file { display:none; align-items:center; justify-content:space-between; gap:12px; margin-top:14px; padding:12px; border:1px solid #bbd1f7; border-radius:10px; background:#fff; text-align:left; }.department-upload-file.visible { display:flex; }
+    .department-preview { display:none; margin-top:16px; }.department-preview.visible { display:block; animation:departmentFade .2s ease-out; }
+    .department-preview-wrap { max-height:240px; overflow:auto; border:1px solid #dbe2ee; border-radius:10px; }.department-preview table { margin:0; }.department-preview th { position:sticky; top:0; background:#eef4ff; z-index:1; }
+    .department-upload-results { display:none; margin-top:14px; padding:12px; border-radius:10px; background:#f8faff; font-size:13px; max-height:180px; overflow:auto; }.department-upload-results.visible { display:block; }
+    @keyframes departmentFade { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+</style>
 
 <div class="content-wrapper">
 
@@ -10,14 +24,10 @@
             <h2 class="ams-page-title">Department Management</h2>
             <p class="ams-page-subtitle">Manage and organize company departments.</p>
         </div>
-        <button
-            class="btn btn-primary"
-            type="button"
-            data-bs-toggle="modal"
-            data-bs-target="#departmentModal"
-            onclick="resetDepartmentForm()">
-            Add Department
-        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#departmentModal" onclick="resetDepartmentForm()">Add Department</button>
+                        <button class="btn-ams-ghost" type="button" data-bs-toggle="modal" data-bs-target="#departmentBulkUploadModal">Bulk Upload</button>
+        </div>
     </div>
 
     <!-- Filters -->
@@ -73,6 +83,29 @@
         </div>
     </div>
 
+</div>
+
+<div class="modal fade" id="departmentBulkUploadModal" tabindex="-1" aria-labelledby="departmentBulkUploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered department-upload-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div><h5 class="modal-title" id="departmentBulkUploadModalLabel">Bulk Upload Departments</h5><small class="text-muted">Upload a CSV with one <strong>Department Name</strong> column.</small></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <a href="assets/templates/departments_bulk_template.csv" download class="bulk-upload-template">Download Template</a>
+                <div class="department-dropzone mt-2" id="departmentDropzone">
+                    <input type="file" id="departmentBulkUploadFile" accept=".csv" aria-describedby="departmentUploadHelp">
+                    <div id="departmentUploadEmpty"><div class="department-upload-icon"><i class="bi bi-cloud-arrow-up"></i></div><div class="fw-bold">Drag &amp; Drop Department CSV File</div><div class="text-muted small my-2">Drop your CSV file here or <label for="departmentBulkUploadFile" class="bulk-upload-template" style="cursor:pointer;">click Browse</label>.</div><label for="departmentBulkUploadFile" class="btn-ams-primary" style="cursor:pointer;">Browse File</label><small class="d-block text-muted mt-2" id="departmentUploadHelp">Supported Format: CSV (.csv) &bull; Maximum File Size: 10 MB</small></div>
+                    <div class="department-upload-file" id="departmentUploadFileState"><div><i class="bi bi-file-earmark-text text-primary me-2"></i><strong id="departmentUploadFileName"></strong><small class="d-block text-muted ms-4" id="departmentUploadFileSize"></small></div><button type="button" class="btn btn-link btn-sm text-danger" id="departmentClearUploadFile">Clear File</button></div>
+                </div>
+                <section class="department-preview" id="departmentUploadPreview"><div class="d-flex justify-content-between align-items-center mb-2"><strong>CSV Preview</strong><small class="text-muted" id="departmentPreviewCount"></small></div><div class="department-preview-wrap"><table class="table table-sm table-hover"><thead id="departmentPreviewHead"></thead><tbody id="departmentPreviewBody"></tbody></table></div></section>
+                <div class="mt-3" id="departmentUploadProgress" style="display:none;"><div class="d-flex justify-content-between small mb-1"><span id="departmentUploadProgressText">Importing...</span><span id="departmentUploadProgressCount"></span></div><div class="progress" style="height:6px;"><div class="progress-bar" id="departmentUploadProgressBar" style="width:0%"></div></div></div>
+                <div class="department-upload-results" id="departmentUploadResults" aria-live="polite"></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn-ams-primary" id="departmentBulkUploadBtn">Import Departments</button></div>
+        </div>
+    </div>
 </div>
 
 <div class="modal fade" id="departmentModal" tabindex="-1" aria-labelledby="departmentModalLabel" aria-hidden="true">
