@@ -1,20 +1,7 @@
 <?php include 'layouts/header.php'; ?>
 <?php include 'layouts/sidebar.php'; ?>
 
-<style>
-    .department-upload-dialog { max-width: 720px; }
-    .department-upload-dialog .modal-content { border: 1px solid #dbe2ee; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 36px rgba(18,28,40,.16); }
-    .department-dropzone { position:relative; padding: 28px; border: 2px dashed #aeb8c9; border-radius: 14px; background: #f8faff; text-align: center; transition: .2s ease; }
-    .bulk-upload-template { color:#003686; font-size:12px; font-weight:700; text-decoration:none; }
-    .department-dropzone.is-dragging { border-color: #003686; background: #eaf2ff; transform: scale(1.015); }
-    .department-dropzone input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-    .department-upload-icon { display: inline-flex; align-items:center; justify-content:center; width:52px; height:52px; border-radius:50%; background:#e5eeff; color:#003686; font-size:24px; margin-bottom:8px; }
-    .department-upload-file { display:none; align-items:center; justify-content:space-between; gap:12px; margin-top:14px; padding:12px; border:1px solid #bbd1f7; border-radius:10px; background:#fff; text-align:left; }.department-upload-file.visible { display:flex; }
-    .department-preview { display:none; margin-top:16px; }.department-preview.visible { display:block; animation:departmentFade .2s ease-out; }
-    .department-preview-wrap { max-height:240px; overflow:auto; border:1px solid #dbe2ee; border-radius:10px; }.department-preview table { margin:0; }.department-preview th { position:sticky; top:0; background:#eef4ff; z-index:1; }
-    .department-upload-results { display:none; margin-top:14px; padding:12px; border-radius:10px; background:#f8faff; font-size:13px; max-height:180px; overflow:auto; }.department-upload-results.visible { display:block; }
-    @keyframes departmentFade { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
-</style>
+<link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
 
 <div class="content-wrapper">
 
