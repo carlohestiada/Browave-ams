@@ -81,6 +81,7 @@ try {
             $columnIndexes = [
                 'employee_code' => findCsvColumn($headers, ['employee id', 'employee code', 'employee_code', 'emp id', 'emp code']),
                 'full_name' => findCsvColumn($headers, ['full name', 'name', 'employee name', 'full_name']),
+                'chinese_name' => findCsvColumn($headers, ['chinese name', 'chinese_name', 'chinese']),
                 'gender' => findCsvColumn($headers, ['gender', 'sex']),
                 'department' => findCsvColumn($headers, ['department', 'department name', 'department_name']),
             ];
@@ -104,6 +105,10 @@ try {
         try {
             $empCode = trim($row[$columnIndexes['employee_code']] ?? '');
             $fullName = trim($row[$columnIndexes['full_name']] ?? '');
+            $chineseName = '';
+            if ($columnIndexes['chinese_name'] !== false && isset($row[$columnIndexes['chinese_name']])) {
+                $chineseName = trim($row[$columnIndexes['chinese_name']]);
+            }
             $gender = trim($row[$columnIndexes['gender']] ?? '');
             $deptName = trim($row[$columnIndexes['department']] ?? '');
 
@@ -128,6 +133,7 @@ try {
             $data = [
                 'employee_code' => $empCode,
                 'full_name' => $fullName,
+                'chinese_name' => $chineseName,
                 'gender' => $gender,
                 'department_id' => $deptId,
                 'status' => 'Active'  // Default status
