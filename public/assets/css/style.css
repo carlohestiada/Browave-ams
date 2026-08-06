@@ -9,12 +9,13 @@
 	--header-height: 64px;
 	--sidebar-width: 250px;
 	--sidebar-width-collapsed: 76px;
+	--font-sans: 'Inter', 'Microsoft JhengHei', 'Noto Sans CJK TC', 'PingFang TC', 'Source Han Sans TC', 'Segoe UI', Arial, sans-serif;
 }
 
 body{
 	overflow-x: hidden;
 	margin: 0;
-	font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	font-family: var(--font-sans);
 }
 
 /* -----------------------------
@@ -962,7 +963,7 @@ body{
 	padding: 24px;
 	background-color: #f8f9ff;
 	min-height: calc(100vh - var(--header-height));
-	font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	font-family: var(--font-sans);
 	transition: margin-left 0.25s ease;
 }
 
@@ -1304,7 +1305,7 @@ body{
 	border-radius: 8px;
 	font-size: 13px;
 	font-weight: 600;
-	font-family: 'Inter', sans-serif;
+	font-family: var(--font-sans);
 	cursor: pointer;
 	transition: opacity 0.15s, transform 0.1s;
 	box-shadow: 0 1px 3px rgba(0,0,0,0.12);
@@ -1323,7 +1324,7 @@ body{
 	border-radius: 8px;
 	font-size: 13px;
 	font-weight: 600;
-	font-family: 'Inter', sans-serif;
+	font-family: var(--font-sans);
 	cursor: pointer;
 	transition: background 0.15s;
 }
@@ -1337,7 +1338,7 @@ body{
 	text-transform: uppercase;
 	letter-spacing: 0.06em;
 	margin-bottom: 6px;
-	font-family: 'Inter', sans-serif;
+	font-family: var(--font-sans);
 }
 
 .ams-input {
@@ -1345,7 +1346,7 @@ body{
 	width: 100%;
 	padding: 9px 12px;
 	font-size: 14px;
-	font-family: 'Inter', sans-serif;
+	font-family: var(--font-sans);
 	color: #121c28;
 	background: #f8f9ff;
 	border: 1px solid #c3c6d5;
@@ -1363,7 +1364,7 @@ body{
 .ams-table {
 	width: 100%;
 	border-collapse: collapse;
-	font-family: 'Inter', sans-serif;
+	font-family: var(--font-sans);
 }
 .ams-table thead tr {
 	background: #eef4ff;
@@ -1397,7 +1398,7 @@ body{
 	border-radius: 9999px;
 	font-size: 11px;
 	font-weight: 700;
-	font-family: 'Inter', sans-serif;
+	font-family: var(--font-sans);
 }
 .badge-active {
 	background: #dcfce7;
@@ -1488,7 +1489,7 @@ body{
 	text-transform: uppercase;
 	letter-spacing: 0.06em;
 	margin: 0 0 6px;
-	font-family: 'Inter', sans-serif;
+	font-family: var(--font-sans);
 	display: flex;
 	align-items: center;
 	gap: 6px;
@@ -1509,7 +1510,7 @@ body{
 	line-height: 1.1;
 	letter-spacing: -0.02em;
 	margin: 0;
-	font-family: 'Inter', sans-serif;
+	font-family: var(--font-sans);
 }
 .kpi-badge {
 	font-size: 11px;
@@ -1517,7 +1518,7 @@ body{
 	padding: 2px 8px;
 	border-radius: 9999px;
 	white-space: nowrap;
-	font-family: 'Inter', sans-serif;
+	font-family: var(--font-sans);
 	flex-shrink: 0;
 }
 
@@ -1541,7 +1542,7 @@ body{
 	width: var(--sidebar-width);
 	background-color: var(--ams-surface);
 	border-right: 1px solid var(--ams-outline-variant);
-	font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	font-family: var(--font-sans);
 	display: flex;
 	flex-direction: column;
 	padding: 24px 0;
@@ -1869,7 +1870,7 @@ body{
     .bulk-upload-dialog { max-width: 1000px; }
     .bulk-upload-dialog .ams-modal-content { border: 1px solid #dbe2ee !important; border-radius: 16px !important; }
     .bulk-upload-dialog .ams-modal-body { max-height: calc(100vh - 190px); overflow-y: auto; }
-    .bulk-upload-dialog .bulk-action-button { display:inline-flex; min-width:160px; height:44px; align-items:center; justify-content:center; gap:8px; padding:0 18px; border-radius:10px; font-family:'Inter', sans-serif; font-size:13px; font-weight:700; line-height:1; text-align:center; text-decoration:none; transition:background .2s, border-color .2s, color .2s, box-shadow .2s, transform .15s, opacity .2s; }
+    .bulk-upload-dialog .bulk-action-button { display:inline-flex; min-width:160px; height:44px; align-items:center; justify-content:center; gap:8px; padding:0 18px; border-radius:10px; font-family: var(--font-sans); font-size:13px; font-weight:700; line-height:1; text-align:center; text-decoration:none; transition:background .2s, border-color .2s, color .2s, box-shadow .2s, transform .15s, opacity .2s; }
     .bulk-upload-dialog .bulk-action-button .material-symbols-outlined, .bulk-upload-dialog .bulk-action-button .bi { font-size:18px; line-height:1; }
     .bulk-upload-dialog #bulkUploadBtn:not(:disabled)::before { content:'upload'; font-family:'Material Symbols Outlined'; font-size:18px; font-weight:normal; line-height:1; }
     .bulk-upload-dialog #bulkUploadBtn:disabled::before { content:none; }

@@ -1,5 +1,6 @@
 <?php
 require_once '../app/controllers/AuthController.php';
+header('Content-Type: text/html; charset=UTF-8');
 
 $error = '';
 
