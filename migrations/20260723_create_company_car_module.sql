@@ -8,13 +8,12 @@
 -- ==========================================================
 
 CREATE TABLE transportation_types (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     transportation_name VARCHAR(100) NOT NULL UNIQUE,
-    is_active TINYINT(1) DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 
 -- ==========================================================
@@ -22,7 +21,7 @@ CREATE TABLE transportation_types (
 -- ==========================================================
 
 CREATE TABLE vehicles (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
 
     plate_number VARCHAR(20) NOT NULL UNIQUE,
     vehicle_name VARCHAR(100) NOT NULL,
@@ -32,12 +31,11 @@ CREATE TABLE vehicles (
 
     remarks TEXT,
 
-    is_active TINYINT(1) DEFAULT 1,
+    is_active BOOLEAN DEFAULT TRUE,
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 
 -- ==========================================================
@@ -45,7 +43,7 @@ CREATE TABLE vehicles (
 -- ==========================================================
 
 CREATE TABLE drivers (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
 
     driver_name VARCHAR(100) NOT NULL,
     contact_number VARCHAR(30),
@@ -53,12 +51,11 @@ CREATE TABLE drivers (
 
     remarks TEXT,
 
-    is_active TINYINT(1) DEFAULT 1,
+    is_active BOOLEAN DEFAULT TRUE,
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
 
 -- ==========================================================
@@ -67,7 +64,7 @@ CREATE TABLE drivers (
 
 CREATE TABLE company_car_departures (
 
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
 
     assignment_id INT NOT NULL,
 
@@ -85,28 +82,22 @@ CREATE TABLE company_car_departures (
 
     destination VARCHAR(150) NULL,
 
-    status ENUM(
-        'Pending',
-        'Scheduled',
-        'Completed',
-        'Cancelled'
-    ) DEFAULT 'Pending',
+    status VARCHAR(30) DEFAULT 'Pending' CHECK (status IN ('Pending','Scheduled','Completed','Cancelled')),
 
     remarks TEXT NULL,
 
     created_by INT NULL,
 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    INDEX idx_assignment (assignment_id),
-    INDEX idx_pickup_date (pickup_date),
-    INDEX idx_status (status),
-    INDEX idx_vehicle (vehicle_id),
-    INDEX idx_driver (driver_id),
-    INDEX idx_transportation (transportation_type_id),
+    CONSTRAINT idx_assignment UNIQUE (assignment_id),
+    CONSTRAINT idx_pickup_date UNIQUE (pickup_date),
+    CONSTRAINT idx_status UNIQUE (status),
+    CONSTRAINT idx_vehicle UNIQUE (vehicle_id),
+    CONSTRAINT idx_driver UNIQUE (driver_id),
+    CONSTRAINT idx_transportation UNIQUE (transportation_type_id),
 
     CONSTRAINT fk_car_assignment
         FOREIGN KEY (assignment_id)

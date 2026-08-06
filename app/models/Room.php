@@ -20,7 +20,7 @@ class Room
 
         $stmt = $this->db->query(
             "SELECT r.*, f.floor_name, b.building_name, a.accommodation_name, e.full_name AS reserved_by_employee_name,
-                    GROUP_CONCAT(DISTINCT emp.full_name ORDER BY emp.full_name SEPARATOR '\n') AS assigned_employee_names
+                    STRING_AGG(DISTINCT emp.full_name, E'\n' ORDER BY emp.full_name) AS assigned_employee_names
              FROM rooms r
              LEFT JOIN floors f ON r.floor_id = f.id
              LEFT JOIN buildings b ON f.building_id = b.id
@@ -28,7 +28,7 @@ class Room
              LEFT JOIN employees e ON r.reserved_by_employee_id = e.id
              LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status IN ('Active', 'Transferred')
              LEFT JOIN employees emp ON emp.id = ra.employee_id
-             GROUP BY r.id
+             GROUP BY r.id, f.floor_name, b.building_name, a.accommodation_name, e.full_name
              ORDER BY r.room_no ASC"
         );
 
@@ -41,7 +41,7 @@ class Room
 
         $stmt = $this->db->prepare(
             "SELECT r.*, f.floor_name, b.building_name, a.accommodation_name, e.full_name AS reserved_by_employee_name,
-                    GROUP_CONCAT(DISTINCT emp.full_name ORDER BY emp.full_name SEPARATOR '\n') AS assigned_employee_names
+                    STRING_AGG(DISTINCT emp.full_name, E'\n' ORDER BY emp.full_name) AS assigned_employee_names
              FROM rooms r
              LEFT JOIN floors f ON r.floor_id = f.id
              LEFT JOIN buildings b ON f.building_id = b.id
@@ -50,7 +50,7 @@ class Room
              LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status IN ('Active', 'Transferred')
              LEFT JOIN employees emp ON emp.id = ra.employee_id
              WHERE r.floor_id=?
-             GROUP BY r.id
+             GROUP BY r.id, f.floor_name, b.building_name, a.accommodation_name, e.full_name
              ORDER BY r.room_no ASC"
         );
 
@@ -66,7 +66,7 @@ class Room
         $stmt = $this->db->prepare(
             "SELECT r.*, f.floor_name, f.building_id AS building_id, b.accommodation_id AS accommodation_id,
                     b.building_name, a.accommodation_name, e.full_name AS reserved_by_employee_name,
-                    GROUP_CONCAT(DISTINCT emp.full_name ORDER BY emp.full_name SEPARATOR '\n') AS assigned_employee_names
+                    STRING_AGG(DISTINCT emp.full_name, E'\n' ORDER BY emp.full_name) AS assigned_employee_names
              FROM rooms r
              LEFT JOIN floors f ON r.floor_id = f.id
              LEFT JOIN buildings b ON f.building_id = b.id
@@ -75,7 +75,7 @@ class Room
              LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status IN ('Active', 'Transferred')
              LEFT JOIN employees emp ON emp.id = ra.employee_id
              WHERE r.id=?
-             GROUP BY r.id"
+             GROUP BY r.id, f.floor_name, f.building_id, b.accommodation_id, b.building_name, a.accommodation_name, e.full_name"
         );
 
         $stmt->execute([$id]);
@@ -271,9 +271,9 @@ class Room
             return;
         }
 
-        $stmt = $this->db->query("SHOW COLUMNS FROM rooms LIKE 'reserved_by_employee_id'");
+        $stmt = $this->db->query("SELECT column_name FROM information_schema.columns WHERE table_name = 'rooms' AND column_name = 'reserved_by_employee_id'");
         if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
-            $this->db->exec("ALTER TABLE rooms ADD reserved_by_employee_id int(11) DEFAULT NULL AFTER status");
+            $this->db->exec("ALTER TABLE rooms ADD COLUMN reserved_by_employee_id INTEGER DEFAULT NULL");
         }
 
         $checked = true;

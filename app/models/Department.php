@@ -60,7 +60,7 @@ class Department
         );
 
         if ($stmt->execute([$data['department_name']])) {
-            return $this->db->lastInsertId();
+            return (int) $this->db->lastInsertId();
         }
 
         return false;

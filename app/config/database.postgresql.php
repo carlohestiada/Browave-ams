@@ -1,13 +1,13 @@
 <?php
 
 return [
-    'driver' => 'mariadb',
-    'host' => '10.8.1.47',
-    'port' => 3306,
+    'driver' => 'pgsql',
+    'host' => 'localhost',
+    'port' => 5432,
     'dbname' => 'browave_ams',
-    'username' => 'root',
-    'password' => '',
-    'charset' => 'utf8mb4',
+    'username' => 'postgres',
+    'password' => 'alwaysBrowave123',
+    'charset' => 'utf8',
     'options' => [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,

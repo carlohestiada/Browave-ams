@@ -279,9 +279,9 @@ class RoomAssignment
             return;
         }
 
-        $stmt = $this->db->query("SHOW COLUMNS FROM room_assignments LIKE 'transferred_to_room_id'");
+        $stmt = $this->db->query("SELECT column_name FROM information_schema.columns WHERE table_name = 'room_assignments' AND column_name = 'transferred_to_room_id'");
         if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
-            $this->db->exec("ALTER TABLE room_assignments ADD transferred_to_room_id int(11) DEFAULT NULL AFTER room_id");
+            $this->db->exec("ALTER TABLE room_assignments ADD COLUMN transferred_to_room_id INTEGER DEFAULT NULL");
         }
 
         $checked = true;

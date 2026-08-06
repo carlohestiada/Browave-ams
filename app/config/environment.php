@@ -5,7 +5,7 @@
  *
  * Priority:
  * 1. APP_ENV environment variable (recommended for CLI and containers)
- * 2. Server/OS detection for local XAMPP vs production Linux
+ * 2. Server/OS detection for local development vs production Linux
  * 3. Default to local for development convenience
  */
 function getApplicationEnvironment(): string
@@ -21,7 +21,7 @@ function getApplicationEnvironment(): string
     $host = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
     $serverSoftware = strtolower((string) ($_SERVER['SERVER_SOFTWARE'] ?? ''));
 
-    if (PHP_OS_FAMILY === 'Windows' || $host === 'localhost' || $host === '127.0.0.1' || strpos($serverSoftware, 'xampp') !== false) {
+    if (PHP_OS_FAMILY === 'Windows' || $host === 'localhost' || $host === '127.0.0.1') {
         return 'local';
     }
 

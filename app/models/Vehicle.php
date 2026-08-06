@@ -48,7 +48,7 @@ class Vehicle
         }
 
         try {
-            // First attempt: include `plate_number` column (newer schemas).
+            // First attempt: include the legacy plate_number column if the schema still has it.
             $plateNumber = $data['license_plate'] !== '' ? $data['license_plate'] : '';
             $stmt = $this->db->prepare(
                 "INSERT INTO vehicles (vehicle_name, license_plate, plate_number, status) VALUES (?, ?, ?, ?)"
@@ -63,8 +63,8 @@ class Vehicle
         } catch (PDOException $e) {
             $message = $e->getMessage();
 
-            // If the production DB doesn't have `plate_number`, retry without it.
-            if (stripos($message, "Unknown column 'plate_number'") !== false || stripos($message, '1054') !== false) {
+            // If the PostgreSQL or upgraded schema does not have the legacy plate_number column, retry without it.
+            if (str_contains($message, 'column') && str_contains($message, 'does not exist')) {
                 try {
                     $stmt = $this->db->prepare(
                         "INSERT INTO vehicles (vehicle_name, license_plate, status) VALUES (?, ?, ?)"
@@ -77,7 +77,7 @@ class Vehicle
                     ]);
                 } catch (PDOException $inner) {
                     $innerMsg = $inner->getMessage();
-                    if (stripos($innerMsg, 'Duplicate entry') !== false) {
+                    if (str_contains($innerMsg, 'duplicate') || str_contains($innerMsg, 'unique constraint')) {
                         return ['success' => false, 'error' => 'A vehicle with this license plate already exists.'];
                     }
 
@@ -85,7 +85,7 @@ class Vehicle
                 }
             }
 
-            if (stripos($message, 'Duplicate entry') !== false) {
+            if (str_contains($message, 'duplicate') || str_contains($message, 'unique constraint')) {
                 return ['success' => false, 'error' => 'A vehicle with this license plate already exists.'];
             }
 

@@ -143,7 +143,7 @@ class Employee
             return false;
         }
 
-        return $this->db->lastInsertId();
+        return (int) $this->db->lastInsertId();
     }
 
     public function update($id,$data)

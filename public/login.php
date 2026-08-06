@@ -1,5 +1,4 @@
 <?php
-
 require_once '../app/controllers/AuthController.php';
 
 $error = '';
@@ -128,9 +127,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <span class="material-symbols-outlined text-[18px]">badge</span>
                             </span>
                             <select name="role" class="select-field" required>
-                                <option value="Viewer">Viewer</option>
-                                <option value="HR">HR</option>
                                 <option value="Admin">Admin</option>
+                                <option value="HR">HR</option>
+                                <option value="Viewer">Viewer</option>
                             </select>
                             <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-outline">
                                 <span class="material-symbols-outlined text-[18px]">expand_more</span>

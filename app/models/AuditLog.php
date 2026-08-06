@@ -13,7 +13,7 @@ class AuditLog
     {
         $stmt = $this->db->prepare(
             "INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_values, new_values, remarks, timestamp, ip_address)
-             VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)"
+             VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)"
         );
 
         return $stmt->execute([
@@ -38,7 +38,7 @@ class AuditLog
              LIMIT ? OFFSET ?"
         );
 
-        $stmt->execute([$limit, $offset]);
+        $stmt->execute([(int) $limit, (int) $offset]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -53,7 +53,7 @@ class AuditLog
              LIMIT ? OFFSET ?"
         );
 
-        $stmt->execute([$userId, $limit, $offset]);
+        $stmt->execute([$userId, (int) $limit, (int) $offset]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -123,7 +123,7 @@ class AuditLog
 
     public function deleteOlderThan($days)
     {
-        $stmt = $this->db->prepare("DELETE FROM audit_logs WHERE timestamp < DATE_SUB(NOW(), INTERVAL ? DAY)");
-        return $stmt->execute([$days]);
+        $stmt = $this->db->prepare("DELETE FROM audit_logs WHERE timestamp < CURRENT_TIMESTAMP - (? * INTERVAL '1 day')");
+        return $stmt->execute([(int) $days]);
     }
 }

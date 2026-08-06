@@ -7,7 +7,7 @@
 DROP TABLE IF EXISTS company_car_departures;
 
 CREATE TABLE company_car_departures (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
 
     -- Reference to Room Assignment
     assignment_id INT NOT NULL,
@@ -24,28 +24,22 @@ CREATE TABLE company_car_departures (
     destination VARCHAR(150) DEFAULT NULL,
 
     -- Status
-    status ENUM(
-        'Pending',
-        'Scheduled',
-        'Completed',
-        'Cancelled'
-    ) NOT NULL DEFAULT 'Pending',
+    status VARCHAR(30) DEFAULT 'Pending' CHECK (status IN ('Pending','Scheduled','Completed','Cancelled')),
 
     remarks TEXT DEFAULT NULL,
 
     -- Audit
     created_by INT DEFAULT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     -- Indexes
-    INDEX idx_assignment (assignment_id),
-    INDEX idx_transportation (transportation_type_id),
-    INDEX idx_vehicle (vehicle_id),
-    INDEX idx_driver (driver_id),
-    INDEX idx_pickup_date (pickup_date),
-    INDEX idx_status (status),
+    CONSTRAINT idx_assignment UNIQUE (assignment_id),
+    CONSTRAINT idx_transportation UNIQUE (transportation_type_id),
+    CONSTRAINT idx_vehicle UNIQUE (vehicle_id),
+    CONSTRAINT idx_driver UNIQUE (driver_id),
+    CONSTRAINT idx_pickup_date UNIQUE (pickup_date),
+    CONSTRAINT idx_status UNIQUE (status),
 
     -- Foreign Keys
     CONSTRAINT fk_ccd_assignment
@@ -72,6 +66,4 @@ CREATE TABLE company_car_departures (
         ON UPDATE CASCADE
         ON DELETE SET NULL
 
-) ENGINE=InnoDB
-DEFAULT CHARSET=utf8mb4
-COLLATE=utf8mb4_unicode_ci;
+);

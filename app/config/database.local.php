@@ -1,16 +1,16 @@
 <?php
 
-// Local XAMPP database configuration.
+// Local PostgreSQL database configuration.
 // Keep this file separate from production credentials to avoid editing
 // the same config on every deployment.
 return [
-    'driver' => 'mysql',
+    'driver' => 'pgsql',
     'host' => 'localhost',
-    'port' => 3306,
+    'port' => 5432,
     'dbname' => 'browave_ams',
-    'username' => 'root',
-    'password' => '',
-    'charset' => 'utf8mb4',
+    'username' => 'postgres',
+    'password' => 'alwaysBrowave123',
+    'charset' => 'utf8',
     'options' => [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,

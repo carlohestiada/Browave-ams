@@ -41,19 +41,26 @@ class Database
 
     public function connect(): PDO
     {
-        $driver = $this->config['driver'];
-        if ($driver === 'mariadb') {
-            $driver = 'mysql';
-        }
+        $driver = strtolower((string) ($this->config['driver'] ?? 'pgsql'));
 
-        $dsn = sprintf(
-            '%s:host=%s;port=%d;dbname=%s;charset=%s',
-            $driver,
-            $this->config['host'],
-            $this->config['port'],
-            $this->config['dbname'],
-            $this->config['charset']
-        );
+        if ($driver === 'pgsql') {
+            $dsn = sprintf(
+                '%s:host=%s;port=%d;dbname=%s',
+                $driver,
+                $this->config['host'],
+                $this->config['port'],
+                $this->config['dbname']
+            );
+        } else {
+            $dsn = sprintf(
+                '%s:host=%s;port=%d;dbname=%s;charset=%s',
+                $driver,
+                $this->config['host'],
+                $this->config['port'],
+                $this->config['dbname'],
+                $this->config['charset'] ?? 'utf8mb4'
+            );
+        }
 
         try {
             $pdo = new PDO(
@@ -63,7 +70,11 @@ class Database
                 $this->config['options']
             );
 
-            $pdo->exec("SET time_zone = '+08:00'");
+            if ($driver === 'pgsql') {
+                $pdo->exec("SET TIME ZONE 'Asia/Manila'");
+            } else {
+                $pdo->exec("SET time_zone = '+08:00'");
+            }
 
             return $pdo;
         } catch (PDOException $e) {
