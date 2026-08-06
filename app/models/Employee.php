@@ -189,7 +189,7 @@ class Employee
 
         $sql = "
             UPDATE employees e
-            SET e.status = (
+            SET status = (
                 SELECT CASE
                     WHEN t.transaction_type = 'arrival' THEN 'Active'
                     ELSE 'Inactive'
