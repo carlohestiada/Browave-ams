@@ -132,10 +132,11 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Gender</label>
-                        <select class="form-select" id="new_employee_gender" name="gender" required>
+                        <select class="form-select" id="new_employee_gender" name="gender">
                             <option value="">Select gender</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
+                            <option value="Others">Others</option>
                         </select>
                     </div>
                     <div class="mb-3">

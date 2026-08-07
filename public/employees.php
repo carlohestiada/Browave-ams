@@ -55,6 +55,7 @@
                     <option value="">Any Gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
+                    <option value="Others">Others</option>
                 </select>
             </div>
             <div style="width:150px;">
@@ -147,8 +148,8 @@
 
                     <div class="ams-field">
                         <label class="ams-label">Gender</label>
-                        <select class="ams-input" id="gender" name="gender" required>
-                            <option value="">Select gender</option>
+                        <select class="ams-input" id="gender" name="gender">
+                            <option value="Other">Other</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
                         </select>

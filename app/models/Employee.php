@@ -117,6 +117,22 @@ class Employee
         return preg_match("/^[\p{Latin}\s\-\.'’]+$/u", $value) === 1;
     }
 
+    private function normalizeGender($value)
+    {
+        $value = isset($value) ? trim((string) $value) : '';
+
+        if ($value === '') {
+            return 'Other';
+        }
+
+        $value = ucfirst(strtolower($value));
+        if (!in_array($value, ['Male', 'Female', 'Other'], true)) {
+            throw new Exception('Invalid gender: ' . $value . '. Must be Male, Female, or Others.');
+        }
+
+        return $value;
+    }
+
     public function create($data)
     {
         $stmt = $this->db->prepare("
@@ -135,6 +151,7 @@ class Employee
 
         $englishName = $this->normalizeEnglishName($data['english_name'] ?? null);
         $chineseName = $this->normalizeEnglishName($data['chinese_name'] ?? null);
+        $gender = $this->normalizeGender($data['gender'] ?? null);
 
         if (!$this->validateEnglishName($englishName)) {
             throw new Exception('English Name may only contain letters, spaces, hyphens, apostrophes, and periods.');
@@ -145,7 +162,7 @@ class Employee
                 $data['employee_code'],
                 $englishName,
                 $chineseName,
-                $data['gender'],
+                $gender,
                 $data['department_id'],
                 $data['status']
             ]);
@@ -181,6 +198,7 @@ class Employee
 
         $chineseName = $this->normalizeEnglishName($data['chinese_name'] ?? null);
         $englishName = $this->normalizeEnglishName($data['english_name'] ?? null);
+        $gender = $this->normalizeGender($data['gender'] ?? null);
 
         if (!$this->validateEnglishName($englishName)) {
             throw new Exception('English Name may only contain letters, spaces, hyphens, apostrophes, and periods.');
@@ -190,7 +208,7 @@ class Employee
             $data['employee_code'],
             $englishName,
             $chineseName,
-            $data['gender'],
+            $gender,
             $data['department_id'],
             $data['status'],
             $id

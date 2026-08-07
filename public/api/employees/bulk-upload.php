@@ -80,21 +80,19 @@ try {
             $headers = array_map('normalizeCsvHeader', $row);
             $columnIndexes = [
                 'employee_code' => findCsvColumn($headers, ['employee id', 'employee code', 'employee_code', 'emp id', 'emp code']),
-            'english_name' => findCsvColumn($headers, ['english name', 'english_name', 'employee name', 'name', 'full name', 'full_name']),
-            'chinese_name' => findCsvColumn($headers, ['chinese name', 'chinese_name', 'chinese']),
-            'gender' => findCsvColumn($headers, ['gender', 'sex']),
-            'department' => findCsvColumn($headers, ['department', 'department name', 'department_name']),
+                'english_name' => findCsvColumn($headers, ['english name', 'english_name', 'employee name', 'name', 'full name', 'full_name']),
+                'chinese_name' => findCsvColumn($headers, ['chinese name', 'chinese_name', 'chinese']),
+                'gender' => findCsvColumn($headers, ['gender', 'sex']),
+                'department' => findCsvColumn($headers, ['department', 'department name', 'department_name']),
             ];
 
             if (
                 $columnIndexes['employee_code'] === false ||
                 $columnIndexes['english_name'] === false ||
-                $columnIndexes['gender'] === false ||
                 $columnIndexes['department'] === false
             ) {
                 throw new Exception(
-                    'CSV headers missing or incorrect. First row must include: Employee ID, English Name, Gender, Department.'
-                );
+                    'CSV headers missing or incorrect. First row must include: Employee ID, English Name, and Department. Gender is optional
             }
 
             continue;
@@ -114,12 +112,17 @@ try {
 
             // Validation
             if (!$empCode) throw new Exception('Employee ID is required.');
-            if (!$gender) throw new Exception('Gender is required.');
             if (!$deptName) throw new Exception('Department is required.');
 
-            // Validate gender
-            if (!in_array($gender, ['Male', 'Female'])) {
-                throw new Exception("Invalid gender: {$gender}. Must be Male or Female.");
+            // Normalize gender values and default blank/missing to Others
+            $gender = normalizeCsvLookupValue($gender);
+            if ($gender === '' || $gender === null) {
+                $gender = 'Others';
+            } else {
+                $gender = ucfirst(strtolower($gender));
+                if (!in_array($gender, ['Male', 'Female', 'Others'], true)) {
+                    throw new Exception("Invalid gender: {$gender}. Must be Male, Female, or Others.");
+                }
             }
 
             // Find department ID
