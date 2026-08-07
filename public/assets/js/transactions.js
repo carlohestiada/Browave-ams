@@ -58,8 +58,8 @@ function loadTransactionOptions(date, target) {
 
 function renderEmployeeList(searchTerm, employees, options) {
     const list = $(options.listSelector);
-    const filtered = employees.filter(emp => {
-        const empStr = (emp.employee_code + ' ' + emp.full_name).toLowerCase();
+        const filtered = employees.filter(emp => {
+        const empStr = (emp.employee_code + ' ' + emp.english_name).toLowerCase();
         return empStr.includes(searchTerm.toLowerCase());
     });
 
@@ -70,12 +70,12 @@ function renderEmployeeList(searchTerm, employees, options) {
         const isArrived = showAll && emp.arrived_count && parseInt(emp.arrived_count) > 0;
         const disabled = isArrived ? ' disabled' : '';
         const disabledClass = isArrived ? ' disabled' : '';
-        const label = isArrived ? `${emp.employee_code} - ${emp.full_name} (already arrived)` : `${emp.employee_code} - ${emp.full_name}`;
+        const label = isArrived ? `${emp.employee_code} - ${emp.english_name} (already arrived)` : `${emp.employee_code} - ${emp.english_name}`;
 
         html += `<div class="dropdown-item${disabledClass}" data-id="${emp.id}" data-label="${label}"${disabled ? ' style="cursor:not-allowed;"' : ''}>${label}</div>`;
     });
 
-    if (options.allowCreate && searchTerm.trim() && !filtered.some(e => e.full_name.toLowerCase() === searchTerm.toLowerCase())) {
+    if (options.allowCreate && searchTerm.trim() && !filtered.some(e => e.english_name.toLowerCase() === searchTerm.toLowerCase())) {
         html += `<div class="dropdown-item create-new" data-action="create" data-name="${searchTerm.trim()}">+ Create new: ${searchTerm.trim()}</div>`;
     }
 
@@ -125,7 +125,7 @@ function filterDepartureRows(rows) {
         return [
             tx.transaction_date,
             tx.employee_code,
-            tx.full_name,
+            tx.english_name,
             tx.department_name,
             tx.remarks
         ].some(value => String(value ?? '').toLowerCase().includes(search));
@@ -343,7 +343,7 @@ function renderTransactionTable(transactionType, tableSelector, transactions) {
                 <tr>
                     ${selectionCell}
                     <td>${displayValue(tx.transaction_date)}</td>
-                    <td>${displayValue(tx.employee_code)} - ${displayValue(tx.full_name)}</td>
+                    <td>${displayValue(tx.employee_code)} - ${displayValue(tx.english_name)}</td>
                     <td>${displayValue(tx.department_name)}</td>
                     <td>${displayValue(tx.remarks)}</td>
                     <td style="white-space:nowrap;">
@@ -359,12 +359,12 @@ function renderTransactionTable(transactionType, tableSelector, transactions) {
         },
         sortColumns: isDeparture ? [
             { index: 1, key: 'transaction_date' },
-            { index: 2, key: function(row) { return `${row.employee_code || ''} ${row.full_name || ''}`; } },
+            { index: 2, key: function(row) { return `${row.employee_code || ''} ${row.english_name || ''}`; } },
             { index: 3, key: 'department_name' },
             { index: 4, key: 'remarks' }
         ] : [
             { index: 1, key: 'transaction_date' },
-            { index: 2, key: function(row) { return `${row.employee_code || ''} ${row.full_name || ''}`; } },
+            { index: 2, key: function(row) { return `${row.employee_code || ''} ${row.english_name || ''}`; } },
             { index: 3, key: 'department_name' },
             { index: 4, key: 'remarks' }
         ]
@@ -405,7 +405,7 @@ function editTransaction(transactionId, transactionType) {
         // Load the transaction data into form
         $(dateInputId).val(tx.transaction_date);
         $(employeeIdInputId).val(tx.employee_id);
-        $(employeeSearchId).val(`${tx.employee_code} - ${tx.full_name}`);
+        $(employeeSearchId).val(`${tx.employee_code} - ${tx.english_name}`);
         $(remarksInputId).val(tx.remarks || '');
         $(transactionIdInputId).val(tx.id);
 
@@ -731,7 +731,7 @@ $(function() {
             dataType: 'json',
             data: {
                 employee_code: $('#new_employee_code').val(),
-                full_name: $('#new_employee_name').val(),
+                english_name: $('#new_employee_name').val(),
                 gender: $('#new_employee_gender').val(),
                 department_id: $('#new_employee_department').val(),
                 status: 'Active'
@@ -748,7 +748,7 @@ $(function() {
 
                     if (res.id) {
                         $('#arrival_employee_id').val(res.id);
-                        const label = `${res.employee_code || ''}${res.employee_code && res.full_name ? ' - ' : ''}${res.full_name || ''}`.trim();
+                        const label = `${res.employee_code || ''}${res.employee_code && res.english_name ? ' - ' : ''}${res.english_name || ''}`.trim();
                         if (label) {
                             $('#arrival_employee_search').val(label);
                         }

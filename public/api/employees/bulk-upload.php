@@ -80,20 +80,20 @@ try {
             $headers = array_map('normalizeCsvHeader', $row);
             $columnIndexes = [
                 'employee_code' => findCsvColumn($headers, ['employee id', 'employee code', 'employee_code', 'emp id', 'emp code']),
-                'full_name' => findCsvColumn($headers, ['full name', 'name', 'employee name', 'full_name']),
-                'chinese_name' => findCsvColumn($headers, ['chinese name', 'chinese_name', 'chinese']),
-                'gender' => findCsvColumn($headers, ['gender', 'sex']),
-                'department' => findCsvColumn($headers, ['department', 'department name', 'department_name']),
+            'english_name' => findCsvColumn($headers, ['english name', 'english_name', 'employee name', 'name', 'full name', 'full_name']),
+            'chinese_name' => findCsvColumn($headers, ['chinese name', 'chinese_name', 'chinese']),
+            'gender' => findCsvColumn($headers, ['gender', 'sex']),
+            'department' => findCsvColumn($headers, ['department', 'department name', 'department_name']),
             ];
 
             if (
                 $columnIndexes['employee_code'] === false ||
-                $columnIndexes['full_name'] === false ||
+                $columnIndexes['english_name'] === false ||
                 $columnIndexes['gender'] === false ||
                 $columnIndexes['department'] === false
             ) {
                 throw new Exception(
-                    'CSV headers missing or incorrect. First row must include: Employee ID, Full Name, Gender, Department.'
+                    'CSV headers missing or incorrect. First row must include: Employee ID, English Name, Gender, Department.'
                 );
             }
 
@@ -104,7 +104,7 @@ try {
 
         try {
             $empCode = trim($row[$columnIndexes['employee_code']] ?? '');
-            $fullName = trim($row[$columnIndexes['full_name']] ?? '');
+            $englishName = trim($row[$columnIndexes['english_name']] ?? '');
             $chineseName = '';
             if ($columnIndexes['chinese_name'] !== false && isset($row[$columnIndexes['chinese_name']])) {
                 $chineseName = trim($row[$columnIndexes['chinese_name']]);
@@ -114,7 +114,6 @@ try {
 
             // Validation
             if (!$empCode) throw new Exception('Employee ID is required.');
-            if (!$fullName) throw new Exception('Full Name is required.');
             if (!$gender) throw new Exception('Gender is required.');
             if (!$deptName) throw new Exception('Department is required.');
 
@@ -132,7 +131,7 @@ try {
             // Prepare data
             $data = [
                 'employee_code' => $empCode,
-                'full_name' => $fullName,
+                'english_name' => $englishName,
                 'chinese_name' => $chineseName,
                 'gender' => $gender,
                 'department_id' => $deptId,

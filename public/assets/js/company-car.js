@@ -22,7 +22,7 @@ function formatBadge(status) {
 
 function formatEmployeeName(row) {
     const chinese = row.chinese_name ? ` <span class="text-muted">(${row.chinese_name})</span>` : '';
-    return `${row.employee_code} - ${row.full_name}${chinese}`;
+    return `${row.employee_code} - ${row.english_name}${chinese}`;
 }
 
 function isRowOverdue(row) {
@@ -236,7 +236,7 @@ function loadEmployees(search = '', targetList = '#filterEmployeeList', inputId 
             html = '<div class="dropdown-item" style="color:#999;">No employees found</div>';
         } else {
             employees.forEach(emp => {
-                html += `<div class="dropdown-item" data-id="${emp.id}" data-label="${emp.employee_code} - ${emp.full_name}">${emp.employee_code} - ${emp.full_name}</div>`;
+                    html += `<div class="dropdown-item" data-id="${emp.id}" data-label="${emp.employee_code} - ${emp.english_name}">${emp.employee_code} - ${emp.english_name}</div>`;
             });
         }
 
@@ -268,7 +268,7 @@ function fetchEmployeeDetails(employeeId) {
         const employee = typeof data === 'string' ? JSON.parse(data) : data;
 
         $('#companyCar_employee_id').val(employee.id || '');
-        $('#companyCar_employee_search').val(`${employee.employee_code || ''} - ${employee.full_name || ''}`);
+            $('#companyCar_employee_search').val(`${employee.employee_code || ''} - ${employee.english_name || ''}`);
         $('#companyCar_department').val(employee.department_name || '');
         $('#companyCar_chinese_name').val(employee.chinese_name || '');
         $('#companyCar_gender').val(employee.gender || '');
@@ -716,7 +716,7 @@ function loadBulkAssignmentEmployees() {
                 <div class="form-check">
                     <input class="form-check-input bulk-employee-checkbox" type="checkbox" value="${employee.id}" id="bulkEmployee_${employee.id}">
                     <label class="form-check-label" for="bulkEmployee_${employee.id}">
-                        ${employee.employee_code || ''} - ${employee.full_name || ''}
+                        ${employee.employee_code || ''} - ${employee.english_name || ''}
                     </label>
                 </div>
             `;
@@ -852,8 +852,8 @@ function exportToCsv() {
     const lines = [header.join(',')];
 
     transportationRows.forEach(row => {
-        const values = [
-            `"${(row.employee_code || '')} - ${(row.full_name || '')}${row.chinese_name ? ' (' + row.chinese_name + ')' : ''}"`,
+            const values = [
+            `"${(row.employee_code || '')} - ${(row.english_name || '')}${row.chinese_name ? ' (' + row.chinese_name + ')' : ''}"`,
             `"${row.department_name || ''}"`,
             `"${row.pickup_date || ''}"`,
             `"${row.pickup_time || ''}"`,

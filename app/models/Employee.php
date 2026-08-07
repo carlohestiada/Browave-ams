@@ -31,7 +31,7 @@ class Employee
         }
 
         $sql = "
-            SELECT e.id, e.employee_code, e.full_name, e.chinese_name, e.gender, e.department_id, e.status, e.created_at, d.department_name $selectExtra
+            SELECT e.id, e.employee_code, e.english_name, e.chinese_name, e.gender, e.department_id, e.status, e.created_at, d.department_name $selectExtra
             FROM employees e
             LEFT JOIN departments d
                 ON e.department_id = d.id
@@ -51,7 +51,7 @@ class Employee
         if (!empty($search)) {
             $conditions[] = "(
                 e.employee_code LIKE ? OR
-                e.full_name LIKE ? OR
+                e.english_name LIKE ? OR
                 e.chinese_name LIKE ? OR
                 d.department_name LIKE ?
             )";
@@ -94,12 +94,27 @@ class Employee
     public function getById($id)
     {
         $stmt = $this->db->prepare(
-            "SELECT id, employee_code, full_name, chinese_name, gender, department_id, status, created_at FROM employees WHERE id=?"
+            "SELECT id, employee_code, english_name, chinese_name, gender, department_id, status, created_at FROM employees WHERE id=?"
         );
 
         $stmt->execute([$id]);
 
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function normalizeEnglishName($value)
+    {
+        $value = isset($value) ? trim((string) $value) : null;
+        return $value === '' ? null : $value;
+    }
+
+    private function validateEnglishName(?string $value): bool
+    {
+        if ($value === null) {
+            return true;
+        }
+
+        return preg_match("/^[\p{Latin}\s\-\.'’]+$/u", $value) === 1;
     }
 
     public function create($data)
@@ -108,7 +123,7 @@ class Employee
             INSERT INTO employees
             (
                 employee_code,
-                full_name,
+                english_name,
                 chinese_name,
                 gender,
                 department_id,
@@ -118,13 +133,17 @@ class Employee
             (?,?,?,?,?,?)
         ");
 
-        $chineseName = isset($data['chinese_name']) ? trim((string) $data['chinese_name']) : null;
-        $chineseName = $chineseName === '' ? null : $chineseName;
+        $englishName = $this->normalizeEnglishName($data['english_name'] ?? null);
+        $chineseName = $this->normalizeEnglishName($data['chinese_name'] ?? null);
+
+        if (!$this->validateEnglishName($englishName)) {
+            throw new Exception('English Name may only contain letters, spaces, hyphens, apostrophes, and periods.');
+        }
 
         try {
             $success = $stmt->execute([
                 $data['employee_code'],
-                $data['full_name'],
+                $englishName,
                 $chineseName,
                 $data['gender'],
                 $data['department_id'],
@@ -152,7 +171,7 @@ class Employee
             UPDATE employees
             SET
                 employee_code=?,
-                full_name=?,
+                english_name=?,
                 chinese_name=?,
                 gender=?,
                 department_id=?,
@@ -160,12 +179,16 @@ class Employee
             WHERE id=?
         ");
 
-        $chineseName = isset($data['chinese_name']) ? trim((string) $data['chinese_name']) : null;
-        $chineseName = $chineseName === '' ? null : $chineseName;
+        $chineseName = $this->normalizeEnglishName($data['chinese_name'] ?? null);
+        $englishName = $this->normalizeEnglishName($data['english_name'] ?? null);
+
+        if (!$this->validateEnglishName($englishName)) {
+            throw new Exception('English Name may only contain letters, spaces, hyphens, apostrophes, and periods.');
+        }
 
         return $stmt->execute([
             $data['employee_code'],
-            $data['full_name'],
+            $englishName,
             $chineseName,
             $data['gender'],
             $data['department_id'],

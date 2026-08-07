@@ -151,11 +151,11 @@ class DailyHeadcount
                 DATE(t.transaction_date) AS transaction_date,
                 t.transaction_type,
                 e.employee_code,
-                e.full_name
+                e.english_name
              FROM transactions t
              LEFT JOIN employees e ON t.employee_id = e.id
              WHERE DATE(t.transaction_date) BETWEEN ? AND ?
-             ORDER BY DATE(t.transaction_date) ASC, e.full_name ASC"
+             ORDER BY DATE(t.transaction_date) ASC, e.english_name ASC"
         );
 
         $stmt->execute([$startDate, $endDate]);

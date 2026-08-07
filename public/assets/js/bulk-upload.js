@@ -71,7 +71,7 @@ function startBulkUpload() {
                     if (hasHeaderErrors) {
                         resultsHtml += `
                             <div style="margin-bottom:10px; padding:10px; background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; color:#9a3412;">
-                                Check the first row of your CSV. It must include these columns: Employee ID, Full Name, Gender, Department. Optional: Chinese Name. The easiest fix is to download the template and paste your employee rows under its header.
+                                Check the first row of your CSV. It must include these columns: Employee ID, English Name, Gender, Department. Optional: Chinese Name. The easiest fix is to download the template and paste your employee rows under its header.
                             </div>
                         `;
                     }

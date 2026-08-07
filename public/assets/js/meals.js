@@ -139,7 +139,7 @@ function renderPlannerPeople(people, type) {
     return `
         <div class="meal-planner-people meal-planner-people--${type}">
             ${people.map((person) => {
-                const name = person.full_name || person.employee_code || 'Employee';
+                const name = person.english_name || person.employee_code || 'Employee';
                 return `<div class="meal-planner-person">• ${mealEscapeHtml(name)}</div>`;
             }).join('')}
         </div>

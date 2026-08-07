@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             tbody.innerHTML = data.slice(0, 5).map(emp => {
-                const initials = (emp.full_name || '').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+                const initials = (emp.english_name || '').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
                 const colors = ['#dbeafe:#1d4ed8', '#ede9fe:#6d28d9', '#fce7f3:#be185d', '#ffedd5:#c2410c', '#d1fae5:#065f46'];
                 const [bg, fg] = (colors[Math.abs((emp.id || 0)) % colors.length]).split(':');
                 const badge = emp.status === 'Active' ? 'badge-active' : 'badge-inactive';
@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td>
                         <div class="dashboard-activity-name-wrap">
                             <div class="dashboard-employee-avatar" style="background:${bg}; color:${fg};">${initials}</div>
-                            <span class="dashboard-employee-name">${emp.full_name ?? '-'}</span>
+                            <span class="dashboard-employee-name">${emp.english_name ?? '-'}</span>
                         </div>
                     </td>
                     <td class="dashboard-status-label">${emp.department_name ?? '-'}</td>
@@ -577,7 +577,7 @@ document.addEventListener('DOMContentLoaded', function () {
             el.innerHTML = data.slice(0, 4).map(tx => `
             <div class="tx-row">
                 <div>
-                    <p class="dashboard-activity-name">${tx.full_name ?? '-'}</p>
+                    <p class="dashboard-activity-name">${tx.english_name ?? '-'}</p>
                     <p class="dashboard-activity-meta">${tx.employee_code ? tx.employee_code : 'Employee'}</p>
                 </div>
                 <span class="dashboard-activity-pill ${badgeClass}">${type === 'arrival' ? 'Arriving' : 'Departing'}</span>

@@ -7,7 +7,7 @@ let assignmentSearchTimer = null;
 let assignmentCheckoutManuallyEdited = false;
 
 const assignmentSortColumns = [
-    { index: 1, key: function(row) { return `${row.employee_code || ''} ${row.full_name || ''}`; } },
+    { index: 1, key: function(row) { return `${row.employee_code || ''} ${row.english_name || ''}`; } },
     { index: 2, key: 'department_name' },
     { index: 3, key: 'gender' },
     { index: 4, key: 'checkin_date' },
@@ -51,8 +51,8 @@ function renderAssignEmployeeDropdown() {
         const employeeId = String(e.id);
         const disabled = activeAssignedEmployees.has(employeeId) ? ' disabled' : '';
         const label = activeAssignedEmployees.has(employeeId)
-            ? `${e.employee_code} - ${e.full_name} (already assigned)`
-            : `${e.employee_code} - ${e.full_name}`;
+            ? `${e.employee_code} - ${e.english_name} (already assigned)`
+            : `${e.employee_code} - ${e.english_name}`;
         opts += `<option value="${e.id}"${disabled}>${label}</option>`;
     });
     assignSelect.html(opts);
@@ -154,7 +154,7 @@ function renderAssignmentRow(r, lookup) {
                     onchange="toggleAssignmentSelection(${assignmentId}, this.checked)"
                     ${checked}>
             </td>          
-            <td>${displayValue(r.employee_code)} - ${displayValue(r.full_name)}</td>
+            <td>${displayValue(r.employee_code)} - ${displayValue(r.english_name)}</td>
             <td>${displayValue(r.department_name)}</td>
             <td>${displayValue(r.gender)}</td>
             <td>${displayValue(r.checkin_date)}</td>
@@ -177,11 +177,11 @@ function filterAssignmentRows(rows) {
         return rows.slice();
     }
 
-    return rows.filter(r => {
+        return rows.filter(r => {
         const transferredTo = `${r.transferred_room_no || ''} ${r.transferred_accommodation_name || ''} ${r.actual_checkout_date || ''}`;
         return [
             r.employee_code,
-            r.full_name,
+                r.english_name,
             r.department_name,
             r.gender,
             r.checkin_date,
@@ -294,7 +294,7 @@ function renderTransferAssignmentDropdown(selectedId = '') {
         .forEach(r => {
             const selected = String(r.id) === String(selectedId) ? ' selected' : '';
             const roomLabel = r.transferred_room_no ? ` -> ${r.transferred_room_no}` : '';
-            opts += `<option value="${r.id}"${selected}>${displayValue(r.employee_code)} - ${displayValue(r.full_name)} (${displayValue(r.room_no)}${roomLabel})</option>`;
+            opts += `<option value="${r.id}"${selected}>${displayValue(r.employee_code)} - ${displayValue(r.english_name)} (${displayValue(r.room_no)}${roomLabel})</option>`;
         });
     transferSelect.html(opts);
 }

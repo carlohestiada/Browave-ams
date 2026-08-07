@@ -15,7 +15,7 @@ class RoomAssignment
         $this->syncRoomStatuses();
 
         $stmt = $this->db->query(
-            "SELECT ra.*, r.room_no, a.accommodation_name, e.employee_code, e.full_name, e.gender, d.department_name,
+            "SELECT ra.*, r.room_no, a.accommodation_name, e.employee_code, e.english_name, e.gender, d.department_name,
                     tr.room_no AS transferred_room_no, ta.accommodation_name AS transferred_accommodation_name
              FROM room_assignments ra
              JOIN employees e ON ra.employee_id = e.id

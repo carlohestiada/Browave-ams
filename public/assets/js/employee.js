@@ -114,7 +114,7 @@ function renderEmployeeRow(emp)
                     ${checked}>
             </td>
             <td>${displayValue(emp.employee_code)}</td>
-            <td>${displayValue(emp.full_name)}</td>
+            <td>${displayValue(emp.english_name)}</td>
             <td>${displayValue(emp.chinese_name)}</td>
             <td>${displayValue(emp.gender)}</td>
             <td>${displayValue(emp.department_name)}</td>
@@ -292,7 +292,7 @@ function openEmployeeModal(employee)
         currentEmployeeId = employee.id;
         $('#employeeId').val(employee.id);
         $('#employee_code').val(employee.employee_code);
-        $('#full_name').val(employee.full_name);
+        $('#english_name').val(employee.english_name);
         $('#chinese_name').val(employee.chinese_name);
         $('#gender').val(employee.gender);
         $('#department_id').val(employee.department_id);

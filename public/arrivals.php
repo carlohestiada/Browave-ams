@@ -127,8 +127,8 @@
                         <input type="text" class="form-control" id="new_employee_code" name="employee_code" placeholder="e.g. EMP-001" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" class="form-control" id="new_employee_name" name="full_name" placeholder="Full name" required>
+                        <label class="form-label">English Name</label>
+                        <input type="text" class="form-control" id="new_employee_name" name="english_name" placeholder="Optional English name">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Gender</label>

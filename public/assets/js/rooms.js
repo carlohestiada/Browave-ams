@@ -485,7 +485,7 @@ function loadEmployeesForRoomReservation() {
         }
 
         const options = ['<option value="">Select employee</option>']
-            .concat((employees || []).map(emp => `<option value="${emp.id}">${emp.employee_code ? `${emp.employee_code} - ` : ''}${emp.full_name || 'Unnamed Employee'}</option>`))
+            .concat((employees || []).map(emp => `<option value="${emp.id}">${emp.employee_code ? `${emp.employee_code} - ` : ''}${emp.english_name || 'Unnamed Employee'}</option>`))
             .join('');
 
         select.html(options);

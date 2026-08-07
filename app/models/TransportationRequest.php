@@ -11,7 +11,7 @@ class TransportationRequest
 
     public function getAll(array $filters = [])
     {
-        $sql = "SELECT tr.*, e.employee_code, e.full_name, e.chinese_name, e.gender, d.department_name, dr.driver_name, v.vehicle_name, v.license_plate
+        $sql = "SELECT tr.*, e.employee_code, e.english_name, e.chinese_name, e.gender, d.department_name, dr.driver_name, v.vehicle_name, v.license_plate
                 FROM transportation_requests tr
                 JOIN employees e ON tr.employee_id = e.id
                 LEFT JOIN departments d ON e.department_id = d.id
@@ -54,7 +54,7 @@ class TransportationRequest
         if (!empty($filters['search'])) {
             $conditions[] = "(
                 e.employee_code LIKE ? OR
-                e.full_name LIKE ? OR
+                e.english_name LIKE ? OR
                 e.chinese_name LIKE ? OR
                 d.department_name LIKE ? OR
                 tr.pickup_location LIKE ? OR
@@ -80,7 +80,7 @@ class TransportationRequest
     public function getById($id)
     {
         $stmt = $this->db->prepare(
-            "SELECT tr.*, e.employee_code, e.full_name, e.chinese_name, e.gender, d.department_name, dr.driver_name, v.vehicle_name, v.license_plate
+            "SELECT tr.*, e.employee_code, e.english_name, e.chinese_name, e.gender, d.department_name, dr.driver_name, v.vehicle_name, v.license_plate
              FROM transportation_requests tr
              JOIN employees e ON tr.employee_id = e.id
              LEFT JOIN departments d ON e.department_id = d.id
@@ -268,7 +268,7 @@ class TransportationRequest
     public function getEmployeeDetails($employeeId)
     {
         $stmt = $this->db->prepare(
-            "SELECT e.id, e.employee_code, e.full_name, e.chinese_name, e.gender, d.department_name,
+            "SELECT e.id, e.employee_code, e.english_name, e.chinese_name, e.gender, d.department_name,
                 (SELECT transaction_date FROM transactions t2 WHERE t2.employee_id = e.id AND t2.transaction_type = 'arrival' ORDER BY transaction_date DESC LIMIT 1) AS last_arrival_date,
                 (SELECT transaction_date FROM transactions t3 WHERE t3.employee_id = e.id AND t3.transaction_type = 'departure' ORDER BY transaction_date DESC LIMIT 1) AS last_departure_date,
                 r.room_no AS room_number,

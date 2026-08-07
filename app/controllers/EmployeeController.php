@@ -64,7 +64,7 @@ class EmployeeController
             'success' => true,
             'id' => (int) $result,
             'employee_code' => $data['employee_code'] ?? '',
-            'full_name' => $data['full_name'] ?? ''
+            'english_name' => $data['english_name'] ?? null
         ]);
     }
 
@@ -81,10 +81,19 @@ class EmployeeController
     {
         parse_str(file_get_contents("php://input"),$data);
 
-        $result = $this->employee->update($id,$data);
+        try {
+            $result = $this->employee->update($id, $data);
+        } catch (Exception $e) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+            return;
+        }
 
         echo json_encode([
-            'success'=>$result
+            'success' => $result
         ]);
     }
 

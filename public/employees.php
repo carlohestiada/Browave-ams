@@ -92,7 +92,7 @@
                             <input type="checkbox" id="selectAllEmployees" aria-label="Select all employees">
                         </th>
                         <th><button type="button" class="employee-sort-btn" data-sort-key="employee_code">Employee ID <span class="employee-sort-indicator" data-sort-indicator="employee_code"></span></button></th>
-                        <th><button type="button" class="employee-sort-btn" data-sort-key="full_name">Full Name <span class="employee-sort-indicator" data-sort-indicator="full_name"></span></button></th>
+                        <th><button type="button" class="employee-sort-btn" data-sort-key="english_name">English Name <span class="employee-sort-indicator" data-sort-indicator="english_name"></span></button></th>
                         <th><button type="button" class="employee-sort-btn" data-sort-key="chinese_name">Chinese Name <span class="employee-sort-indicator" data-sort-indicator="chinese_name"></span></button></th>
                         <th><button type="button" class="employee-sort-btn" data-sort-key="gender">Gender <span class="employee-sort-indicator" data-sort-indicator="gender"></span></button></th>
                         <th><button type="button" class="employee-sort-btn" data-sort-key="department_name">Department <span class="employee-sort-indicator" data-sort-indicator="department_name"></span></button></th>
@@ -136,8 +136,8 @@
                     </div>
 
                     <div class="ams-field">
-                        <label for="full_name" class="ams-label">Full Name</label>
-                        <input type="text" class="ams-input" id="full_name" name="full_name" placeholder="Full legal name" required>
+                        <label for="english_name" class="ams-label">English Name</label>
+                        <input type="text" class="ams-input" id="english_name" name="english_name" placeholder="Optional English name">
                     </div>
 
                     <div class="ams-field">
@@ -192,7 +192,7 @@
             <!-- Header -->
             <div class="modal-header">
                 <div>
-                    <h5 class="modal-title" id="bulkUploadModalLabel">Bulk Upload Employees</h5><small class="text-muted">Upload a CSV with Employee ID, Full Name, Gender, and Department.</small>
+                    <h5 class="modal-title" id="bulkUploadModalLabel">Bulk Upload Employees</h5><small class="text-muted">Upload a CSV with Employee ID, English Name, Gender, and Department. Chinese Name is optional.</small>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>

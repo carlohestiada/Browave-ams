@@ -19,8 +19,8 @@ class Room
         $this->assignment->refreshRoomStatuses();
 
         $stmt = $this->db->query(
-            "SELECT r.*, f.floor_name, b.building_name, a.accommodation_name, e.full_name AS reserved_by_employee_name,
-                    STRING_AGG(DISTINCT emp.full_name, E'\n' ORDER BY emp.full_name) AS assigned_employee_names
+            "SELECT r.*, f.floor_name, b.building_name, a.accommodation_name, e.english_name AS reserved_by_employee_name,
+                STRING_AGG(DISTINCT emp.english_name, E'\n' ORDER BY emp.english_name) AS assigned_employee_names
              FROM rooms r
              LEFT JOIN floors f ON r.floor_id = f.id
              LEFT JOIN buildings b ON f.building_id = b.id
@@ -28,7 +28,7 @@ class Room
              LEFT JOIN employees e ON r.reserved_by_employee_id = e.id
              LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status IN ('Active', 'Transferred')
              LEFT JOIN employees emp ON emp.id = ra.employee_id
-             GROUP BY r.id, f.floor_name, b.building_name, a.accommodation_name, e.full_name
+             GROUP BY r.id, f.floor_name, b.building_name, a.accommodation_name, e.english_name
              ORDER BY r.room_no ASC"
         );
 
@@ -40,8 +40,8 @@ class Room
         $this->assignment->refreshRoomStatuses();
 
         $stmt = $this->db->prepare(
-            "SELECT r.*, f.floor_name, b.building_name, a.accommodation_name, e.full_name AS reserved_by_employee_name,
-                    STRING_AGG(DISTINCT emp.full_name, E'\n' ORDER BY emp.full_name) AS assigned_employee_names
+            "SELECT r.*, f.floor_name, b.building_name, a.accommodation_name, e.english_name AS reserved_by_employee_name,
+                STRING_AGG(DISTINCT emp.english_name, E'\n' ORDER BY emp.english_name) AS assigned_employee_names
              FROM rooms r
              LEFT JOIN floors f ON r.floor_id = f.id
              LEFT JOIN buildings b ON f.building_id = b.id
@@ -50,7 +50,7 @@ class Room
              LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status IN ('Active', 'Transferred')
              LEFT JOIN employees emp ON emp.id = ra.employee_id
              WHERE r.floor_id=?
-             GROUP BY r.id, f.floor_name, b.building_name, a.accommodation_name, e.full_name
+             GROUP BY r.id, f.floor_name, b.building_name, a.accommodation_name, e.english_name
              ORDER BY r.room_no ASC"
         );
 
@@ -65,8 +65,8 @@ class Room
 
         $stmt = $this->db->prepare(
             "SELECT r.*, f.floor_name, f.building_id AS building_id, b.accommodation_id AS accommodation_id,
-                    b.building_name, a.accommodation_name, e.full_name AS reserved_by_employee_name,
-                    STRING_AGG(DISTINCT emp.full_name, E'\n' ORDER BY emp.full_name) AS assigned_employee_names
+                b.building_name, a.accommodation_name, e.english_name AS reserved_by_employee_name,
+                STRING_AGG(DISTINCT emp.english_name, E'\n' ORDER BY emp.english_name) AS assigned_employee_names
              FROM rooms r
              LEFT JOIN floors f ON r.floor_id = f.id
              LEFT JOIN buildings b ON f.building_id = b.id
@@ -75,7 +75,7 @@ class Room
              LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status IN ('Active', 'Transferred')
              LEFT JOIN employees emp ON emp.id = ra.employee_id
              WHERE r.id=?
-             GROUP BY r.id, f.floor_name, f.building_id, b.accommodation_id, b.building_name, a.accommodation_name, e.full_name"
+             GROUP BY r.id, f.floor_name, f.building_id, b.accommodation_id, b.building_name, a.accommodation_name, e.english_name"
         );
 
         $stmt->execute([$id]);
