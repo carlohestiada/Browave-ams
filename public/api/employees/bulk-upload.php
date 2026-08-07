@@ -19,6 +19,47 @@ function normalizeCsvHeader($value)
     return normalizeCsvLookupValue($value);
 }
 
+function removeUtf8Bom($value)
+{
+    if (!is_string($value)) {
+        return $value;
+    }
+
+    return strpos($value, "\xEF\xBB\xBF") === 0 ? substr($value, 3) : $value;
+}
+
+function convertCsvTextToUtf8(string $content): string
+{
+    $content = removeUtf8Bom($content);
+
+    if (mb_check_encoding($content, 'UTF-8')) {
+        return $content;
+    }
+
+    $encodings = ['BIG5', 'CP950', 'GBK', 'CP936'];
+    $detected = mb_detect_encoding($content, $encodings, true);
+    if ($detected !== false) {
+        $converted = @mb_convert_encoding($content, 'UTF-8', $detected);
+        if ($converted !== false && mb_check_encoding($converted, 'UTF-8')) {
+            return $converted;
+        }
+    }
+
+    foreach ($encodings as $encoding) {
+        $converted = @mb_convert_encoding($content, 'UTF-8', $encoding);
+        if ($converted !== false && mb_check_encoding($converted, 'UTF-8')) {
+            return $converted;
+        }
+    }
+
+    throw new Exception('Invalid file encoding. Please save the CSV as UTF-8 before uploading.');
+}
+
+function normalizeCsvField($value)
+{
+    return trim(removeUtf8Bom((string) $value));
+}
+
 function findCsvColumn($headers, $acceptedNames)
 {
     foreach ($acceptedNames as $name) {
@@ -45,10 +86,18 @@ try {
     }
 
     // Read and parse CSV
-    $handle = fopen($file['tmp_name'], 'r');
-    if (!$handle) {
-        throw new Exception('Unable to open file.');
+    $rawContent = file_get_contents($file['tmp_name']);
+    if ($rawContent === false) {
+        throw new Exception('Unable to read uploaded file.');
     }
+
+    $csvContent = convertCsvTextToUtf8($rawContent);
+    $handle = fopen('php://memory', 'r+');
+    if (!$handle) {
+        throw new Exception('Unable to open temporary buffer.');
+    }
+    fwrite($handle, $csvContent);
+    rewind($handle);
 
     // Initialize models
     $db = (new Database())->connect();
@@ -102,17 +151,17 @@ try {
         $results['total']++;
 
         try {
-            $empCode = trim($row[$columnIndexes['employee_code']] ?? '');
-            $englishName = trim($row[$columnIndexes['english_name']] ?? '');
+            $empCode = normalizeCsvField($row[$columnIndexes['employee_code']] ?? '');
+            $englishName = normalizeCsvField($row[$columnIndexes['english_name']] ?? '');
             $chineseName = '';
             if ($columnIndexes['chinese_name'] !== false && isset($row[$columnIndexes['chinese_name']])) {
-                $chineseName = trim($row[$columnIndexes['chinese_name']]);
+                $chineseName = normalizeCsvField($row[$columnIndexes['chinese_name']]);
             }
             $gender = '';
             if ($columnIndexes['gender'] !== false && isset($row[$columnIndexes['gender']])) {
-                $gender = trim($row[$columnIndexes['gender']]);
+                $gender = normalizeCsvField($row[$columnIndexes['gender']]);
             }
-            $deptName = trim($row[$columnIndexes['department']] ?? '');
+            $deptName = normalizeCsvField($row[$columnIndexes['department']] ?? '');
 
             // Validation
             if (!$empCode) throw new Exception('Employee ID is required.');

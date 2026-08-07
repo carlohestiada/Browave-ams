@@ -230,7 +230,7 @@
                                     </div>
                                     <div class="flex items-start gap-3">
                                         <span class="material-symbols-outlined text-secondary" data-icon="edit_note">edit_note</span>
-                                        <p class="text-body-md"><span class="font-bold">Step 2:</span> Populate fields ensuring the "Department Code" matches exactly with existing entries.</p>
+                                        <p class="text-body-md"><span class="font-bold">Step 2:</span> Populate fields ensuring the "Department Code" matches exactly with existing entries. Save the file as UTF-8 if you use Traditional Chinese characters.</p>
                                     </div>
                                     <div class="flex items-start gap-3">
                                         <span class="material-symbols-outlined text-secondary" data-icon="cloud_upload">cloud_upload</span>
@@ -411,11 +411,6 @@
                     <a class="block py-2 px-3 text-body-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors border-l-2 border-transparent" href="#assignments">Room Assignments</a>
                     <a class="block py-2 px-3 text-body-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors border-l-2 border-transparent" href="#rules">Important Notes</a>
                 </nav>
-                <div class="mt-12 bg-primary-fixed p-4 rounded-lg">
-                    <p class="text-label-md font-bold text-primary mb-2">Need Help?</p>
-                    <p class="text-body-sm text-primary/80 mb-4">Contact our 24/7 Enterprise Support team for complex migration assistance.</p>
-                    <button class="w-full py-2 bg-primary text-white rounded-lg text-label-md font-bold">Chat Support</button>
-                </div>
             </aside>
         </main>
     </div>

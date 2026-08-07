@@ -193,7 +193,7 @@
             <!-- Header -->
             <div class="modal-header">
                 <div>
-                    <h5 class="modal-title" id="bulkUploadModalLabel">Bulk Upload Employees</h5><small class="text-muted">Upload a CSV with Employee ID, English Name, Gender, and Department. Chinese Name is optional.</small>
+                    <h5 class="modal-title" id="bulkUploadModalLabel">Bulk Upload Employees</h5><small class="text-muted">Upload a UTF-8 CSV with Employee ID, English Name, Gender, and Department. Chinese Name is optional. Save the file as UTF-8 to support Traditional Chinese characters.</small>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -201,6 +201,7 @@
             <!-- Body -->
             <div class="modal-body">
                 <a class="bulk-upload-template" href="assets/templates/employees_bulk_template.csv" download>Download Template</a>
+                <p class="text-muted mb-3">Tip: Save the CSV as UTF-8 encoding to preserve Traditional Chinese names like 謝德偉, 張志明, and 林美玲.</p>
 
                 <div class="bulk-dropzone" id="bulkDropzone">
                     <input type="file" class="ams-input" id="bulkUploadFile" name="file" accept=".csv" required aria-describedby="bulkDropzoneHelp">

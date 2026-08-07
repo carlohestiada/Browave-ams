@@ -71,7 +71,9 @@ class Database
             );
 
             if ($driver === 'pgsql') {
+                $charset = strtoupper($this->config['charset'] ?? 'utf8');
                 $pdo->exec("SET TIME ZONE 'Asia/Manila'");
+                $pdo->exec("SET client_encoding TO '{$charset}'");
             } else {
                 $pdo->exec("SET time_zone = '+08:00'");
             }

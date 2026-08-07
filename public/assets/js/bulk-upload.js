@@ -151,6 +151,7 @@ $(function() {
 
     const formatSize = bytes => bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
     const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[char]);
+    const stripUtf8Bom = text => text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text;
     const parseCsvForPreview = text => {
         const records = []; let row = []; let value = ''; let quoted = false;
         for (let i = 0; i < text.length; i++) {
@@ -194,9 +195,34 @@ $(function() {
         document.getElementById('bulkPreviewMeta').textContent = `Selected ${new Date().toLocaleString()} · Preview is read-only; server validation occurs during import.`;
         // Limit only the visual preview read; the existing upload still receives the untouched file.
         if (!file.name.toLowerCase().endsWith('.csv') || file.size > 10 * 1024 * 1024) { preview.classList.remove('is-visible'); return; }
-        const reader = new FileReader();
-        reader.onload = event => {
-            const records = parseCsvForPreview(event.target.result);
+        const decodeCsvText = async file => {
+            const buffer = await file.arrayBuffer();
+            const tryDecode = (encoding, fatal = true) => {
+                try {
+                    return new TextDecoder(encoding, { fatal }).decode(buffer);
+                } catch (error) {
+                    return null;
+                }
+            };
+
+            let text = tryDecode('utf-8');
+            if (text !== null) {
+                return stripUtf8Bom(text);
+            }
+
+            for (const encoding of ['big5', 'cp950', 'gbk', 'cp936']) {
+                const decoded = tryDecode(encoding);
+                if (decoded !== null && !decoded.includes('\uFFFD')) {
+                    return stripUtf8Bom(decoded);
+                }
+            }
+
+            text = tryDecode('utf-8', false);
+            return stripUtf8Bom(text ?? '');
+        };
+
+        decodeCsvText(file).then(text => {
+            const records = parseCsvForPreview(text);
             previewHeaders = records.shift() || [];
             previewRows = records;
             document.getElementById('bulkTotalRecords').textContent = previewRows.length;
@@ -205,8 +231,11 @@ $(function() {
             document.getElementById('bulkErrorRecords').textContent = '—';
             preview.classList.toggle('is-visible', previewHeaders.length > 0);
             renderPreview();
-        };
-        reader.readAsText(file);
+        }).catch(error => {
+            console.error('CSV preview decode failed', error);
+            preview.classList.remove('is-visible');
+            document.getElementById('bulkPreviewMeta').textContent = 'Unable to preview this file. Please ensure it is saved as UTF-8.';
+        });
     };
 
     fileInput.addEventListener('change', () => showFile(fileInput.files[0]));
