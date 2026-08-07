@@ -92,7 +92,8 @@ try {
                 $columnIndexes['department'] === false
             ) {
                 throw new Exception(
-                    'CSV headers missing or incorrect. First row must include: Employee ID, English Name, and Department. Gender is optional
+                    'CSV headers missing or incorrect. First row must include: Employee ID, English Name, and Department. Gender is optional.'
+                );
             }
 
             continue;
@@ -107,7 +108,10 @@ try {
             if ($columnIndexes['chinese_name'] !== false && isset($row[$columnIndexes['chinese_name']])) {
                 $chineseName = trim($row[$columnIndexes['chinese_name']]);
             }
-            $gender = trim($row[$columnIndexes['gender']] ?? '');
+            $gender = '';
+            if ($columnIndexes['gender'] !== false && isset($row[$columnIndexes['gender']])) {
+                $gender = trim($row[$columnIndexes['gender']]);
+            }
             $deptName = trim($row[$columnIndexes['department']] ?? '');
 
             // Validation
@@ -117,11 +121,11 @@ try {
             // Normalize gender values and default blank/missing to Others
             $gender = normalizeCsvLookupValue($gender);
             if ($gender === '' || $gender === null) {
-                $gender = 'Others';
+                $gender = 'Other';
             } else {
                 $gender = ucfirst(strtolower($gender));
-                if (!in_array($gender, ['Male', 'Female', 'Others'], true)) {
-                    throw new Exception("Invalid gender: {$gender}. Must be Male, Female, or Others.");
+                if (!in_array($gender, ['Male', 'Female', 'Other'], true)) {
+                    throw new Exception("Invalid gender: {$gender}. Must be Male, Female, or Other.");
                 }
             }
 
