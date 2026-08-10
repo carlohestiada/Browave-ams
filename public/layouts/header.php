@@ -119,20 +119,30 @@ if (!in_array($currentPage, $allowedPages, true)) {
         const root = document.documentElement;
 
         // Capture original computed widths so we can animate back and forth
-        const originalSidebarWidth = getComputedStyle(root).getPropertyValue('--sidebar-width') || '250px';
-        const collapsedSidebarWidth = getComputedStyle(root).getPropertyValue('--sidebar-width-collapsed') || '76px';
+        const defaultSidebarWidth = '250px';
+        const defaultCollapsedWidth = '0px';
+        const computedStyles = getComputedStyle(root);
+        const originalSidebarWidth = (computedStyles.getPropertyValue('--sidebar-width') || defaultSidebarWidth).trim() || defaultSidebarWidth;
+        const collapsedSidebarWidth = (computedStyles.getPropertyValue('--sidebar-width-collapsed') || defaultCollapsedWidth).trim() || defaultCollapsedWidth;
+
+        // Ensure the root CSS variables are set and valid
+        root.style.setProperty('--sidebar-width', originalSidebarWidth);
+        root.style.setProperty('--sidebar-width-collapsed', collapsedSidebarWidth);
 
         // Check localStorage for saved state
         const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
 
+        const topbar = document.querySelector('.ams-topbar');
+        const contentWrapper = document.querySelector('.content-wrapper');
+        const footer = document.querySelector('.ams-footer');
+
         function updateSidebarWidth(collapsed) {
-            if (collapsed) {
-                root.style.setProperty('--sidebar-width', collapsedSidebarWidth.trim());
-                sidebar.classList.add('collapsed');
-            } else {
-                root.style.setProperty('--sidebar-width', originalSidebarWidth.trim());
-                sidebar.classList.remove('collapsed');
-            }
+            const widthValue = collapsed ? collapsedSidebarWidth : originalSidebarWidth;
+            root.style.setProperty('--sidebar-width', widthValue);
+            sidebar.classList.toggle('collapsed', collapsed);
+            if (topbar) topbar.classList.toggle('collapsed', collapsed);
+            if (contentWrapper) contentWrapper.classList.toggle('collapsed', collapsed);
+            if (footer) footer.classList.toggle('collapsed', collapsed);
         }
 
         // Apply saved state

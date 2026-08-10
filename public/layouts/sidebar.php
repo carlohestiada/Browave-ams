@@ -16,192 +16,215 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
     </div>
 
     <div class="sidebar-nav-scroll">
-    <ul class="nav flex-column px-3">
+        <ul class="nav flex-column px-3">
 
-        <li class="nav-item mb-1">
-            <a href="dashboard.php" class="nav-link <?= $currentPage === 'dashboard.php' ? 'active' : '' ?>" title="Dashboard">
-                <i class="bi bi-speedometer2 nav-icon"></i>
-                <span>Dashboard</span>
-            </a>
-        </li>
+            <li class="nav-group-label">Overview</li>
 
-        <?php $role = currentUserRole(); ?>
+            <li class="nav-item mb-1">
+                <a href="dashboard.php" class="nav-link <?= $currentPage === 'dashboard.php' ? 'active' : '' ?>" title="Dashboard">
+                    <i class="bi bi-speedometer2 nav-icon"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
 
-        <?php
-            $managementPages = ['employees.php','departments.php','rooms.php','accommodations.php','company-car.php'];
+            <?php $role = currentUserRole(); ?>
+
+            <?php
+            $managementPages = ['employees.php', 'departments.php', 'rooms.php', 'accommodations.php', 'company-car.php'];
             // only include management pages that are allowed for this user
-            $managementAllowed = array_values(array_filter($managementPages, function($p) use ($allowedPages) { return in_array($p, $allowedPages, true); }));
+            $managementAllowed = array_values(array_filter($managementPages, function ($p) use ($allowedPages) {
+                return in_array($p, $allowedPages, true);
+            }));
             $isManagementActive = in_array($currentPage, $managementPages, true);
             $showManagement = count($managementAllowed) > 0;
-        ?>
-        <?php if ($showManagement): ?>
-        <li class="nav-item mb-1">
-            <a class="nav-link d-flex justify-content-between <?= $isManagementActive ? 'active' : '' ?>" data-bs-toggle="collapse" href="#managementMenu" role="button" aria-expanded="<?= $isManagementActive ? 'true' : 'false' ?>" aria-controls="managementMenu">
-                <span><i class="bi bi-folder nav-icon"></i>&nbsp;&nbsp;&nbsp;&nbsp;<span>Management</span></span>
-                <i class="bi bi-chevron-down chev" data-target="managementMenu"></i>
-            </a>
+            ?>
 
-            <div class="collapse <?= $isManagementActive ? 'show' : '' ?>" id="managementMenu">
-                <ul class="nav flex-column ms-2">
-                    <!-- EMPLOYEE SIDEBAR MODULE -->
-                    <?php if (in_array('employees.php', $managementAllowed, true)): ?>
-                    <li class="nav-item mb-1">
-                        <a href="employees.php" class="nav-link <?= $currentPage === 'employees.php' ? 'active' : '' ?>" title="Employees">
-                            <i class="bi bi-people nav-icon"></i>
-                            <span>Employees</span>
-                        </a>
-                    </li>
-                    <?php endif; ?>
+            <li class="nav-group-label">Modules</li>
 
-                    <!-- DEPARTMENT SIDEBAR MODULE -->
-                    <?php if (in_array('departments.php', $managementAllowed, true)): ?>
-                    <li class="nav-item mb-1">
-                        <a href="departments.php" class="nav-link <?= $currentPage === 'departments.php' ? 'active' : '' ?>" title="Departments">
-                            <i class="bi bi-building nav-icon"></i>
-                            <span>Departments</span>
-                        </a>
-                    </li>
-                    <?php endif; ?>
+            <!-- MANAGEMENT SIDEBAR MODULE -->
+            <?php if ($showManagement): ?>
+                <li class="nav-item mb-1 nav-group">
+                    <a class="nav-link nav-link-toggle d-flex justify-content-between <?= $isManagementActive ? 'active' : '' ?>" data-bs-toggle="collapse" href="#managementMenu" role="button" aria-expanded="<?= $isManagementActive ? 'true' : 'false' ?>" aria-controls="managementMenu">
+                        <i class="bi bi-folder nav-icon"></i><span>Management</span>
+                        <i class="bi bi-chevron-down chev" data-target="managementMenu"></i>
+                    </a>
 
-                    <!-- ROOMS SIDEBAR MODULE -->
-                    <?php if (in_array('rooms.php', $managementAllowed, true)): ?>
-                    <li class="nav-item mb-1">
-                        <a href="rooms.php" class="nav-link <?= $currentPage === 'rooms.php' ? 'active' : '' ?>" title="Rooms">
-                            <i class="bi bi-door-closed nav-icon"></i>
-                            <span>Rooms</span>
-                        </a>
-                    </li>
-                    <?php endif; ?>
+                    <div class="collapse <?= $isManagementActive ? 'show' : '' ?>" id="managementMenu">
+                        <ul class="nav flex-column nav-subgroup">
+                            <!-- EMPLOYEE SIDEBAR MODULE -->
+                            <?php if (in_array('employees.php', $managementAllowed, true)): ?>
+                                <li class="nav-item mb-1">
+                                    <a href="employees.php" class="nav-link <?= $currentPage === 'employees.php' ? 'active' : '' ?>" title="Employees">
+                                        <i class="bi bi-people nav-icon"></i>
+                                        <span>Employees</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
 
-                    <!-- ACCOMMODATIONS SIDEBAR MODULE -->
-                    <?php if (in_array('accommodations.php', $managementAllowed, true)): ?>
-                    <li class="nav-item mb-1">
-                        <a href="accommodations.php" class="nav-link <?= $currentPage === 'accommodations.php' ? 'active' : '' ?>" title="Accommodations">
-                            <i class="bi bi-houses nav-icon"></i>
-                            <span>Accommodations</span>
-                        </a>
-                    </li>
-                    <?php endif; ?>
+                            <!-- DEPARTMENT SIDEBAR MODULE -->
+                            <?php if (in_array('departments.php', $managementAllowed, true)): ?>
+                                <li class="nav-item mb-1">
+                                    <a href="departments.php" class="nav-link <?= $currentPage === 'departments.php' ? 'active' : '' ?>" title="Departments">
+                                        <i class="bi bi-building nav-icon"></i>
+                                        <span>Departments</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
 
-                    <!-- COMPANY CAR SIDEBAR MODULE -->
-                    <?php if (in_array('company-car.php', $managementAllowed, true)): ?>
-                    <li class="nav-item mb-1">
-                        <a href="company-car.php" class="nav-link <?= $currentPage === 'company-car.php' ? 'active' : '' ?>" title="Company Car">
-                            <i class="bi bi-car-front nav-icon"></i>
-                            <span>Company Car</span>
-                        </a>
-                    </li>
-                    <?php endif; ?>
-                </ul>
-            </div>
-        </li>
-        <?php endif; ?>
+                            <!-- ROOMS SIDEBAR MODULE -->
+                            <?php if (in_array('rooms.php', $managementAllowed, true)): ?>
+                                <li class="nav-item mb-1">
+                                    <a href="rooms.php" class="nav-link <?= $currentPage === 'rooms.php' ? 'active' : '' ?>" title="Rooms">
+                                        <i class="bi bi-door-closed nav-icon"></i>
+                                        <span>Rooms</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
 
-        <!-- MEALS SIDEBAR MODULE -->
-        <?php if (in_array('meals.php', $allowedPages, true)): ?>
-        <li class="nav-item mb-1">
-            <a href="meals.php" class="nav-link <?= $currentPage === 'meals.php' ? 'active' : '' ?>" title="Meals">
-                <i class="bi bi-cup-hot nav-icon"></i>
-                <span>Meals</span>
-            </a>
-        </li>
-        <?php endif; ?>
+                            <!-- ACCOMMODATIONS SIDEBAR MODULE -->
+                            <?php if (in_array('accommodations.php', $managementAllowed, true)): ?>
+                                <li class="nav-item mb-1">
+                                    <a href="accommodations.php" class="nav-link <?= $currentPage === 'accommodations.php' ? 'active' : '' ?>" title="Accommodations">
+                                        <i class="bi bi-houses nav-icon"></i>
+                                        <span>Accommodations</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
 
-        <!-- SETTINGS SIDEBAR MODULE -->
-        <?php
+                            <!-- COMPANY CAR SIDEBAR MODULE -->
+                            <?php if (in_array('company-car.php', $managementAllowed, true)): ?>
+                                <li class="nav-item mb-1">
+                                    <a href="company-car.php" class="nav-link <?= $currentPage === 'company-car.php' ? 'active' : '' ?>" title="Company Car">
+                                        <i class="bi bi-car-front nav-icon"></i>
+                                        <span>Company Car</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+                </li>
+            <?php endif; ?>
+
+            <?php
+            $opsPages = ['meals.php', 'room-assignments.php'];
+            $opsAllowed = array_values(array_filter($opsPages, function ($p) use ($allowedPages) {
+                return in_array($p, $allowedPages, true);
+            }));
+            ?>
+            <?php if (count($opsAllowed) > 0): ?>
+                <li class="nav-group-label">Operations</li>
+            <?php endif; ?>
+
+            <!-- MEALS SIDEBAR MODULE -->
+            <?php if (in_array('meals.php', $allowedPages, true)): ?>
+                <li class="nav-item mb-1">
+                    <a href="meals.php" class="nav-link <?= $currentPage === 'meals.php' ? 'active' : '' ?>" title="Meals">
+                        <i class="bi bi-cup-hot nav-icon"></i>
+                        <span>Meals</span>
+                    </a>
+                </li>
+            <?php endif; ?>
+
+            <!-- ROOM ASSIGNMENTS SIDEBAR MODULE -->
+            <?php if (in_array('room-assignments.php', $allowedPages, true)): ?>
+                <li class="nav-item mb-1">
+                    <a href="room-assignments.php" class="nav-link <?= $currentPage === 'room-assignments.php' ? 'active' : '' ?>" title="Room Assignments">
+                        <i class="bi bi-arrow-repeat nav-icon"></i>
+                        <span>Room Assignments</span>
+                    </a>
+                </li>
+            <?php endif; ?>
+
+            <?php
+            $txPages = ['arrivals.php', 'departures.php'];
+            $txAllowed = array_values(array_filter($txPages, function ($p) use ($allowedPages) {
+                return in_array($p, $allowedPages, true);
+            }));
+            $isTxActive = in_array($currentPage, $txPages, true);
+            ?>
+
+            <!-- TRANSACTIONS SIDEBAR MODULE -->
+            <?php if (count($txAllowed) > 0): ?>
+                <li class="nav-item mb-1 nav-group">
+                    <a class="nav-link nav-link-toggle d-flex justify-content-between <?= $isTxActive ? 'active' : '' ?>" data-bs-toggle="collapse" href="#transactionsMenu" role="button" aria-expanded="<?= $isTxActive ? 'true' : 'false' ?>" aria-controls="transactionsMenu">
+                        <i class="bi bi-repeat nav-icon"></i><span>Transactions</span>
+                        <i class="bi bi-chevron-down chev" data-target="transactionsMenu"></i>
+                    </a>
+
+                    <div class="collapse <?= $isTxActive ? 'show' : '' ?>" id="transactionsMenu">
+                        <ul class="nav flex-column nav-subgroup">
+
+                            <!-- ARRIVALS MODULE -->
+                            <?php if (in_array('arrivals.php', $allowedPages, true)): ?>
+                                <li class="nav-item mb-1">
+                                    <a href="arrivals.php" class="nav-link <?= $currentPage === 'arrivals.php' ? 'active' : '' ?>" title="Arrivals">
+                                        <i class="bi bi-box-arrow-in-right nav-icon"></i>
+                                        <span> Arrivals</span>
+                                        <span class="badge bg-secondary" id="badge-arrivals">0</span>
+                                    </a>
+                                </li>
+
+                            <?php endif; ?>
+
+                            <!-- DEPARTURES MODULE -->
+                            <?php if (in_array('departures.php', $allowedPages, true)): ?>
+                                <li class="nav-item mb-1">
+                                    <a href="departures.php" class="nav-link <?= $currentPage === 'departures.php' ? 'active' : '' ?>" title="Departures">
+                                        <i class="bi bi-box-arrow-right nav-icon"></i>
+                                        <span> Departures</span>
+                                        <span class="badge bg-secondary" id="badge-departures">0</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+                </li>
+            <?php endif; ?>
+
+            <!-- SETTINGS SIDEBAR MODULE -->
+            <?php
             $settingsPages = ['users.php', 'guide.php'];
-            $settingsAllowed = array_values(array_filter($settingsPages, function($p) use ($allowedPages) { return in_array($p, $allowedPages, true); }));
+            $settingsAllowed = array_values(array_filter($settingsPages, function ($p) use ($allowedPages) {
+                return in_array($p, $allowedPages, true);
+            }));
             $isSettingsActive = in_array($currentPage, $settingsPages, true);
             $showSettings = count($settingsAllowed) > 0;
-        ?>
-        <?php if ($showSettings): ?>
-        <li class="nav-item mb-1">
-            <a class="nav-link d-flex justify-content-between <?= $isSettingsActive ? 'active' : '' ?>" data-bs-toggle="collapse" href="#settingsMenu" role="button" aria-expanded="<?= $isSettingsActive ? 'true' : 'false' ?>" aria-controls="settingsMenu">
-                <span><i class="bi bi-gear nav-icon"></i>&nbsp;&nbsp;&nbsp;&nbsp;<span>Settings</span></span>
-                <i class="bi bi-chevron-down chev" data-target="settingsMenu"></i>
-            </a>
+            ?>
+            <?php if ($showSettings): ?>
+                <li class="nav-item mb-1 nav-group">
+                    <a class="nav-link nav-link-toggle d-flex justify-content-between <?= $isSettingsActive ? 'active' : '' ?>" data-bs-toggle="collapse" href="#settingsMenu" role="button" aria-expanded="<?= $isSettingsActive ? 'true' : 'false' ?>" aria-controls="settingsMenu">
+                        <i class="bi bi-gear nav-icon"></i><span>System</span>
+                        <i class="bi bi-chevron-down chev" data-target="settingsMenu"></i>
+                    </a>
 
-            <div class="collapse <?= $isSettingsActive ? 'show' : '' ?>" id="settingsMenu">
-                <ul class="nav flex-column ms-2">
+                    <div class="collapse <?= $isSettingsActive ? 'show' : '' ?>" id="settingsMenu">
+                        <ul class="nav flex-column nav-subgroup">
 
-                    <!-- USERS -->
-                    <?php if (in_array('users.php', $settingsAllowed, true)): ?>
-                    <li class="nav-item mb-1">
-                        <a href="users.php" class="nav-link <?= $currentPage === 'users.php' ? 'active' : '' ?>" title="Users">
-                            <i class="bi bi-person-circle nav-icon"></i>
-                            <span>Users</span>
-                        </a>
-                    </li>
-                    <?php endif; ?>
+                            <!-- USERS -->
+                            <?php if (in_array('users.php', $settingsAllowed, true)): ?>
+                                <li class="nav-item mb-1">
+                                    <a href="users.php" class="nav-link <?= $currentPage === 'users.php' ? 'active' : '' ?>" title="Users">
+                                        <i class="bi bi-person-circle nav-icon"></i>
+                                        <span>Users</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
 
-                    <!-- GUIDE -->
-                    <?php if (in_array('guide.php', $settingsAllowed, true)): ?>
-                    <li class="nav-item mb-1">
-                        <a href="guide.php" class="nav-link <?= $currentPage === 'guide.php' ? 'active' : '' ?>" title="Guide">
-                            <i class="bi bi-journal-text nav-icon"></i>
-                            <span>Guide</span>
-                        </a>
-                    </li>
-                    <?php endif; ?>
-                </ul>
-            </div>
-        </li>
-        <?php endif; ?>
+                            <!-- GUIDE -->
+                            <?php if (in_array('guide.php', $settingsAllowed, true)): ?>
+                                <li class="nav-item mb-1">
+                                    <a href="guide.php" class="nav-link <?= $currentPage === 'guide.php' ? 'active' : '' ?>" title="Guide">
+                                        <i class="bi bi-journal-text nav-icon"></i>
+                                        <span>Guide</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+                </li>
+            <?php endif; ?>
 
-        <?php
-            $txPages = ['arrivals.php','departures.php'];
-            $txAllowed = array_values(array_filter($txPages, function($p) use ($allowedPages) { return in_array($p, $allowedPages, true); }));
-            $isTxActive = in_array($currentPage, $txPages, true);
-        ?>
-
-        <?php if (count($txAllowed) > 0): ?>
-        <li class="nav-item mb-1">
-            <a class="nav-link d-flex justify-content-between <?= $isTxActive ? 'active' : '' ?>" data-bs-toggle="collapse" href="#transactionsMenu" role="button" aria-expanded="<?= $isTxActive ? 'true' : 'false' ?>" aria-controls="transactionsMenu">
-                <span><i class="bi bi-repeat nav-icon"></i>&nbsp;&nbsp;&nbsp;&nbsp;<span>Transactions</span></span>
-                <i class="bi bi-chevron-down"></i>
-            </a>
-
-            <div class="collapse <?= $isTxActive ? 'show' : '' ?>" id="transactionsMenu">
-                <ul class="nav flex-column ms-2">
-
-                <!-- ARRIVALS MODULE -->
-                    <?php if (in_array('arrivals.php', $allowedPages, true)): ?>
-                    <li class="nav-item mb-1">
-                        <a href="arrivals.php" class="nav-link <?= $currentPage === 'arrivals.php' ? 'active' : '' ?>" title="Arrivals">
-                            <i class="bi bi-box-arrow-in-right nav-icon"></i>
-                            <span>Arrivals</span>
-                            <span class="badge bg-secondary ms-2" id="badge-arrivals">0</span>
-                        </a>
-                    </li>
-
-                    <?php endif; ?>
-
-                    <!-- DEPARTURES MODULE -->
-                    <?php if (in_array('departures.php', $allowedPages, true)): ?>
-                    <li class="nav-item mb-1">
-                        <a href="departures.php" class="nav-link <?= $currentPage === 'departures.php' ? 'active' : '' ?>" title="Departures">
-                            <i class="bi bi-box-arrow-right nav-icon"></i>
-                            <span>Departures</span>
-                            <span class="badge bg-secondary ms-2" id="badge-departures">0</span>
-                        </a>
-                    </li>
-                    <?php endif; ?>
-                </ul>
-            </div>
-        </li>
-        <?php endif; ?>
-
-        <!-- ROOM ASSIGNMENTS SIDEBAR MODULE -->
-        <?php if (in_array('room-assignments.php', $allowedPages, true)): ?>
-        <li class="nav-item mb-1">
-            <a href="room-assignments.php" class="nav-link <?= $currentPage === 'room-assignments.php' ? 'active' : '' ?>" title="Room Assignments">
-                <i class="bi bi-arrow-repeat nav-icon"></i>
-                <span>Room Assignments</span>
-            </a>
-        </li>
-        <?php endif; ?>
-
-
-    </ul>
+        </ul>
     </div>
+</div>
 </div>

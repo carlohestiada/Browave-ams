@@ -45,14 +45,6 @@
         </a>
 
         <a href="rooms.php" class="kpi-card kpi-card--link">
-            <p class="kpi-label"><i class="bi bi-house-fill"></i> Occupied Rooms</p>
-            <div class="kpi-value-row">
-                <p class="kpi-value kpi-value--primary" id="kpi-occupied">-</p>
-                <span class="kpi-badge badge-default" id="kpi-occupied-pct">-</span>
-            </div>
-        </a>
-
-        <a href="rooms.php" class="kpi-card kpi-card--link">
             <p class="kpi-label"><i class="bi bi-door-open-fill"></i> Available Rooms</p>
             <div class="kpi-value-row">
                 <p class="kpi-value kpi-value--success" id="kpi-available">-</p>
@@ -73,14 +65,6 @@
             <div class="kpi-value-row">
                 <p class="kpi-value kpi-value--primary" id="kpi-companycar-total">-</p>
                 <span class="kpi-badge badge-default">Total</span>
-            </div>
-        </a>
-
-        <a href="company-car.php" class="kpi-card kpi-card--link">
-            <p class="kpi-label"><i class="bi bi-calendar-check-fill"></i> Scheduled Today</p>
-            <div class="kpi-value-row">
-                <p class="kpi-value kpi-value--success" id="kpi-companycar-scheduled">-</p>
-                <span class="kpi-badge badge-active">Today</span>
             </div>
         </a>
 
