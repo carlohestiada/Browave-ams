@@ -239,28 +239,43 @@ class TransportationRequest
 
     public function getStats()
     {
-        $today = date('Y-m-d');
-
         $stmt = $this->db->prepare(
             "SELECT
-                SUM(CASE WHEN pickup_date = ? THEN 1 ELSE 0 END) AS todays_requests,
-                SUM(CASE WHEN pickup_date = ? AND status IN ('Scheduled', 'Pending', 'Picked Up') THEN 1 ELSE 0 END) AS scheduled_today,
-                SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) AS completed,
-                SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) AS pending_assignment
+                SUM(CASE WHEN transportation_type = 'Company Car' AND status IN ('Pending','Scheduled','Picked Up') THEN 1 ELSE 0 END) AS active_company_car_requests,
+                SUM(CASE WHEN transportation_type = 'Company Car' AND status = 'Pending' THEN 1 ELSE 0 END) AS pending_company_car_requests,
+                SUM(CASE WHEN transportation_type = 'Company Car' AND status = 'Scheduled' THEN 1 ELSE 0 END) AS scheduled_company_car_requests,
+                SUM(CASE WHEN transportation_type = 'Company Car' AND status = 'Picked Up' THEN 1 ELSE 0 END) AS picked_up_company_car_requests,
+                SUM(CASE WHEN transportation_type = 'Company Car' AND status = 'Completed' THEN 1 ELSE 0 END) AS completed_company_car_requests,
+                SUM(CASE WHEN transportation_type = 'Company Car' AND status = 'Cancelled' THEN 1 ELSE 0 END) AS cancelled_company_car_requests,
+                SUM(CASE WHEN transportation_type = 'Company Car' THEN 1 ELSE 0 END) AS total_company_car_requests
              FROM transportation_requests"
         );
-        $stmt->execute([$today, $today]);
+        $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        $vehicleStmt = $this->db->prepare("SELECT COUNT(*) AS available_vehicles FROM vehicles WHERE status = 'Available'");
+        $vehicleStmt = $this->db->prepare(
+            "SELECT COUNT(*) AS available_vehicles
+             FROM vehicles v
+             WHERE v.status = 'Available'
+               AND v.id NOT IN (
+                   SELECT DISTINCT vehicle_id
+                   FROM transportation_requests
+                   WHERE transportation_type = 'Company Car'
+                     AND status IN ('Pending','Scheduled','Picked Up')
+                     AND vehicle_id IS NOT NULL
+               )"
+        );
         $vehicleStmt->execute();
         $vehicleRow = $vehicleStmt->fetch(PDO::FETCH_ASSOC);
 
         return [
-            'todays_requests' => (int) ($row['todays_requests'] ?? 0),
-            'scheduled_today' => (int) ($row['scheduled_today'] ?? 0),
-            'completed' => (int) ($row['completed'] ?? 0),
-            'pending_assignment' => (int) ($row['pending_assignment'] ?? 0),
+            'active_company_car_requests' => (int) ($row['active_company_car_requests'] ?? 0),
+            'pending_company_car_requests' => (int) ($row['pending_company_car_requests'] ?? 0),
+            'scheduled_company_car_requests' => (int) ($row['scheduled_company_car_requests'] ?? 0),
+            'picked_up_company_car_requests' => (int) ($row['picked_up_company_car_requests'] ?? 0),
+            'completed_company_car_requests' => (int) ($row['completed_company_car_requests'] ?? 0),
+            'cancelled_company_car_requests' => (int) ($row['cancelled_company_car_requests'] ?? 0),
+            'total_company_car_requests' => (int) ($row['total_company_car_requests'] ?? 0),
             'available_vehicles' => (int) ($vehicleRow['available_vehicles'] ?? 0)
         ];
     }

@@ -82,33 +82,18 @@
     <div class="dashboard-grid-charts dashboard-section-spacing">
 
         <!-- Department -->
-        <div class="ams-card dashboard-card-panel dashboard-chart-panel--wide">
-            <div class="dashboard-card-header">
-                <div class="dashboard-card-title">
-                    <span>Department Chart</span>
-                </div>
-                <div class="dashboard-chart-legend" id="trend-chart-legend">
-                    <!-- Legend items injected by JS -->
+        <div class="ams-card dept-chart-card">
+            <div class="dept-chart-header">
+                <div class="dept-chart-title">Department Chart</div>
+                <div class="dept-chart-legend">
+                    <span class="dept-chart-legend-swatch"></span>
+                    Employees
                 </div>
             </div>
-            <div class="dashboard-card-body dashboard-chart-body">
-                <div id="dashboard-chart-tooltip" class="dashboard-chart-tooltip"></div>
-                <div id="department-chart-empty" class="dashboard-chart-empty-state" style="display:none;">
-                    <svg class="dashboard-chart-empty-illustration" viewBox="0 0 120 80" aria-hidden="true">
-                        <rect x="12" y="22" width="18" height="38" rx="4" fill="#dbeafe"></rect>
-                        <rect x="40" y="14" width="18" height="46" rx="4" fill="#bfdbfe"></rect>
-                        <rect x="68" y="28" width="18" height="32" rx="4" fill="#93c5fd"></rect>
-                        <rect x="96" y="18" width="12" height="42" rx="4" fill="#60a5fa"></rect>
-                        <path d="M12 58c10-8 19-12 30-12s20 4 30 10 19 8 36 8" stroke="#00639d" stroke-width="3" stroke-linecap="round" fill="none"></path>
-                    </svg>
-                    <p class="dashboard-chart-empty-title"><strong>No data available.</strong></p>
-                    <p class="dashboard-chart-empty-text">Please add employee records to generate chart statistics.</p>
-                </div>
-                <svg id="trend-chart-svg" class="dashboard-trend-chart" viewBox="0 0 800 420" preserveAspectRatio="none">
-                    <!-- Points injected by JS -->
-                </svg>
-                <div class="dashboard-trend-chart-labels" id="trend-chart-labels">
-                    <!-- Month labels injected by JS -->
+            <div class="dept-chart-body">
+                <div class="dept-chart-canvas-wrap">
+                    <canvas id="departmentChart" role="img" aria-label="Bar chart of employee count by department"></canvas>
+                    <div id="departmentChartStatus" class="dept-chart-empty">Loading department data...</div>
                 </div>
             </div>
         </div>
@@ -147,11 +132,21 @@
                             stroke-dasharray="0 100"
                             transform="rotate(-90 18 18)"
                             class="gender-arc-animate"></circle>
-                        <!-- Male arc (rendered on top) -->
+                        <!-- Male arc -->
                         <circle id="gender-donut-arc"
                             cx="18" cy="18" r="15.9"
                             fill="none"
                             stroke="#00639d"
+                            stroke-width="3.2"
+                            stroke-linecap="round"
+                            stroke-dasharray="0 100"
+                            transform="rotate(-90 18 18)"
+                            class="gender-arc-animate"></circle>
+                        <!-- Other arc (topmost) -->
+                        <circle id="gender-donut-arc-other"
+                            cx="18" cy="18" r="15.9"
+                            fill="none"
+                            stroke="#f59e0b"
                             stroke-width="3.2"
                             stroke-linecap="round"
                             stroke-dasharray="0 100"
@@ -200,6 +195,18 @@
                             <p class="dashboard-donut-legend-value" id="gender-pct-female">-</p>
                         </div>
                     </div>
+                    <div class="dashboard-donut-legend-item gender-legend-other">
+                        <div class="gender-legend-icon" style="background: linear-gradient(135deg, #f59e0b, #f97316);">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="8" r="4" />
+                                <path d="M12 14c-5 0-8 2-8 4v1h16v-1c0-2-3-4-8-4z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="dashboard-donut-legend-label">Other</p>
+                            <p class="dashboard-donut-legend-value" id="gender-pct-other">-</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Bar breakdown -->
@@ -207,10 +214,12 @@
                     <div class="gender-bar-track">
                         <div class="gender-bar-male" id="gender-bar-male" style="width:0%"></div>
                         <div class="gender-bar-female" id="gender-bar-female" style="width:0%"></div>
+                        <div class="gender-bar-other" id="gender-bar-other" style="width:0%"></div>
                     </div>
                     <div class="gender-bar-labels">
                         <span id="gender-bar-label-male">Male 0%</span>
                         <span id="gender-bar-label-female">Female 0%</span>
+                        <span id="gender-bar-label-other">Other 0%</span>
                     </div>
                 </div>
 
@@ -219,7 +228,7 @@
 
     </div>
 
-    <!-- Two-column section: Recent Employees + Room Status -->
+    <!-- Recent Employees & Room Status -->
     <div class="dashboard-grid-twocol dashboard-section-spacing">
 
         <!-- Recent Employees -->
@@ -300,6 +309,8 @@
 </div>
 
 
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 
 <script src="assets/js/dashboard.js"></script>
 
