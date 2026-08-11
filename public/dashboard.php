@@ -52,30 +52,6 @@
             </div>
         </a>
 
-        <a href="departments.php" class="kpi-card kpi-card--link">
-            <p class="kpi-label"><i class="bi bi-diagram-3-fill"></i> Departments</p>
-            <div class="kpi-value-row">
-                <p class="kpi-value kpi-value--primary" id="kpi-departments">-</p>
-                <span class="kpi-badge badge-default">Total</span>
-            </div>
-        </a>
-
-        <a href="company-car.php" class="kpi-card kpi-card--link">
-            <p class="kpi-label"><i class="bi bi-car-front-fill"></i> Company Car Requests</p>
-            <div class="kpi-value-row">
-                <p class="kpi-value kpi-value--primary" id="kpi-companycar-total">-</p>
-                <span class="kpi-badge badge-default">Total</span>
-            </div>
-        </a>
-
-        <a href="company-car.php" class="kpi-card kpi-card--link">
-            <p class="kpi-label"><i class="bi bi-truck"></i> Available Vehicles</p>
-            <div class="kpi-value-row">
-                <p class="kpi-value kpi-value--neutral" id="kpi-companycar-available">-</p>
-                <span class="kpi-badge badge-default">Available</span>
-            </div>
-        </a>
-
     </div>
 
     <!-- Analytical Charts -->
@@ -310,8 +286,8 @@
 
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-
 <script src="assets/js/dashboard.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 
 <?php include 'layouts/footer.php'; ?>

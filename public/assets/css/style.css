@@ -174,9 +174,11 @@ body {
   margin: 4px 0 0;
 }
 
+/* KPI Cards */
+
 .dashboard-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 24px;
   align-items: stretch;
@@ -202,6 +204,64 @@ body {
   box-shadow: 0 8px 20px rgba(0, 54, 134, 0.12);
   border-color: #9fb8e6;
 }
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.kpi-card {
+  background: #fff;
+  border: 1px solid #c3c6d5;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+.kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #434653;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 6px;
+  font-family: var(--font-sans);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.kpi-label i {
+  font-size: 1rem;
+  color: #00639d;
+}
+.kpi-value-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.kpi-value {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0;
+  font-family: var(--font-sans);
+}
+.kpi-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+  flex-shrink: 0;
+}
+
+/* END of KPI Cards */
 
 .dashboard-grid-twocol {
   display: grid;
@@ -1595,61 +1655,6 @@ body {
 .ams-field {
   display: flex;
   flex-direction: column;
-}
-
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 16px;
-}
-.kpi-card {
-  background: #fff;
-  border: 1px solid #c3c6d5;
-  border-radius: 10px;
-  padding: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  text-decoration: none;
-  color: inherit;
-  display: block;
-}
-.kpi-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: #434653;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin: 0 0 6px;
-  font-family: var(--font-sans);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.kpi-label i {
-  font-size: 1rem;
-  color: #00639d;
-}
-.kpi-value-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-.kpi-value {
-  font-size: 32px;
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  margin: 0;
-  font-family: var(--font-sans);
-}
-.kpi-badge {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 9999px;
-  white-space: nowrap;
-  font-family: var(--font-sans);
-  flex-shrink: 0;
 }
 
 /* Sidebar styles */
