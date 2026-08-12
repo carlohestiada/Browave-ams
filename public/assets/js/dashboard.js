@@ -35,43 +35,47 @@ function initDashboard() {
   }
 
   function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>'"]/g, (character) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      "'": "&#039;",
-      '"': "&quot;",
-    })[character]);
+    return String(value ?? "").replace(
+      /[&<>'"]/g,
+      (character) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "'": "&#039;",
+          '"': "&quot;",
+        })[character],
+    );
   }
 
-//   Rooms Status Panel
+  //   Rooms Status Panel
 
-function renderRoomStatusPanel(summary, total) {
-  const panel = document.getElementById("dashboard-room-status");
-  if (!panel) return;
+  function renderRoomStatusPanel(summary, total) {
+    const panel = document.getElementById("dashboard-room-status");
+    if (!panel) return;
 
-  const meta = {
-    Occupied: { color: "var(--blue)", icon: "bi-person-fill" },
-    Available: { color: "var(--teal-dim)", icon: "bi-door-open-fill" },
-    Reserved: { color: "var(--amber)", icon: "bi-bookmark-fill" },
-    Maintenance: { color: "var(--coral)", icon: "bi-tools" },
-  };
+    const meta = {
+      Occupied: { color: "var(--blue)", icon: "bi-person-fill" },
+      Available: { color: "var(--teal-dim)", icon: "bi-door-open-fill" },
+      Reserved: { color: "var(--amber)", icon: "bi-bookmark-fill" },
+      Maintenance: { color: "var(--coral)", icon: "bi-tools" },
+    };
 
-  const totalRooms = summary.total_rooms ?? total ?? 0;
+    const totalRooms = summary.total_rooms ?? total ?? 0;
 
-  const statuses = [
-    { label: "Occupied", value: summary.occupied_rooms ?? 0 },
-    { label: "Available", value: summary.available_rooms ?? 0 },
-    { label: "Reserved", value: summary.reserved_rooms ?? 0 },
-    { label: "Maintenance", value: summary.maintenance_rooms ?? 0 },
-  ];
+    const statuses = [
+      { label: "Occupied", value: summary.occupied_rooms ?? 0 },
+      { label: "Available", value: summary.available_rooms ?? 0 },
+      { label: "Reserved", value: summary.reserved_rooms ?? 0 },
+      { label: "Maintenance", value: summary.maintenance_rooms ?? 0 },
+    ];
 
-  const rows = statuses
-    .map(({ label, value }) => {
-      const pct = totalRooms > 0 ? Math.round((value / totalRooms) * 100) : 0;
-      const { color, icon } = meta[label];
-      const isZero = value === 0;
-      return `
+    const rows = statuses
+      .map(({ label, value }) => {
+        const pct = totalRooms > 0 ? Math.round((value / totalRooms) * 100) : 0;
+        const { color, icon } = meta[label];
+        const isZero = value === 0;
+        return `
       <div class="room-status-hbar-row${isZero ? " is-zero" : ""}">
         <div class="room-status-hbar-label" style="--rs-color:${color}"><i class="bi ${icon}"></i>${label}</div>
         <div class="room-status-hbar-track">
@@ -79,26 +83,29 @@ function renderRoomStatusPanel(summary, total) {
         </div>
         <div class="room-status-hbar-value">${value}<span class="pct">${pct}%</span></div>
       </div>`;
-    })
-    .join("");
+      })
+      .join("");
 
-  const roomTypes = Object.entries(summary.room_types || {})
-    .map(([name, count]) => ({ name: name.trim(), count: Number(count) || 0 }))
-    .filter((type) => type.name);
+    const roomTypes = Object.entries(summary.room_types || {})
+      .map(([name, count]) => ({
+        name: name.trim(),
+        count: Number(count) || 0,
+      }))
+      .filter((type) => type.name);
 
-  const chips = roomTypes.length
-    ? roomTypes
-        .map(
-          (t) =>
-            `<span class="room-status-chip" title="${escapeHtml(t.name)}">
+    const chips = roomTypes.length
+      ? roomTypes
+          .map(
+            (t) =>
+              `<span class="room-status-chip" title="${escapeHtml(t.name)}">
               <span class="room-status-chip-name">${escapeHtml(t.name)}</span>
               <span class="room-status-chip-count">${t.count}</span>
             </span>`,
-        )
-        .join("")
-    : `<span class="room-status-chip room-status-chip--empty">None</span>`;
+          )
+          .join("")
+      : `<span class="room-status-chip room-status-chip--empty">None</span>`;
 
-  panel.innerHTML = `
+    panel.innerHTML = `
   <div class="room-status-total-line">
     <span class="total-count">${totalRooms}</span>
     <span class="total-label">Total Rooms</span>
@@ -111,13 +118,13 @@ function renderRoomStatusPanel(summary, total) {
     </div>
     <div class="room-status-chip-row">${chips}</div>
   </div>`;
-}
+  }
 
-function renderRoomStatusMessage(message) {
-  const panel = document.getElementById("dashboard-room-status");
-  if (panel)
-    panel.innerHTML = `<div class="dashboard-loading-state">${message}</div>`;
-}
+  function renderRoomStatusMessage(message) {
+    const panel = document.getElementById("dashboard-room-status");
+    if (panel)
+      panel.innerHTML = `<div class="dashboard-loading-state">${message}</div>`;
+  }
 
   function loadDashboardSummary() {
     Promise.all([
@@ -176,9 +183,9 @@ function renderRoomStatusMessage(message) {
             occupied_rooms: occupiedRooms,
             available_rooms: availableRooms,
             reserved_rooms: reservedRooms,
-          maintenance_rooms: maintenanceRooms,
-          room_types: roomTypes,
-          room_types_text: roomTypesText || "None",
+            maintenance_rooms: maintenanceRooms,
+            room_types: roomTypes,
+            room_types_text: roomTypesText || "None",
           },
           totalRooms,
         );
@@ -205,7 +212,7 @@ function renderRoomStatusMessage(message) {
 
   //   End of Rooms Status Panel
 
-//   RECENT EMPLOYEES PANEL
+  //   RECENT EMPLOYEES PANEL
 
   function loadRecentEmployees() {
     fetchJSON("api/employees.php").then((data) => {
@@ -252,7 +259,7 @@ function renderRoomStatusMessage(message) {
     });
   }
 
-//   END RECENT EMPLOYEES PANEL 
+  //   END RECENT EMPLOYEES PANEL
 
   function navigateToEmployees(filters) {
     const params = new URLSearchParams();
