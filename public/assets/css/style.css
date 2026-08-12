@@ -3251,12 +3251,1234 @@ body {
 }
 
 /* ---------------------------------
-	ROOM DESIGN
+	EMPLOYEE DESIGN
 	-------------------------------- */
-	/* ============================================
-   BROWAVE AMS — Room Management
+/* ============================================
+   BROWAVE AMS — Employee Management
    Mockup-matched styling (CSS only)
    ============================================ */
+
+:root {
+  --navy: #003686;
+  --blue: #00639d;
+  --coral: #ba1a1a;
+  --slate: #737784;
+  --border-line: #E4E9F2;
+  --surface-low: #eef4ff;
+}
+
+/* ---- Page header (inline-styled in your HTML, targeted via content-wrapper) ---- */
+.content-wrapper h2 {
+  font-family: 'Sora', 'Inter', sans-serif !important;
+  letter-spacing: -0.01em !important;
+}
+
+.content-wrapper .alert-info {
+  background: var(--surface-low);
+  border: 1px solid #bfd7ff;
+  border-radius: 10px;
+  color: #0a1c34;
+  font-family: 'Inter', sans-serif;
+}
+
+.content-wrapper .alert-info strong { color: var(--navy); }
+.content-wrapper .alert-info .alert-link { color: var(--blue); }
+
+/* ---- Buttons ---- */
+.btn-ams-primary {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--navy);
+  border: 1px solid var(--navy);
+  border-radius: 8px;
+  padding: 9px 20px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.btn-ams-primary:hover {
+  background: #002a6b;
+  color: #fff;
+}
+
+.btn-ams-ghost {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--slate);
+  background: var(--surface-low);
+  border: 1px solid var(--border-line);
+  border-radius: 8px;
+  padding: 9px 20px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.btn-ams-ghost:hover {
+  background: #dee8ff;
+  color: var(--navy);
+}
+
+/* ---- Cards ---- */
+.ams-card {
+  background: #fff;
+  border: 1px solid var(--border-line);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.045);
+}
+
+/* ---- Filter bar ---- */
+.ams-label {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate);
+  margin-bottom: 6px;
+}
+
+.ams-input {
+  width: 100%;
+  padding: 9px 14px;
+  border: 1px solid var(--border-line);
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  color: #121c28;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ams-input:focus {
+  outline: none;
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(0, 54, 134, 0.12);
+}
+
+/* ---- Selection / bulk delete bar ---- */
+#selectedEmployeesText {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 500 !important;
+  color: var(--slate) !important;
+}
+
+#bulkDeleteEmployeesBtn {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 6px 16px;
+}
+
+#bulkDeleteEmployeesBtn:disabled {
+  background: #ffdad6;
+  border-color: #ffdad6;
+  color: var(--coral);
+  opacity: 1;
+}
+
+/* ---- Table ---- */
+.ams-table {
+  width: 100%;
+  margin-bottom: 0;
+  border-collapse: collapse;
+  font-family: 'Inter', sans-serif;
+}
+
+.ams-table thead tr {
+  background: var(--surface-low);
+}
+
+.ams-table thead th {
+  padding: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--slate);
+  border: none;
+  border-bottom: 1px solid var(--border-line);
+  white-space: nowrap;
+}
+
+.ams-table tbody tr {
+  border-bottom: 1px solid var(--border-line);
+  transition: background 0.15s ease;
+}
+
+.ams-table tbody tr:last-child { border-bottom: none; }
+.ams-table tbody tr:hover { background: var(--surface-low); }
+
+.ams-table td {
+  padding: 13px 16px;
+  font-size: 13px;
+  color: #121c28;
+  vertical-align: middle;
+  border: none;
+}
+
+/* ---- Sortable header buttons ---- */
+.employee-sort-btn {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 12px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--slate);
+  text-align: left;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s ease;
+}
+
+.employee-sort-btn:hover {
+  color: var(--navy);
+}
+
+.employee-sort-indicator {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+/* ---- Status badges — style whatever renderStatusBadge() outputs ---- */
+.ams-table .badge,
+.ams-table .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px !important;
+  border-radius: 9999px !important;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.ams-table .badge::before,
+.ams-table .status-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.ams-table .badge.bg-success,
+.ams-table .status-active {
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+  border-color: #a7f3d0;
+}
+
+.ams-table .badge.bg-danger,
+.ams-table .status-inactive {
+  background: #ffdad6 !important;
+  color: var(--coral) !important;
+  border-color: #ffb4ab;
+}
+
+/* ---- Row action buttons ---- */
+.ams-table td .btn-sm {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 5px 10px;
+}
+
+/* ---- Loading / empty state ---- */
+.ams-table td[style*="text-align:center"] {
+  color: var(--slate) !important;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ---- Pagination footer (injected by ensurePaginationContainer) ---- */
+.ams-table + div,
+[id$="PaginationContainer"],
+.pagination-container {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border-line);
+  background: #fff;
+  font-family: 'Inter', sans-serif;
+}
+
+.pagination {
+  margin: 0;
+}
+
+.pagination .page-link {
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--navy);
+  border: 1px solid var(--border-line);
+  border-radius: 6px !important;
+  margin: 0 3px;
+  padding: 6px 12px;
+}
+
+.pagination .page-item.active .page-link {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+.pagination .page-link:hover {
+  background: var(--surface-low);
+  color: var(--navy);
+}
+
+#employeeEntriesSelect.form-select-sm {
+  border: 1px solid var(--border-line);
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+}
+
+/* ============================================
+   Employee Modal (Add/Edit)
+   ============================================ */
+.ams-modal-content {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.ams-modal-header {
+  border-bottom: 1px solid var(--border-line);
+  padding: 18px 24px;
+}
+
+.ams-modal-body {
+  padding: 22px 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.ams-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.ams-modal-footer {
+  border-top: 1px solid var(--border-line);
+  padding: 16px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Standard bootstrap modal fallback (bulk upload modal uses modal-header/body/footer) */
+.modal-content {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--border-line);
+  padding: 18px 24px;
+}
+
+.modal-header small {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--slate);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.modal-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.modal-footer {
+  border-top: 1px solid var(--border-line);
+  padding: 16px 24px;
+}
+
+.modal-footer .btn-secondary {
+  background: #fff;
+  border: 1px solid var(--border-line);
+  color: var(--slate);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 8px 20px;
+}
+
+.modal-footer .btn-secondary:hover {
+  background: var(--surface-low);
+}
+
+/* ============================================
+   Bulk Upload Modal (Employees CSV)
+   — dropzone/file-selected aligned to Department's pattern
+   ============================================ */
+.employee-upload-dialog {
+  max-width: 760px;
+}
+
+.bulk-upload-template {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--blue);
+  text-decoration: none;
+}
+
+.bulk-upload-template:hover {
+  text-decoration: underline;
+  color: var(--navy);
+}
+
+.modal-body .text-muted.mb-3 {
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  color: var(--slate) !important;
+}
+
+/* Dropzone */
+.bulk-dropzone {
+  position: relative;
+  border: 2px dashed var(--border-line);
+  border-radius: 12px;
+  background: var(--surface-low);
+  padding: 32px 20px;
+  text-align: center;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.bulk-dropzone.is-dragging {
+  border-color: var(--navy);
+  background: #dee8ff;
+}
+
+.bulk-dropzone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.department-upload-icon {
+  font-size: 32px;
+  color: var(--navy);
+  margin-bottom: 8px;
+}
+
+.bulk-dropzone-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #121c28;
+}
+
+.bulk-dropzone-copy {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--slate);
+  margin: 8px 0;
+}
+
+.bulk-dropzone-help {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: var(--slate);
+  margin-top: 10px;
+}
+
+.bulk-dropzone-release {
+  display: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-top: 8px;
+}
+
+.bulk-dropzone.is-dragging .bulk-dropzone-release {
+  display: block;
+}
+
+/* File-selected state — matches Department's card pattern */
+.bulk-file-selected {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border: 1px solid var(--border-line);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+}
+
+.bulk-file-selected.visible {
+  display: flex;
+}
+
+.bulk-file-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bulk-file-meta .material-symbols-outlined {
+  color: var(--navy);
+  font-size: 22px;
+}
+
+.bulk-file-name {
+  font-weight: 600;
+  color: #121c28;
+}
+
+.bulk-file-size {
+  font-size: 11px;
+  color: var(--slate);
+}
+
+.bulk-action-button {
+  border: none;
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bulk-action-neutral {
+  color: var(--coral);
+}
+
+.bulk-action-neutral:hover {
+  text-decoration: underline;
+}
+
+/* Preview section */
+.bulk-preview {
+  display: none;
+  margin-top: 18px;
+}
+
+.bulk-preview.visible {
+  display: block;
+}
+
+.bulk-preview-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: var(--surface-low);
+  border: 1px solid var(--border-line);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+}
+
+.bulk-preview-heading h6 {
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 0;
+}
+
+.bulk-preview-heading p {
+  font-family: 'Inter', sans-serif;
+  font-size: 11.5px;
+  color: var(--slate);
+  margin: 4px 0 0;
+}
+
+.bulk-preview-heading small {
+  font-family: 'Inter', sans-serif;
+  font-size: 11.5px;
+  color: var(--slate) !important;
+}
+
+/* Stat pills */
+.bulk-preview-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.bulk-stat {
+  background: var(--surface-low);
+  border: 1px solid var(--border-line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bulk-stat span {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: var(--slate);
+}
+
+.bulk-stat strong {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 20px;
+  color: var(--navy);
+}
+
+.bulk-stat.ready {
+  background: #d1fae5;
+  border-color: #a7f3d0;
+}
+
+.bulk-stat.ready strong { color: #065f46; }
+
+.bulk-stat.warning {
+  background: #fef3c7;
+  border-color: #fde68a;
+}
+
+.bulk-stat.warning strong { color: #92400e; }
+
+.bulk-stat.error {
+  background: #ffdad6;
+  border-color: #ffb4ab;
+}
+
+.bulk-stat.error strong { color: var(--coral); }
+
+/* Preview controls */
+.bulk-preview-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.bulk-preview-controls .ams-input {
+  padding: 8px 12px;
+  font-size: 12.5px;
+}
+
+.bulk-preview-controls #bulkPreviewSearch {
+  flex: 1;
+}
+
+.bulk-preview-controls #bulkPreviewFilter {
+  width: 160px;
+}
+
+/* Preview table */
+.bulk-table-wrap {
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--border-line);
+  border-radius: 10px;
+}
+
+.bulk-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+}
+
+.bulk-preview-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-low);
+  padding: 10px 12px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--slate);
+  border-bottom: 1px solid var(--border-line);
+  white-space: nowrap;
+}
+
+.bulk-preview-table tbody td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border-line);
+  color: #121c28;
+}
+
+.bulk-preview-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.bulk-preview-table tbody tr:hover {
+  background: var(--surface-low);
+}
+
+/* Pagination row under preview */
+.bulk-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--slate);
+}
+
+.bulk-pagination label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bulk-pagination select.ams-input {
+  width: auto;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+/* Validation details panel */
+.bulk-validation-panel {
+  margin-top: 14px;
+  border: 1px solid var(--border-line);
+  border-radius: 10px;
+  background: var(--surface-low);
+  padding: 12px 16px;
+}
+
+.bulk-validation-panel summary {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+  cursor: pointer;
+}
+
+.bulk-validation-details {
+  margin-top: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: #44474d;
+}
+
+.bulk-validation-details p {
+  margin: 4px 0;
+}
+
+/* Upload progress */
+#uploadProgress #progressText {
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  color: var(--slate);
+}
+
+#progressBar {
+  border-radius: 3px;
+}
+
+/* Results box */
+#uploadResults {
+  font-family: 'Inter', sans-serif !important;
+  border: 1px solid var(--border-line) !important;
+}
+/* ---------------------------------
+	END EMPLOYEE DESIGN
+	-------------------------------- */
+/* ---------------------------------
+	DEPARTMENT DESIGN
+	-------------------------------- */
+
+:root {
+  --navy: #003686;
+  --blue: #00639d;
+  --coral: #ba1a1a;
+  --slate: #737784;
+  --border-line: #E4E9F2;
+  --surface-low: #eef4ff;
+}
+
+/* ---- Page header ---- */
+.ams-page-title {
+  font-family: 'Sora', 'Inter', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.ams-page-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #44474d;
+  margin: 4px 0 0;
+}
+
+.content-wrapper .btn-primary {
+  border-radius: 8px;
+  background: var(--navy);
+  border-color: var(--navy);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 20px;
+}
+
+.content-wrapper .btn-primary:hover {
+  background: #002a6b;
+  border-color: #002a6b;
+}
+
+.btn-ams-primary:hover {
+  background: #002a6b;
+  color: #fff;
+}
+
+/* ---- Cards ---- */
+.ams-card {
+  background: #fff;
+  border: 1px solid var(--border-line);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.045);
+}
+
+/* ---- Filter/search bar ---- */
+.ams-label {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate);
+  margin-bottom: 6px;
+}
+
+.ams-input {
+  width: 100%;
+  padding: 9px 14px;
+  border: 1px solid var(--border-line);
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  color: #121c28;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ams-input:focus {
+  outline: none;
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(0, 54, 134, 0.12);
+}
+
+/* ---- Selection / bulk delete bar ---- */
+#selectedDepartmentsText {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 500 !important;
+  color: var(--slate) !important;
+}
+
+#bulkDeleteDepartmentsBtn {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 6px 16px;
+}
+
+#bulkDeleteDepartmentsBtn:disabled {
+  background: #ffdad6;
+  border-color: #ffdad6;
+  color: var(--coral);
+  opacity: 1;
+}
+
+/* ---- Table ---- */
+.table.table-bordered {
+  width: 100%;
+  margin-bottom: 0;
+  border-collapse: collapse;
+  font-family: 'Inter', sans-serif;
+}
+
+.table.table-bordered thead tr {
+  background: var(--surface-low);
+}
+
+.table.table-bordered thead th {
+  padding: 12px 16px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--slate);
+  border: none;
+  border-bottom: 1px solid var(--border-line);
+  white-space: nowrap;
+}
+
+.table.table-bordered tbody tr {
+  border-bottom: 1px solid var(--border-line);
+  transition: background 0.15s ease;
+}
+
+.table.table-bordered tbody tr:last-child { border-bottom: none; }
+.table.table-bordered tbody tr:hover { background: var(--surface-low); }
+
+.table.table-bordered td {
+  padding: 13px 16px;
+  font-size: 13px;
+  color: #121c28;
+  vertical-align: middle;
+  border: none;
+  border-bottom: 1px solid var(--border-line);
+}
+
+.table.table-bordered td .btn-sm {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 5px 10px;
+}
+
+/* ---- Loading / empty state ---- */
+#departmentTable td[style*="text-align:center"] {
+  color: var(--slate) !important;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+}
+
+/* ============================================
+   Department Modal
+   ============================================ */
+.modal-content {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--border-line);
+  padding: 18px 24px;
+}
+
+.modal-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.modal-body {
+  padding: 22px 24px;
+}
+
+.modal-body .form-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate);
+  margin-bottom: 6px;
+}
+
+.modal-body .form-control {
+  border: 1px solid var(--border-line);
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  padding: 9px 14px;
+}
+
+.modal-body .form-control:focus {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(0, 54, 134, 0.12);
+}
+
+.modal-footer {
+  border-top: 1px solid var(--border-line);
+  padding: 16px 24px;
+}
+
+.modal-footer .btn-primary {
+  background: var(--navy);
+  border-color: var(--navy);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 8px 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modal-footer .btn-secondary {
+  background: #fff;
+  border: 1px solid var(--border-line);
+  color: var(--slate);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 8px 20px;
+}
+
+.modal-footer .btn-secondary:hover {
+  background: var(--surface-low);
+}
+
+/* ============================================
+   Bulk Upload Modal (Departments CSV)
+   ============================================ */
+.department-upload-dialog {
+  max-width: 640px;
+}
+
+#departmentBulkUploadModal .modal-header small {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--slate);
+  margin-top: 4px;
+}
+
+.bulk-upload-template {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--blue);
+  text-decoration: none;
+}
+
+.bulk-upload-template:hover {
+  text-decoration: underline;
+  color: var(--navy);
+}
+
+/* Dropzone */
+.department-dropzone {
+  position: relative;
+  border: 2px dashed var(--border-line);
+  border-radius: 12px;
+  background: var(--surface-low);
+  padding: 32px 20px;
+  text-align: center;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.department-dropzone.is-dragging {
+  border-color: var(--navy);
+  background: #dee8ff;
+}
+
+.department-dropzone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.department-upload-icon {
+  font-size: 32px;
+  color: var(--navy);
+  margin-bottom: 8px;
+}
+
+#departmentUploadEmpty .fw-bold {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #121c28;
+}
+
+#departmentUploadEmpty .text-muted.small {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--slate) !important;
+}
+
+#departmentUploadHelp {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: var(--slate) !important;
+}
+
+/* File-selected state */
+.department-upload-file {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border: 1px solid var(--border-line);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+}
+
+.department-upload-file.visible {
+  display: flex;
+}
+
+.department-upload-file strong {
+  color: #121c28;
+  font-weight: 600;
+}
+
+.department-upload-file small {
+  font-size: 11px;
+  color: var(--slate) !important;
+}
+
+.department-upload-file .btn-link {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.department-upload-file .btn-link:hover {
+  text-decoration: underline;
+}
+
+/* CSV Preview */
+.department-preview {
+  display: none;
+  margin-top: 16px;
+  border: 1px solid var(--border-line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.department-preview.visible {
+  display: block;
+}
+
+.department-preview > div:first-child {
+  padding: 10px 14px;
+  background: var(--surface-low);
+  border-bottom: 1px solid var(--border-line);
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+}
+
+.department-preview strong {
+  color: var(--navy);
+}
+
+.department-preview .text-muted {
+  color: var(--slate) !important;
+  font-size: 11.5px;
+}
+
+.department-preview-wrap {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.department-preview-wrap .table {
+  margin-bottom: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+}
+
+.department-preview-wrap thead th {
+  background: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--slate);
+  border-bottom: 1px solid var(--border-line);
+  position: sticky;
+  top: 0;
+}
+
+.department-preview-wrap tbody td {
+  color: #121c28;
+  border-bottom: 1px solid var(--border-line);
+}
+
+/* Progress bar */
+#departmentUploadProgress .small {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--slate);
+}
+
+#departmentUploadProgress .progress {
+  border-radius: 9999px;
+  background: var(--surface-low);
+  overflow: hidden;
+}
+
+#departmentUploadProgress .progress-bar {
+  background: var(--navy);
+  transition: width 0.2s ease;
+}
+
+/* Results box */
+.department-upload-results {
+  display: none;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--surface-low);
+  border: 1px solid var(--border-line);
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.department-upload-results.visible {
+  display: block;
+}
+
+.department-upload-results .text-danger {
+  color: var(--coral) !important;
+}
+/* ---------------------------------
+	END DEPARTMENT DESIGN
+	-------------------------------- */
+
+/* ---------------------------------
+	ROOM DESIGN
+	-------------------------------- */
 
 :root {
   --navy: #003686;
@@ -3789,24 +5011,6 @@ body {
   outline: none;
   border-color: var(--navy);
   box-shadow: 0 0 0 3px rgba(0, 54, 134, 0.12);
-}
-
-.btn-ams-ghost {
-  font-family: 'Inter', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--slate);
-  background: var(--surface-low);
-  border: 1px solid var(--border-line);
-  border-radius: 8px;
-  padding: 0 20px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.btn-ams-ghost:hover {
-  background: #dee8ff;
-  color: var(--navy);
 }
 
 /* ---- Selection / bulk delete bar ---- */

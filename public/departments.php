@@ -6,14 +6,14 @@
 <div class="content-wrapper">
 
     <!-- Page Header -->
-    <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:12px;">
         <div>
             <h2 class="ams-page-title">Department Management</h2>
             <p class="ams-page-subtitle">Manage and organize company departments.</p>
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#departmentModal" onclick="resetDepartmentForm()">Add Department</button>
-                        <button class="btn-ams-ghost" type="button" data-bs-toggle="modal" data-bs-target="#departmentBulkUploadModal">Bulk Upload</button>
+            <button class="btn-ams-ghost" type="button" data-bs-toggle="modal" data-bs-target="#departmentBulkUploadModal">Bulk Upload</button>
         </div>
     </div>
 

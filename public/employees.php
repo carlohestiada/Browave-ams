@@ -11,20 +11,9 @@
             <h2 style="font-size:26px; font-weight:700; color:#003686; margin:0; letter-spacing:-0.02em;">Employee Management</h2>
             <p style="font-size:13px; color:#434653; margin:4px 0 0;">Manage staffing, accommodation assignments, and personnel records.</p>
         </div>
-        <div>
-            <button
-                class="btn-ams-primary"
-                data-bs-toggle="modal"
-                data-bs-target="#employeeModal">
-                Add Employee
-            </button>
-            <button
-                class="btn-ams-ghost"
-                data-bs-toggle="modal"
-                data-bs-target="#bulkUploadModal"
-                style="border:1px solid #c3c6d5;">
-                Bulk Upload
-            </button>
+        <div class="d-flex gap-2">
+            <button class="btn-ams-primary" type="button" data-bs-toggle="modal" data-bs-target="#employeeModal">Add Employee</button>
+            <button class="btn-ams-ghost" type="button" data-bs-toggle="modal" data-bs-target="#bulkUploadModal" style="border:1px solid #c3c6d5;">Bulk Upload</button>
         </div>
     </div>
     <div class="alert alert-info py-3 px-3 mb-3" role="alert" style="font-size:0.95rem;">
