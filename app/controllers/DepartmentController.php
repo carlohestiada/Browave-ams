@@ -29,19 +29,35 @@ class DepartmentController
     {
         $data = $_POST;
 
-        if (empty($data['department_name'])) {
+        $data['department_name'] = trim($data['department_name'] ?? '');
+        $data['location'] = trim($data['location'] ?? '');
+
+        if ($data['department_name'] === '') {
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Department name is required']);
             return;
         }
 
-        if ($this->department->existsByName($data['department_name'])) {
+        if ($data['location'] === '') {
             http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Department name already exists']);
+            echo json_encode(['success' => false, 'error' => 'Location is required']);
+            return;
+        }
+
+
+        if ($this->department->existsByName($data['department_name'], $data['location'])) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Department already exists for this location.']);
             return;
         }
 
         $insertId = $this->department->create($data);
+
+        if (is_array($insertId) && ($insertId['error'] ?? '') === 'duplicate') {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Department already exists for this location.']);
+            return;
+        }
 
         if ($insertId === false) {
             http_response_code(500);
@@ -59,22 +75,37 @@ class DepartmentController
     {
         parse_str(file_get_contents("php://input"), $data);
 
-        if (empty($data['department_name'])) {
+        $data['department_name'] = trim($data['department_name'] ?? '');
+        $data['location'] = trim($data['location'] ?? '');
+
+        if ($data['department_name'] === '') {
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Department name is required']);
             return;
         }
 
-        if ($this->department->existsByName($data['department_name'], $id)) {
+        if ($data['location'] === '') {
             http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Department name already exists']);
+            echo json_encode(['success' => false, 'error' => 'Location is required']);
+            return;
+        }
+
+        if ($this->department->existsByName($data['department_name'], $data['location'], $id)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Department already exists for this location.']);
             return;
         }
 
         $result = $this->department->update($id, $data);
 
+        if (is_array($result) && ($result['error'] ?? '') === 'duplicate') {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Department already exists for this location.']);
+            return;
+        }
+
         echo json_encode([
-            'success' => $result
+            'success' => (bool) $result
         ]);
     }
 

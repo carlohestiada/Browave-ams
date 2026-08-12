@@ -17,6 +17,11 @@
     }
 
     function getTableData(table) {
+        const providerName = table.dataset.exportProvider;
+        if (providerName && typeof window[providerName] === 'function') {
+            return window[providerName]();
+        }
+
         const headers = Array.from(table.querySelectorAll('thead th'));
         const skippedIndexes = headers
             .map(function (th, index) { return shouldSkipColumn(th, index) ? index : -1; })

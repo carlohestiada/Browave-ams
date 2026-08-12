@@ -19,6 +19,7 @@ function renderDepartmentRow(dept) {
                     ${checked}>
             </td>
             <td>${displayValue(dept.department_name)}</td>
+            <td>${displayValue(dept.location)}</td>
             <td style="text-align:right; white-space:nowrap;">
                 <button type="button" class="btn btn-warning btn-sm me-1" onclick="editDepartment(${dept.id})">
                     Edit
@@ -40,7 +41,8 @@ function filterDepartmentRows(departments)
     }
 
     return departments.filter(dept => {
-        return String(dept.department_name ?? '').toLowerCase().includes(search);
+        return String(dept.department_name ?? '').toLowerCase().includes(search)
+            || String(dept.location ?? '').toLowerCase().includes(search);
     });
 }
 
@@ -53,7 +55,8 @@ function renderDepartments()
         perPage: 10,
         renderRow: renderDepartmentRow,
         sortColumns: [
-            { index: 1, key: 'department_name' }
+            { index: 1, key: 'department_name' },
+            { index: 2, key: 'location' }
         ]
     });
 
@@ -74,6 +77,20 @@ function resetDepartmentFilters()
     $('#departmentSearchInput').val('');
     selectedDepartmentIds.clear();
     renderDepartments();
+}
+
+function getDepartmentExportData()
+{
+    return {
+        columns: ['ID', 'Department', 'Location', 'Created At', 'Updated At'],
+        rows: filterDepartmentRows(departmentRows).map(dept => [
+            dept.id ?? '',
+            dept.department_name ?? '',
+            dept.location ?? '',
+            dept.created_at ?? '',
+            dept.updated_at ?? ''
+        ])
+    };
 }
 
 function toggleDepartmentSelection(id, checked)
@@ -132,6 +149,7 @@ function openDepartmentModal(department)
     if (department) {
         $('#departmentId').val(department.id);
         $('#department_name').val(department.department_name);
+        $('#location').val(department.location);
         $('#departmentModalLabel').text('Edit Department');
     }
 
@@ -274,7 +292,8 @@ $(function() {
     const importButton = document.getElementById('departmentBulkUploadBtn');
     const progress = document.getElementById('departmentUploadProgress');
     const resultBox = document.getElementById('departmentUploadResults');
-    let departmentNames = [];
+    const escapeHtml = value => $('<div>').text(value).html();
+    let departmentRecords = [];
 
     const parseCsv = text => {
         const rows = []; let row = []; let value = ''; let quoted = false;
@@ -289,49 +308,75 @@ $(function() {
         return rows;
     };
     const resetUpload = () => {
-        input.value = ''; departmentNames = []; empty.style.display = ''; fileState.classList.remove('visible'); preview.classList.remove('visible'); progress.style.display = 'none'; resultBox.classList.remove('visible'); resultBox.innerHTML = ''; importButton.disabled = false; importButton.textContent = 'Import Departments';
+        input.value = ''; departmentRecords.length = 0; empty.style.display = ''; fileState.classList.remove('visible'); preview.classList.remove('visible'); progress.style.display = 'none'; resultBox.classList.remove('visible'); resultBox.innerHTML = ''; importButton.disabled = false; importButton.textContent = 'Import Departments';
     };
     const renderPreview = () => {
-        previewHead.innerHTML = '<tr><th class="px-3 py-2">Department Name</th></tr>';
-        previewBody.innerHTML = departmentNames.slice(0, 100).map(name => `<tr><td class="px-3 py-2">${$('<div>').text(name).html()}</td></tr>`).join('');
-        document.getElementById('departmentPreviewCount').textContent = `${departmentNames.length} department${departmentNames.length === 1 ? '' : 's'} found${departmentNames.length > 100 ? ' · showing first 100' : ''}`;
-        preview.classList.toggle('visible', departmentNames.length > 0);
+        previewHead.innerHTML = '<tr><th class="px-3 py-2">Department Name</th><th class="px-3 py-2">Location</th><th class="px-3 py-2">Validation</th></tr>';
+        previewBody.innerHTML = departmentRecords.slice(0, 100).map(record => `<tr><td class="px-3 py-2">${$('<div>').text(record.department).html()}</td><td class="px-3 py-2">${$('<div>').text(record.location).html()}</td><td class="px-3 py-2 ${record.errors.length ? 'text-danger' : 'text-success'}">${$('<div>').text(record.errors.join('; ') || 'Ready to import').html()}</td></tr>`).join('');
+        const invalidCount = departmentRecords.filter(record => record.errors.length).length;
+        document.getElementById('departmentPreviewCount').textContent = `${departmentRecords.length} row${departmentRecords.length === 1 ? '' : 's'} found${invalidCount ? ` - ${invalidCount} need attention` : ''}${departmentRecords.length > 100 ? ' - showing first 100' : ''}`;
+        preview.classList.toggle('visible', departmentRecords.length > 0);
     };
     const showFile = file => {
         if (!file) { resetUpload(); return; }
         empty.style.display = 'none'; fileState.classList.add('visible');
         document.getElementById('departmentUploadFileName').textContent = file.name;
         document.getElementById('departmentUploadFileSize').textContent = `${(file.size / 1024).toFixed(1)} KB`;
-        if (!file.name.toLowerCase().endsWith('.csv') || file.size > 10 * 1024 * 1024) { departmentNames = []; preview.classList.remove('visible'); return; }
+        if (!file.name.toLowerCase().endsWith('.csv') || file.size > 10 * 1024 * 1024) { departmentRecords.length = 0; preview.classList.remove('visible'); return; }
         const reader = new FileReader();
         reader.onload = event => {
             const rows = parseCsv(event.target.result);
-            const header = (rows.shift()?.[0] || '').replace(/^\uFEFF/, '').trim().toLowerCase();
-            departmentNames = header === 'department name' || header === 'department_name' ? rows.map(row => row[0]).filter(Boolean) : [];
+            const headers = (rows.shift() || []).map(header => header.replace(/^\uFEFF/, '').trim().toLowerCase());
+            const departmentIndex = headers.findIndex(header => ['department', 'department name', 'department_name'].includes(header));
+            const locationIndex = headers.indexOf('location');
+            const seenCombos = new Set();
+            const existingCombos = new Set((departmentRows || []).map(d => `${String(d.department_name || '').toLowerCase()}|||${String(d.location || '').toLowerCase()}`));
+            const records = rows.map((row, index) => {
+                const department = (row[departmentIndex] || '').trim();
+                const location = (row[locationIndex] || '').trim();
+                const errors = [];
+                if (departmentIndex === -1 || locationIndex === -1) {
+                    errors.push('CSV must include department and location columns');
+                } else {
+                    if (!department) errors.push('Department name is required');
+                    if (!location) errors.push('Location is required');
+                    const comboKey = `${department.toLowerCase()}|||${location.toLowerCase()}`;
+                    if (department && seenCombos.has(comboKey)) errors.push('Duplicate department+location in CSV');
+                    if (department && existingCombos.has(comboKey)) errors.push('Department already exists for this location');
+                    if (department) seenCombos.add(comboKey);
+                }
+                return { rowNumber: index + 2, department, location, errors };
+            });
+            departmentRecords.splice(0, departmentRecords.length, ...records);
             renderPreview();
         };
         reader.readAsText(file);
     };
     const importDepartments = async () => {
         if (!input.files[0]) { swalError('Please select a CSV file to upload.'); return; }
-        if (!departmentNames.length) { swalError('The CSV must have a Department Name header and at least one department.'); return; }
+        if (!departmentRecords.length) { swalError('The CSV must have department and location headers and at least one data row.'); return; }
+        const validRecords = departmentRecords.filter(record => record.errors.length === 0);
+        const successes = [];
+        const failures = departmentRecords
+            .filter(record => record.errors.length > 0)
+            .map(record => ({ record, error: record.errors.join('; ') }));
+        if (!validRecords.length) { swalError('Fix the row validation errors before importing.'); return; }
         importButton.disabled = true; importButton.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Importing...'; progress.style.display = 'block'; resultBox.classList.remove('visible');
-        const successes = []; const failures = [];
-        for (let index = 0; index < departmentNames.length; index++) {
-            const name = departmentNames[index];
+        for (let index = 0; index < validRecords.length; index++) {
+            const record = validRecords[index];
             try {
-                const response = await $.ajax({ url: departmentApiUrl, type: 'POST', data: { department_name: name } });
+                const response = await $.ajax({ url: departmentApiUrl, type: 'POST', data: { department_name: record.department, location: record.location } });
                 const data = typeof response === 'string' ? JSON.parse(response) : response;
-                if (data.success) successes.push(name); else failures.push({ name, error: data.error || 'Unable to save department' });
+                if (data.success) successes.push(record); else failures.push({ record, error: data.error || 'Unable to save department' });
             } catch (xhr) {
-                failures.push({ name, error: xhr.responseJSON?.error || xhr.responseText || 'Unable to save department' });
+                failures.push({ record, error: xhr.responseJSON?.error || xhr.responseText || 'Unable to save department' });
             }
             const completed = index + 1;
-            document.getElementById('departmentUploadProgressBar').style.width = `${(completed / departmentNames.length) * 100}%`;
-            document.getElementById('departmentUploadProgressCount').textContent = `${completed} / ${departmentNames.length}`;
+            document.getElementById('departmentUploadProgressBar').style.width = `${(completed / validRecords.length) * 100}%`;
+            document.getElementById('departmentUploadProgressCount').textContent = `${completed} / ${validRecords.length}`;
         }
         importButton.disabled = false; importButton.textContent = 'Import Departments'; loadDepartments();
-        resultBox.innerHTML = `<strong style="color:${failures.length ? '#b45309' : '#15803d'};">${successes.length} of ${departmentNames.length} departments imported.</strong>${failures.length ? `<div class="mt-2 text-danger">${failures.slice(0, 20).map(item => `${$('<div>').text(item.name).html()}: ${$('<div>').text(item.error).html()}`).join('<br>')}${failures.length > 20 ? `<br>…and ${failures.length - 20} more.` : ''}</div>` : ''}`;
+        resultBox.innerHTML = `<strong style="color:${failures.length ? '#b45309' : '#15803d'};">${successes.length} of ${departmentRecords.length} departments imported.</strong>${failures.length ? `<div class="mt-2 text-danger">${failures.slice(0, 20).map(item => `Row ${item.record.rowNumber} (${escapeHtml(item.record.department || 'blank department')}): ${escapeHtml(item.error)}`).join('<br>')}</div>` : ''}`;
         resultBox.classList.add('visible');
         if (!failures.length) swalSuccess(`${successes.length} department${successes.length === 1 ? '' : 's'} imported successfully.`);
     };

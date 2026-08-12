@@ -92,22 +92,39 @@ if (!in_array($currentPage, $allowedPages, true)) {
             </button>
         </div>
 
-        <?php $role = currentUserRole(); $username = $_SESSION['username'] ?? ''; ?>
+        <?php
+        $role = currentUserRole();
+        $username = $_SESSION['username'] ?? '';
+        $displayUsername = $username !== '' ? $username : 'User';
+        ?>
 
         <div class="ams-topbar-right">
-            <?php if (!empty($username)): ?>
-                <div class="ams-user-block">
-                    <p class="ams-user-role">Role: <?= htmlspecialchars($role) ?></p>
-                </div>
-                <div class="ams-divider"></div>
-            <?php else: ?>
-                <span class="badge bg-light text-primary me-2">Role: <?= htmlspecialchars($role) ?></span>
-            <?php endif; ?>
+            <div class="dropdown ams-user-dropdown">
+                <button class="ams-user-trigger" type="button" id="userProfileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="ams-user-avatar" aria-hidden="true"><i class="bi bi-person-fill"></i></span>
+                    <span class="ams-user-summary">
+                        <span class="ams-user-name"><?= htmlspecialchars($displayUsername) ?></span>
+                        <span class="ams-user-role"><?= htmlspecialchars($role) ?></span>
+                    </span>
+                    <i class="bi bi-chevron-down ams-user-chevron" aria-hidden="true"></i>
+                </button>
 
-            <a href="logout.php" class="ams-logout-btn">
-                <i class="bi bi-box-arrow-right"></i>
-                Logout
-            </a>
+                <div class="dropdown-menu dropdown-menu-end ams-user-menu" aria-labelledby="userProfileDropdown">
+                    <div class="ams-user-menu-details">
+                        <span class="ams-user-menu-label">Username</span>
+                        <span class="ams-user-menu-value"><?= htmlspecialchars($displayUsername) ?></span>
+                    </div>
+                    <div class="ams-user-menu-details">
+                        <span class="ams-user-menu-label">Role</span>
+                        <span class="ams-user-menu-value"><?= htmlspecialchars($role) ?></span>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <a href="logout.php" class="dropdown-item ams-user-logout">
+                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                        Sign out
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 </nav>

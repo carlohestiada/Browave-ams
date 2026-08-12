@@ -29,16 +29,16 @@ class Department
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function existsByName($name, $excludeId = null)
+    public function existsByName($name, $location, $excludeId = null)
     {
-        $sql = "SELECT COUNT(*) FROM departments WHERE LOWER(department_name) = LOWER(?)";
+        $sql = "SELECT COUNT(*) FROM departments WHERE LOWER(department_name) = LOWER(?) AND LOWER(location) = LOWER(?)";
 
         if ($excludeId !== null) {
             $sql .= " AND id != ?";
         }
 
         $stmt = $this->db->prepare($sql);
-        $params = [$name];
+        $params = [$name, $location];
 
         if ($excludeId !== null) {
             $params[] = $excludeId;
@@ -51,16 +51,22 @@ class Department
 
     public function create($data)
     {
-        if ($this->existsByName($data['department_name'])) {
-            return false;
+        if ($this->existsByName($data['department_name'], $data['location'])) {
+            return ['error' => 'duplicate'];
         }
 
         $stmt = $this->db->prepare(
-            "INSERT INTO departments (department_name) VALUES (?)"
+            "INSERT INTO departments (department_name, location) VALUES (?, ?)"
         );
 
-        if ($stmt->execute([$data['department_name']])) {
-            return (int) $this->db->lastInsertId();
+        try {
+            if ($stmt->execute([$data['department_name'], $data['location']])) {
+                return (int) $this->db->lastInsertId();
+            }
+        } catch (PDOException $e) {
+            if ($e->getCode() == '23000') {
+                return ['error' => 'duplicate'];
+            }
         }
 
         return false;
@@ -68,15 +74,23 @@ class Department
 
     public function update($id, $data)
     {
-        if ($this->existsByName($data['department_name'], $id)) {
-            return false;
+        if ($this->existsByName($data['department_name'], $data['location'], $id)) {
+            return ['error' => 'duplicate'];
         }
 
         $stmt = $this->db->prepare(
-            "UPDATE departments SET department_name=? WHERE id=?"
+            "UPDATE departments SET department_name=?, location=? WHERE id=?"
         );
 
-        return $stmt->execute([$data['department_name'], $id]);
+        try {
+            return $stmt->execute([$data['department_name'], $data['location'], $id]);
+        } catch (PDOException $e) {
+            if ($e->getCode() == '23000') {
+                return ['error' => 'duplicate'];
+            }
+        }
+
+        return false;
     }
 
     public function hasEmployees($departmentId)

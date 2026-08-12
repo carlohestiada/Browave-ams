@@ -48,19 +48,20 @@
             </button>
         </div>
         <div style="overflow-x:auto;">
-            <table class="table table-bordered" data-export-title="Department Data">
+            <table class="table table-bordered" data-export-title="Department Data" data-export-provider="getDepartmentExportData">
                 <thead>
                     <tr>
                         <th style="width:44px; text-align:center;">
                             <input type="checkbox" id="selectAllDepartments" aria-label="Select all departments">
                         </th>
                         <th>Department Name</th>
+                        <th>Location</th>
                         <th style="text-align:right; width:160px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="departmentTable">
                     <tr>
-                        <td colspan="3" style="text-align:center; padding:48px 24px; color:#737784;">
+                        <td colspan="4" style="text-align:center; padding:48px 24px; color:#737784;">
                             <i class="bi bi-building" style="font-size:28px; display:block; margin-bottom:8px; opacity:0.5;"></i>
                             Loading departments…
                         </td>
@@ -76,7 +77,7 @@
     <div class="modal-dialog modal-dialog-centered department-upload-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <div><h5 class="modal-title" id="departmentBulkUploadModalLabel">Bulk Upload Departments</h5><small class="text-muted">Upload a CSV with one <strong>Department Name</strong> column.</small></div>
+                <div><h5 class="modal-title" id="departmentBulkUploadModalLabel">Bulk Upload Departments</h5><small class="text-muted">Upload a CSV with <strong>Department</strong> and <strong>Location</strong> columns.</small></div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -118,6 +119,10 @@
                     <div class="mb-3">
                         <label for="department_name" class="form-label">Department Name</label>
                         <input type="text" class="form-control" id="department_name" name="department_name" placeholder="e.g. Engineering" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" name="location" placeholder="e.g. Hsinchu" required>
                     </div>
                 </div>
 

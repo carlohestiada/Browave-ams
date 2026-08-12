@@ -137,6 +137,7 @@ INSERT INTO `daily_headcount` (`id`, `date`, `active_count`, `meal_count`) VALUE
 CREATE TABLE `departments` (
   `id` int(11) NOT NULL,
   `department_name` varchar(100) NOT NULL,
+  `location` varchar(100) NOT NULL DEFAULT '',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

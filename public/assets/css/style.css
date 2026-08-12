@@ -15,7 +15,6 @@ body {
 
 /* --------------------------------------
  Arrival / Departure search dropdowns
-(used in arrivals.php and departures.php)
 ----------------------------------------- */
 .search-input-wrapper {
   position: relative;
@@ -1610,23 +1609,67 @@ body {
 .ams-topbar-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
-.ams-user-block {
-  text-align: right;
+.ams-user-dropdown {
+  position: relative;
+}
+
+.ams-user-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #121c28;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.ams-user-trigger:hover,
+.ams-user-trigger:focus-visible,
+.ams-user-trigger.show {
+  background-color: #eef4ff;
+  color: #003686;
+  outline: none;
+}
+
+.ams-user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #003686;
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.ams-user-summary {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   line-height: 1.2;
 }
 
-.ams-user-block .ams-user-name {
-  margin: 0;
+.ams-user-name {
+  overflow: hidden;
+  max-width: 160px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 13px;
   font-weight: 700;
   color: #121c28;
 }
 
-.ams-user-block .ams-user-role {
-  margin: 0;
+.ams-user-role {
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -1634,29 +1677,85 @@ body {
   color: #434653;
 }
 
-.ams-divider {
-  width: 1px;
-  height: 32px;
-  background-color: #c3c6d5;
+.ams-user-chevron {
+  font-size: 11px;
+  transition: transform 0.2s ease;
 }
 
-.ams-logout-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 8px;
-  background-color: #003686;
-  color: #ffffff !important;
-  font-size: 12.5px;
+.ams-user-trigger.show .ams-user-chevron {
+  transform: rotate(180deg);
+}
+
+.ams-user-menu {
+  min-width: 230px;
+  margin-top: 8px !important;
+  padding: 8px;
+  border: 1px solid #e4e9f2;
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(18, 28, 40, 0.14);
+}
+
+.ams-user-menu-details {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px;
+}
+
+.ams-user-menu-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #737784;
+}
+
+.ams-user-menu-value {
+  overflow-wrap: anywhere;
+  font-size: 13px;
   font-weight: 600;
-  text-decoration: none;
-  transition: opacity 0.2s ease;
+  color: #121c28;
 }
 
-.ams-logout-btn:hover {
-  opacity: 0.88;
-  color: #ffffff;
+.ams-user-menu .dropdown-divider {
+  margin: 6px 0;
+  border-color: #e4e9f2;
+}
+
+.ams-user-logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 8px;
+  border-radius: 8px;
+  color: #ba1a1a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ams-user-logout:hover,
+.ams-user-logout:focus {
+  background-color: #fff0ee;
+  color: #ba1a1a;
+}
+
+@media (max-width: 575.98px) {
+  .ams-topbar .container-fluid {
+    padding: 0 12px;
+  }
+
+  .ams-user-trigger {
+    gap: 7px;
+    padding: 5px;
+  }
+
+  .ams-user-name {
+    max-width: 105px;
+  }
+
+  .ams-user-menu {
+    min-width: min(230px, calc(100vw - 24px));
+  }
 }
 
 /* ------------------------------
@@ -1699,7 +1798,7 @@ body {
 /* fixed bottom sidebar */
 .sidebar {
   display: flex;
-  flex-direction: column;	
+  flex-direction: column;
   height: 100vh;
 }
 /* -----------------------------------
@@ -3253,23 +3352,19 @@ body {
 /* ---------------------------------
 	EMPLOYEE DESIGN
 	-------------------------------- */
-/* ============================================
-   BROWAVE AMS — Employee Management
-   Mockup-matched styling (CSS only)
-   ============================================ */
 
 :root {
   --navy: #003686;
   --blue: #00639d;
   --coral: #ba1a1a;
   --slate: #737784;
-  --border-line: #E4E9F2;
+  --border-line: #e4e9f2;
   --surface-low: #eef4ff;
 }
 
 /* ---- Page header (inline-styled in your HTML, targeted via content-wrapper) ---- */
 .content-wrapper h2 {
-  font-family: 'Sora', 'Inter', sans-serif !important;
+  font-family: "Sora", "Inter", sans-serif !important;
   letter-spacing: -0.01em !important;
 }
 
@@ -3278,15 +3373,19 @@ body {
   border: 1px solid #bfd7ff;
   border-radius: 10px;
   color: #0a1c34;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
-.content-wrapper .alert-info strong { color: var(--navy); }
-.content-wrapper .alert-info .alert-link { color: var(--blue); }
+.content-wrapper .alert-info strong {
+  color: var(--navy);
+}
+.content-wrapper .alert-info .alert-link {
+  color: var(--blue);
+}
 
 /* ---- Buttons ---- */
 .btn-ams-primary {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: #fff;
@@ -3306,7 +3405,7 @@ body {
 }
 
 .btn-ams-ghost {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: var(--slate);
@@ -3330,13 +3429,13 @@ body {
   background: #fff;
   border: 1px solid var(--border-line);
   border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.045);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.045);
 }
 
 /* ---- Filter bar ---- */
 .ams-label {
   display: block;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 600;
   color: var(--slate);
@@ -3348,11 +3447,13 @@ body {
   padding: 9px 14px;
   border: 1px solid var(--border-line);
   border-radius: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13.5px;
   color: #121c28;
   background: #fff;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .ams-input:focus {
@@ -3363,13 +3464,13 @@ body {
 
 /* ---- Selection / bulk delete bar ---- */
 #selectedEmployeesText {
-  font-family: 'Inter', sans-serif !important;
+  font-family: "Inter", sans-serif !important;
   font-weight: 500 !important;
   color: var(--slate) !important;
 }
 
 #bulkDeleteEmployeesBtn {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 600;
   border-radius: 8px;
@@ -3388,7 +3489,7 @@ body {
   width: 100%;
   margin-bottom: 0;
   border-collapse: collapse;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .ams-table thead tr {
@@ -3412,8 +3513,12 @@ body {
   transition: background 0.15s ease;
 }
 
-.ams-table tbody tr:last-child { border-bottom: none; }
-.ams-table tbody tr:hover { background: var(--surface-low); }
+.ams-table tbody tr:last-child {
+  border-bottom: none;
+}
+.ams-table tbody tr:hover {
+  background: var(--surface-low);
+}
 
 .ams-table td {
   padding: 13px 16px;
@@ -3429,7 +3534,7 @@ body {
   background: transparent;
   border: none;
   padding: 12px 16px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -3448,7 +3553,7 @@ body {
 }
 
 .employee-sort-indicator {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 10px;
   font-weight: 700;
   color: var(--blue);
@@ -3462,7 +3567,7 @@ body {
   gap: 6px;
   padding: 4px 12px !important;
   border-radius: 9999px !important;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 11px !important;
   font-weight: 700 !important;
   white-space: nowrap;
@@ -3495,7 +3600,7 @@ body {
 
 /* ---- Row action buttons ---- */
 .ams-table td .btn-sm {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 11px;
   font-weight: 600;
   border-radius: 6px;
@@ -3505,7 +3610,7 @@ body {
 /* ---- Loading / empty state ---- */
 .ams-table td[style*="text-align:center"] {
   color: var(--slate) !important;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 /* ---- Pagination footer (injected by ensurePaginationContainer) ---- */
@@ -3515,7 +3620,7 @@ body {
   padding: 14px 16px;
   border-top: 1px solid var(--border-line);
   background: #fff;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .pagination {
@@ -3523,7 +3628,7 @@ body {
 }
 
 .pagination .page-link {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12.5px;
   font-weight: 600;
   color: var(--navy);
@@ -3547,7 +3652,7 @@ body {
 #employeeEntriesSelect.form-select-sm {
   border: 1px solid var(--border-line);
   border-radius: 6px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12.5px;
 }
 
@@ -3557,7 +3662,7 @@ body {
 .ams-modal-content {
   border-radius: 12px;
   border: none;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
 .ams-modal-header {
@@ -3589,7 +3694,7 @@ body {
 .modal-content {
   border-radius: 12px;
   border: none;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
 .modal-header {
@@ -3599,7 +3704,7 @@ body {
 
 .modal-header small {
   display: block;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   color: var(--slate);
   margin-top: 4px;
@@ -3607,7 +3712,7 @@ body {
 }
 
 .modal-title {
-  font-family: 'Sora', sans-serif;
+  font-family: "Sora", sans-serif;
   font-size: 16px;
   font-weight: 700;
   color: var(--navy);
@@ -3622,7 +3727,7 @@ body {
   background: #fff;
   border: 1px solid var(--border-line);
   color: var(--slate);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-weight: 600;
   border-radius: 8px;
   padding: 8px 20px;
@@ -3632,10 +3737,6 @@ body {
   background: var(--surface-low);
 }
 
-/* ============================================
-   Bulk Upload Modal (Employees CSV)
-   — dropzone/file-selected aligned to Department's pattern
-   ============================================ */
 .employee-upload-dialog {
   max-width: 760px;
 }
@@ -3644,7 +3745,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12.5px;
   font-weight: 600;
   color: var(--blue);
@@ -3657,7 +3758,7 @@ body {
 }
 
 .modal-body .text-muted.mb-3 {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12.5px;
   color: var(--slate) !important;
 }
@@ -3670,7 +3771,9 @@ body {
   background: var(--surface-low);
   padding: 32px 20px;
   text-align: center;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .bulk-dropzone.is-dragging {
@@ -3695,14 +3798,14 @@ body {
 }
 
 .bulk-dropzone-title {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 14px;
   font-weight: 700;
   color: #121c28;
 }
 
 .bulk-dropzone-copy {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   color: var(--slate);
   margin: 8px 0;
@@ -3710,7 +3813,7 @@ body {
 
 .bulk-dropzone-help {
   display: block;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 11px;
   color: var(--slate);
   margin-top: 10px;
@@ -3718,7 +3821,7 @@ body {
 
 .bulk-dropzone-release {
   display: none;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13px;
   font-weight: 700;
   color: var(--navy);
@@ -3739,7 +3842,7 @@ body {
   border-radius: 10px;
   padding: 14px 16px;
   margin-top: 4px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13px;
 }
 
@@ -3771,7 +3874,7 @@ body {
 .bulk-action-button {
   border: none;
   background: transparent;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -3811,7 +3914,7 @@ body {
 }
 
 .bulk-preview-heading h6 {
-  font-family: 'Sora', sans-serif;
+  font-family: "Sora", sans-serif;
   font-size: 14px;
   font-weight: 700;
   color: var(--navy);
@@ -3819,14 +3922,14 @@ body {
 }
 
 .bulk-preview-heading p {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 11.5px;
   color: var(--slate);
   margin: 4px 0 0;
 }
 
 .bulk-preview-heading small {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 11.5px;
   color: var(--slate) !important;
 }
@@ -3850,13 +3953,13 @@ body {
 }
 
 .bulk-stat span {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 11px;
   color: var(--slate);
 }
 
 .bulk-stat strong {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 20px;
   color: var(--navy);
 }
@@ -3866,21 +3969,27 @@ body {
   border-color: #a7f3d0;
 }
 
-.bulk-stat.ready strong { color: #065f46; }
+.bulk-stat.ready strong {
+  color: #065f46;
+}
 
 .bulk-stat.warning {
   background: #fef3c7;
   border-color: #fde68a;
 }
 
-.bulk-stat.warning strong { color: #92400e; }
+.bulk-stat.warning strong {
+  color: #92400e;
+}
 
 .bulk-stat.error {
   background: #ffdad6;
   border-color: #ffb4ab;
 }
 
-.bulk-stat.error strong { color: var(--coral); }
+.bulk-stat.error strong {
+  color: var(--coral);
+}
 
 /* Preview controls */
 .bulk-preview-controls {
@@ -3913,7 +4022,7 @@ body {
 .bulk-preview-table {
   width: 100%;
   border-collapse: collapse;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12.5px;
 }
 
@@ -3951,7 +4060,7 @@ body {
   align-items: center;
   justify-content: space-between;
   margin-top: 10px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   color: var(--slate);
 }
@@ -3978,7 +4087,7 @@ body {
 }
 
 .bulk-validation-panel summary {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13px;
   font-weight: 700;
   color: var(--navy);
@@ -3987,7 +4096,7 @@ body {
 
 .bulk-validation-details {
   margin-top: 10px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   color: #44474d;
 }
@@ -3998,7 +4107,7 @@ body {
 
 /* Upload progress */
 #uploadProgress #progressText {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12.5px;
   color: var(--slate);
 }
@@ -4009,7 +4118,7 @@ body {
 
 /* Results box */
 #uploadResults {
-  font-family: 'Inter', sans-serif !important;
+  font-family: "Inter", sans-serif !important;
   border: 1px solid var(--border-line) !important;
 }
 /* ---------------------------------
@@ -4024,13 +4133,13 @@ body {
   --blue: #00639d;
   --coral: #ba1a1a;
   --slate: #737784;
-  --border-line: #E4E9F2;
+  --border-line: #e4e9f2;
   --surface-low: #eef4ff;
 }
 
 /* ---- Page header ---- */
 .ams-page-title {
-  font-family: 'Sora', 'Inter', sans-serif;
+  font-family: "Sora", "Inter", sans-serif;
   font-size: 26px;
   font-weight: 700;
   color: var(--navy);
@@ -4039,7 +4148,7 @@ body {
 }
 
 .ams-page-subtitle {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 14px;
   color: #44474d;
   margin: 4px 0 0;
@@ -4049,7 +4158,7 @@ body {
   border-radius: 8px;
   background: var(--navy);
   border-color: var(--navy);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13px;
   font-weight: 600;
   padding: 10px 20px;
@@ -4070,13 +4179,13 @@ body {
   background: #fff;
   border: 1px solid var(--border-line);
   border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.045);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.045);
 }
 
 /* ---- Filter/search bar ---- */
 .ams-label {
   display: block;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 600;
   color: var(--slate);
@@ -4088,11 +4197,13 @@ body {
   padding: 9px 14px;
   border: 1px solid var(--border-line);
   border-radius: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13.5px;
   color: #121c28;
   background: #fff;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .ams-input:focus {
@@ -4103,13 +4214,13 @@ body {
 
 /* ---- Selection / bulk delete bar ---- */
 #selectedDepartmentsText {
-  font-family: 'Inter', sans-serif !important;
+  font-family: "Inter", sans-serif !important;
   font-weight: 500 !important;
   color: var(--slate) !important;
 }
 
 #bulkDeleteDepartmentsBtn {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 600;
   border-radius: 8px;
@@ -4128,7 +4239,7 @@ body {
   width: 100%;
   margin-bottom: 0;
   border-collapse: collapse;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .table.table-bordered thead tr {
@@ -4152,8 +4263,12 @@ body {
   transition: background 0.15s ease;
 }
 
-.table.table-bordered tbody tr:last-child { border-bottom: none; }
-.table.table-bordered tbody tr:hover { background: var(--surface-low); }
+.table.table-bordered tbody tr:last-child {
+  border-bottom: none;
+}
+.table.table-bordered tbody tr:hover {
+  background: var(--surface-low);
+}
 
 .table.table-bordered td {
   padding: 13px 16px;
@@ -4165,7 +4280,7 @@ body {
 }
 
 .table.table-bordered td .btn-sm {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 11px;
   font-weight: 600;
   border-radius: 6px;
@@ -4175,7 +4290,7 @@ body {
 /* ---- Loading / empty state ---- */
 #departmentTable td[style*="text-align:center"] {
   color: var(--slate) !important;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13px;
 }
 
@@ -4185,7 +4300,7 @@ body {
 .modal-content {
   border-radius: 12px;
   border: none;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
 .modal-header {
@@ -4194,7 +4309,7 @@ body {
 }
 
 .modal-title {
-  font-family: 'Sora', sans-serif;
+  font-family: "Sora", sans-serif;
   font-size: 16px;
   font-weight: 700;
   color: var(--navy);
@@ -4205,7 +4320,7 @@ body {
 }
 
 .modal-body .form-label {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 600;
   color: var(--slate);
@@ -4215,7 +4330,7 @@ body {
 .modal-body .form-control {
   border: 1px solid var(--border-line);
   border-radius: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13.5px;
   padding: 9px 14px;
 }
@@ -4233,7 +4348,7 @@ body {
 .modal-footer .btn-primary {
   background: var(--navy);
   border-color: var(--navy);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-weight: 600;
   border-radius: 8px;
   padding: 8px 20px;
@@ -4246,7 +4361,7 @@ body {
   background: #fff;
   border: 1px solid var(--border-line);
   color: var(--slate);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-weight: 600;
   border-radius: 8px;
   padding: 8px 20px;
@@ -4265,7 +4380,7 @@ body {
 
 #departmentBulkUploadModal .modal-header small {
   display: block;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   color: var(--slate);
   margin-top: 4px;
@@ -4275,7 +4390,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12.5px;
   font-weight: 600;
   color: var(--blue);
@@ -4295,7 +4410,9 @@ body {
   background: var(--surface-low);
   padding: 32px 20px;
   text-align: center;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .department-dropzone.is-dragging {
@@ -4320,19 +4437,19 @@ body {
 }
 
 #departmentUploadEmpty .fw-bold {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 14px;
   color: #121c28;
 }
 
 #departmentUploadEmpty .text-muted.small {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   color: var(--slate) !important;
 }
 
 #departmentUploadHelp {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 11px;
   color: var(--slate) !important;
 }
@@ -4347,7 +4464,7 @@ body {
   border-radius: 10px;
   padding: 14px 16px;
   margin-top: 4px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13px;
 }
 
@@ -4366,7 +4483,7 @@ body {
 }
 
 .department-upload-file .btn-link {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 600;
   text-decoration: none;
@@ -4393,7 +4510,7 @@ body {
   padding: 10px 14px;
   background: var(--surface-low);
   border-bottom: 1px solid var(--border-line);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12.5px;
 }
 
@@ -4413,7 +4530,7 @@ body {
 
 .department-preview-wrap .table {
   margin-bottom: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12.5px;
 }
 
@@ -4436,7 +4553,7 @@ body {
 
 /* Progress bar */
 #departmentUploadProgress .small {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   color: var(--slate);
 }
@@ -4460,7 +4577,7 @@ body {
   border-radius: 10px;
   background: var(--surface-low);
   border: 1px solid var(--border-line);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12.5px;
   line-height: 1.6;
 }
@@ -4485,13 +4602,13 @@ body {
   --blue: #00639d;
   --coral: #ba1a1a;
   --slate: #737784;
-  --border-line: #E4E9F2;
+  --border-line: #e4e9f2;
   --surface-low: #eef4ff;
 }
 
 /* ---- Page header ---- */
 .ams-page-title {
-  font-family: 'Sora', 'Inter', sans-serif;
+  font-family: "Sora", "Inter", sans-serif;
   font-size: 26px;
   font-weight: 700;
   color: var(--navy);
@@ -4500,7 +4617,7 @@ body {
 }
 
 .ams-page-subtitle {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 14px;
   color: #44474d;
   margin: 4px 0 0;
@@ -4510,7 +4627,7 @@ body {
   border-radius: 8px;
   background: var(--navy);
   border-color: var(--navy);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13.5px;
   font-weight: 600;
   padding: 10px 22px;
@@ -4527,18 +4644,22 @@ body {
   border: 1px solid #bfd7ff;
   border-radius: 10px;
   color: #0a1c34;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
-.alert-info strong { color: var(--navy); }
-.alert-info .alert-link { color: var(--blue); }
+.alert-info strong {
+  color: var(--navy);
+}
+.alert-info .alert-link {
+  color: var(--blue);
+}
 
 /* ---- KPI Summary Cards ---- */
 .row.g-3.mb-3.w-100 > [class*="col-"] > .card {
   background: #fff;
   border: 1px solid var(--border-line);
   border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.045);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.045);
   transition: border-color 0.15s ease;
 }
 
@@ -4547,7 +4668,7 @@ body {
 }
 
 .row.g-3.mb-3.w-100 .text-uppercase.text-muted.small {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 11px !important;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -4555,7 +4676,7 @@ body {
 }
 
 .row.g-3.mb-3.w-100 h3 {
-  font-family: 'IBM Plex Mono', 'Inter', monospace;
+  font-family: "IBM Plex Mono", "Inter", monospace;
   font-size: 28px;
   font-weight: 700;
   color: var(--navy);
@@ -4567,7 +4688,7 @@ body {
 }
 
 #roomTypeSummaryList {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12.5px;
 }
 
@@ -4577,7 +4698,7 @@ body {
 
 #roomTypeSummaryList .fw-semibold {
   color: var(--navy) !important;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "IBM Plex Mono", monospace;
 }
 
 /* ---- Room Prefix Tabs card ---- */
@@ -4585,7 +4706,7 @@ body {
   background: #fff;
   border: 1px solid var(--border-line);
   border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.045);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.045);
 }
 
 #roomPrefixTabs {
@@ -4594,10 +4715,12 @@ body {
   flex-wrap: wrap;
 }
 
-#roomPrefixTabs .nav-item { margin: 0; }
+#roomPrefixTabs .nav-item {
+  margin: 0;
+}
 
 #roomPrefixTabs .nav-link {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12.5px;
   font-weight: 600;
   color: var(--slate) !important;
@@ -4621,7 +4744,7 @@ body {
 
 /* ---- Filters card ---- */
 .card.mb-3 .form-label {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 600;
   color: var(--slate);
@@ -4632,7 +4755,7 @@ body {
 .card.mb-3 .form-select {
   border: 1px solid var(--border-line);
   border-radius: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13.5px;
   padding: 9px 14px;
 }
@@ -4645,7 +4768,7 @@ body {
 
 .card.mb-3 .btn-outline-secondary {
   border-radius: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: var(--slate);
@@ -4663,18 +4786,18 @@ body {
   background: #fff;
   border: 1px solid var(--border-line);
   border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.045);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.045);
 }
 
 /* ---- Selection / bulk delete bar ---- */
 #selectedRoomsText {
-  font-family: 'Inter', sans-serif !important;
+  font-family: "Inter", sans-serif !important;
   font-weight: 500 !important;
   color: var(--slate) !important;
 }
 
 #bulkDeleteRoomsBtn {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 600;
   border-radius: 8px;
@@ -4693,7 +4816,7 @@ body {
   width: 100%;
   margin-bottom: 0;
   border-collapse: collapse;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .table.ams-table.table-bordered thead tr {
@@ -4717,8 +4840,12 @@ body {
   transition: background 0.15s ease;
 }
 
-.table.ams-table.table-bordered tbody tr:last-child { border-bottom: none; }
-.table.ams-table.table-bordered tbody tr:hover { background: var(--surface-low); }
+.table.ams-table.table-bordered tbody tr:last-child {
+  border-bottom: none;
+}
+.table.ams-table.table-bordered tbody tr:hover {
+  background: var(--surface-low);
+}
 
 .table.ams-table.table-bordered td {
   padding: 13px 16px;
@@ -4736,7 +4863,7 @@ body {
   gap: 6px;
   padding: 4px 12px !important;
   border-radius: 9999px !important;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 11px !important;
   font-weight: 700 !important;
   white-space: nowrap;
@@ -4793,7 +4920,7 @@ body {
 
 /* ---- Row action buttons ---- */
 .table.ams-table.table-bordered td .btn-sm {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 11px;
   font-weight: 600;
   border-radius: 6px;
@@ -4813,7 +4940,7 @@ body {
 .modal-content {
   border-radius: 12px;
   border: none;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
 .modal-header {
@@ -4822,7 +4949,7 @@ body {
 }
 
 .modal-title {
-  font-family: 'Sora', sans-serif;
+  font-family: "Sora", sans-serif;
   font-size: 16px;
   font-weight: 700;
   color: var(--navy);
@@ -4833,7 +4960,7 @@ body {
 }
 
 .modal-body .form-label {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 600;
   color: var(--slate);
@@ -4845,7 +4972,7 @@ body {
 .modal-body textarea.form-control {
   border: 1px solid var(--border-line);
   border-radius: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13.5px;
   padding: 9px 14px;
 }
@@ -4870,7 +4997,7 @@ body {
 
 .modal-body .border.rounded.p-3 .btn-outline-secondary.btn-sm {
   border-radius: 6px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 11.5px;
   font-weight: 600;
 }
@@ -4889,7 +5016,7 @@ body {
 .modal-footer .btn-primary {
   background: var(--navy);
   border-color: var(--navy);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-weight: 600;
   border-radius: 8px;
   padding: 8px 20px;
@@ -4899,7 +5026,7 @@ body {
   background: #fff;
   border: 1px solid var(--border-line);
   color: var(--slate);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-weight: 600;
   border-radius: 8px;
   padding: 8px 20px;
@@ -4921,13 +5048,13 @@ body {
   --blue: #00639d;
   --coral: #ba1a1a;
   --slate: #737784;
-  --border-line: #E4E9F2;
+  --border-line: #e4e9f2;
   --surface-low: #eef4ff;
 }
 
 /* ---- Page header ---- */
 .ams-page-title {
-  font-family: 'Sora', 'Inter', sans-serif;
+  font-family: "Sora", "Inter", sans-serif;
   font-size: 26px;
   font-weight: 700;
   color: var(--navy);
@@ -4936,7 +5063,7 @@ body {
 }
 
 .ams-page-subtitle {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 14px;
   color: #44474d;
   margin: 4px 0 0;
@@ -4953,7 +5080,7 @@ body {
   border-radius: 8px;
   background: var(--navy);
   border-color: var(--navy);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13px;
   font-weight: 600;
   padding: 10px 20px;
@@ -4970,7 +5097,7 @@ body {
   border: 1px solid #bfd7ff;
   border-radius: 10px;
   color: #0a1c34;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .alert-info strong {
@@ -4982,13 +5109,13 @@ body {
   background: #fff;
   border: 1px solid var(--border-line);
   border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.045);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.045);
 }
 
 /* ---- Filter/search bar ---- */
 .ams-label {
   display: block;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 600;
   color: var(--slate);
@@ -5000,11 +5127,13 @@ body {
   padding: 9px 14px;
   border: 1px solid var(--border-line);
   border-radius: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13.5px;
   color: #121c28;
   background: #fff;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .ams-input:focus {
@@ -5015,13 +5144,13 @@ body {
 
 /* ---- Selection / bulk delete bar ---- */
 #selectedAccommodationsText {
-  font-family: 'Inter', sans-serif !important;
+  font-family: "Inter", sans-serif !important;
   font-weight: 500 !important;
   color: var(--slate) !important;
 }
 
 #bulkDeleteAccommodationsBtn {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 600;
   border-radius: 8px;
@@ -5040,7 +5169,7 @@ body {
   width: 100%;
   margin-bottom: 0;
   border-collapse: collapse;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .table.table-bordered thead tr {
@@ -5064,8 +5193,12 @@ body {
   transition: background 0.15s ease;
 }
 
-.table.table-bordered tbody tr:last-child { border-bottom: none; }
-.table.table-bordered tbody tr:hover { background: var(--surface-low); }
+.table.table-bordered tbody tr:last-child {
+  border-bottom: none;
+}
+.table.table-bordered tbody tr:hover {
+  background: var(--surface-low);
+}
 
 .table.table-bordered td {
   padding: 13px 16px;
@@ -5084,7 +5217,7 @@ body {
   gap: 6px;
   padding: 4px 12px !important;
   border-radius: 9999px !important;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 11px !important;
   font-weight: 700 !important;
   white-space: nowrap;
@@ -5140,7 +5273,7 @@ body {
 
 /* ---- Row action buttons ---- */
 .table.table-bordered td .btn-sm {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 11px;
   font-weight: 600;
   border-radius: 6px;
@@ -5161,7 +5294,7 @@ body {
 .modal-content {
   border-radius: 12px;
   border: none;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
 .modal-header {
@@ -5170,7 +5303,7 @@ body {
 }
 
 .modal-title {
-  font-family: 'Sora', sans-serif;
+  font-family: "Sora", sans-serif;
   font-size: 16px;
   font-weight: 700;
   color: var(--navy);
@@ -5181,7 +5314,7 @@ body {
 }
 
 .modal-body .form-label {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 600;
   color: var(--slate);
@@ -5192,7 +5325,7 @@ body {
 .modal-body .form-select {
   border: 1px solid var(--border-line);
   border-radius: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13.5px;
   padding: 9px 14px;
 }
@@ -5217,7 +5350,7 @@ body {
 .modal-footer .btn-primary {
   background: var(--navy);
   border-color: var(--navy);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-weight: 600;
   border-radius: 8px;
   padding: 8px 20px;
@@ -5227,7 +5360,7 @@ body {
   background: #fff;
   border: 1px solid var(--border-line);
   color: var(--slate);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-weight: 600;
   border-radius: 8px;
   padding: 8px 20px;
@@ -5239,7 +5372,7 @@ body {
 
 .modal-body .btn-info {
   border-radius: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12.5px;
   font-weight: 600;
 }
@@ -5250,7 +5383,7 @@ body {
   border-radius: 10px !important;
   margin-bottom: 8px;
   padding: 14px 16px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 #buildingList .list-group-item:last-child {
@@ -5781,8 +5914,321 @@ body {
 }
 
 /* ---------------------------------
-	End Company Car Design
+	End COMPANY CAR DESIGN
 	-------------------------------- */
 
-/* end moved styles */
+/* -------------------------------
+    USER DESIGN
+    -------------------------------- */
 
+/* ---- Page header (inline-styled in your HTML) ---- */
+.content-wrapper h2 {
+  font-family: "Sora", "Inter", sans-serif !important;
+  letter-spacing: -0.01em !important;
+}
+
+.content-wrapper .d-flex.justify-content-between.mb-3 {
+  align-items: flex-start;
+}
+
+.content-wrapper .d-flex.justify-content-between.mb-3 .btn-primary {
+  border-radius: 8px;
+  background: var(--navy);
+  border-color: var(--navy);
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 20px;
+}
+
+.content-wrapper .d-flex.justify-content-between.mb-3 .btn-primary:hover {
+  background: #002a6b;
+  border-color: #002a6b;
+}
+
+/* ---- Filter card ---- */
+.card.mb-3 {
+  background: #fff;
+  border: 1px solid var(--border-line);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.045);
+}
+
+.card.mb-3 .form-label {
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate);
+  margin-bottom: 6px;
+}
+
+.card.mb-3 .form-control,
+.card.mb-3 .form-select {
+  border: 1px solid var(--border-line);
+  border-radius: 8px;
+  font-family: "Inter", sans-serif;
+  font-size: 13.5px;
+  padding: 9px 14px;
+}
+
+.card.mb-3 .form-control:focus,
+.card.mb-3 .form-select:focus {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(0, 54, 134, 0.12);
+}
+
+.card.mb-3 .btn-primary {
+  border-radius: 8px;
+  background: var(--navy);
+  border-color: var(--navy);
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.card.mb-3 .btn-primary:hover {
+  background: #002a6b;
+  border-color: #002a6b;
+}
+
+.card.mb-3 .btn-secondary {
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid var(--border-line);
+  color: var(--slate);
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.card.mb-3 .btn-secondary:hover {
+  background: var(--surface-low);
+  color: var(--navy);
+}
+
+/* ---- Cards (ams-card) ---- */
+.ams-card {
+  background: #fff;
+  border: 1px solid var(--border-line);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.045);
+}
+
+/* ---- Selection / bulk delete bar ---- */
+#selectedUsersText {
+  font-family: "Inter", sans-serif !important;
+  font-weight: 500 !important;
+  color: var(--slate) !important;
+}
+
+#bulkDeleteUsersBtn {
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 6px 16px;
+}
+
+#bulkDeleteUsersBtn:disabled {
+  background: #ffdad6;
+  border-color: #ffdad6;
+  color: var(--coral);
+  opacity: 1;
+}
+
+/* ---- Table ---- */
+.table.table-bordered {
+  width: 100%;
+  margin-bottom: 0;
+  border-collapse: collapse;
+  font-family: "Inter", sans-serif;
+}
+
+.table.table-bordered thead tr {
+  background: var(--surface-low);
+}
+
+.table.table-bordered thead th {
+  padding: 12px 16px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--slate);
+  border: none;
+  border-bottom: 1px solid var(--border-line);
+  white-space: nowrap;
+}
+
+.table.table-bordered tbody tr {
+  border-bottom: 1px solid var(--border-line);
+  transition: background 0.15s ease;
+}
+
+.table.table-bordered tbody tr:last-child {
+  border-bottom: none;
+}
+.table.table-bordered tbody tr:hover {
+  background: var(--surface-low);
+}
+
+.table.table-bordered td {
+  padding: 13px 16px;
+  font-size: 13px;
+  color: #121c28;
+  vertical-align: middle;
+  border: none;
+  border-bottom: 1px solid var(--border-line);
+}
+
+/* ---- Badges — matches exact bg-* classes from users.js ---- */
+#userTable .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px !important;
+  border-radius: 9999px !important;
+  font-family: "Inter", sans-serif;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+#userTable .badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* Role badge */
+#userTable .badge.bg-info {
+  background: var(--surface-low) !important;
+  color: var(--navy) !important;
+  border-color: #bfd7ff;
+}
+
+/* Status: Active */
+#userTable .badge.bg-success {
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+  border-color: #a7f3d0;
+}
+
+/* Status: Inactive */
+#userTable .badge.bg-danger {
+  background: #ffdad6 !important;
+  color: var(--coral) !important;
+  border-color: #ffb4ab;
+}
+
+/* ---- Row action buttons ---- */
+.table.table-bordered td .btn-sm {
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 5px 10px;
+}
+
+/* ---- Loading / empty state ---- */
+.table.table-bordered td.text-center.text-muted {
+  padding: 32px 16px;
+  color: var(--slate) !important;
+  font-size: 13px;
+}
+
+/* ============================================
+   User Modal (Add/Edit)
+   ============================================ */
+.modal-content {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--border-line);
+  padding: 18px 24px;
+}
+
+.modal-title {
+  font-family: "Sora", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.modal-body {
+  padding: 22px 24px;
+}
+
+.modal-body .form-label {
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate);
+  margin-bottom: 6px;
+}
+
+.modal-body .form-control,
+.modal-body .form-select {
+  border: 1px solid var(--border-line);
+  border-radius: 8px;
+  font-family: "Inter", sans-serif;
+  font-size: 13.5px;
+  padding: 9px 14px;
+}
+
+.modal-body .form-control:focus,
+.modal-body .form-select:focus {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(0, 54, 134, 0.12);
+}
+
+.modal-body .form-text {
+  font-size: 11.5px;
+  color: var(--slate);
+  margin-top: 4px;
+}
+
+#passwordLabel {
+  font-weight: 600;
+  color: var(--blue);
+  font-size: 12px;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--border-line);
+  padding: 16px 24px;
+}
+
+.modal-footer .btn-primary {
+  background: var(--navy);
+  border-color: var(--navy);
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 8px 20px;
+}
+
+.modal-footer .btn-secondary {
+  background: #fff;
+  border: 1px solid var(--border-line);
+  color: var(--slate);
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 8px 20px;
+}
+
+.modal-footer .btn-secondary:hover {
+  background: var(--surface-low);
+}
+/* -------------------------------
+    END USER DESIGN
+    -------------------------------- */
+/* end moved styles */
