@@ -135,9 +135,9 @@ body {
   box-shadow: 0 0 0 3px rgba(0, 54, 134, 0.12);
 }
 
-/* -----------------------------
-   Shared dashboard utility styles
-   ----------------------------- */
+/* -------------------------------------------------
+   DASHBOARD
+   ------------------------------------------------- */
 .dashboard-header {
   display: flex;
   align-items: flex-start;
@@ -174,7 +174,19 @@ body {
   margin: 4px 0 0;
 }
 
-/* KPI Cards */
+/* ---------------------------------------
+	END DASHBOARD
+	-------------------------------------- */
+
+/* ---------------------------------------
+	KPI Cards
+	-------------------------------------- */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
 
 .dashboard-kpi-grid {
   display: grid;
@@ -205,12 +217,6 @@ body {
   border-color: #9fb8e6;
 }
 
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
 .kpi-card {
   background: #fff;
   border: 1px solid #c3c6d5;
@@ -221,6 +227,55 @@ body {
   color: inherit;
   display: block;
 }
+
+.kpi-value-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kpi-value {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0;
+  font-family: var(--font-sans);
+}
+
+.kpi-value--primary {
+  color: #003686;
+}
+
+.badge-active,
+.badge-inactive,
+.badge-default {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-sans);
+}
+
+.badge-default {
+  background: #e5eeff;
+  color: #003686;
+  border: 1px solid #c3c6d5;
+}
+
+.kpi-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+  flex-shrink: 0;
+}
+
 .kpi-label {
   font-size: 11px;
   font-weight: 600;
@@ -237,31 +292,45 @@ body {
   font-size: 1rem;
   color: #00639d;
 }
-.kpi-value-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
+
+/* ------------------------------------
+	END KPI CARDS
+	----------------------------------- */
+
+/* --------------------------------------
+	DEPARTMENT AND GENDER CHARTS
+	------------------------------------- */
+
+.dashboard-grid-charts {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
 }
-.kpi-value {
-  font-size: 32px;
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  margin: 0;
-  font-family: var(--font-sans);
-}
-.kpi-badge {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 9999px;
-  white-space: nowrap;
-  font-family: var(--font-sans);
-  flex-shrink: 0;
+@media (max-width: 992px) {
+  .dashboard-grid-charts {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* END of KPI Cards */
+.dashboard-section-spacing {
+  margin-bottom: 24px;
+}
+
+/* ------------------------------------
+	<DEPARTMENT> <GENDER> <EMPLOYEE> <ROOM>
+	<ARRIVALS> <DEPARTURE> CHART
+	----------------------------------- */
+
+.ams-card {
+  background: #fff;
+  border: 1px solid var(--border-line);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.045);
+}
+
+/* ---------------------------------------------------
+	<EMPLOYEE> <ROOM> <ARRIVALS> <DEAPRTURE> CHART
+	-------------------------------------------------- */
 
 .dashboard-grid-twocol {
   display: grid;
@@ -269,14 +338,39 @@ body {
   gap: 20px;
 }
 
+@media (max-width: 900px) {
+  .dashboard-grid-twocol {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ----------------------------------------
+	<EMPLOYEE> <ROOM> <ARRIVALS> CHARTS
+	--------------------------------------- */
+
+:root {
+  --navy: #000d23;
+  --blue: #0054cb;
+  --coral: #EF6461;
+  --amber: #F2A93B;
+  --teal-dim: #5fdac7;
+  --teal-fixed: #7ef7e3;
+  --teal-text: #009b8b;
+  --slate: #94A3B8;
+  --border-line: #E4E9F2;
+  --surface-low: #f0f3ff;
+  --surface-bright: #f9f9ff;
+}
+
+
 .dashboard-card-panel {
   padding: 0;
   overflow: hidden;
 }
 
 .dashboard-card-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid #c3c6d5;
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--border-line);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -286,51 +380,423 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 14px;
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
   font-weight: 700;
-  color: #121c28;
+  color: var(--navy);
 }
 
 .dashboard-card-link {
-  font-size: 12px;
-  color: #003686;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
   font-weight: 600;
+  color: var(--blue);
   text-decoration: none;
-}
-
-.dashboard-card-body {
-  padding: 16px 20px;
 }
 
 .dashboard-card-table-body {
   overflow-x: auto;
 }
 
-.dashboard-section-spacing {
-  margin-bottom: 24px;
-}
-
-.dashboard-employee-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 9999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.dashboard-employee-name {
-  font-weight: 600;
+.dashboard-card-body {
+  padding: 20px 22px;
 }
 
 .dashboard-loading-state {
   text-align: center;
   padding: 24px;
-  color: #737784;
+  color: var(--slate);
+  font-family: 'Inter', sans-serif;
   font-size: 13px;
+}
+
+/* ----------------------------------------
+	EMPLOYEE CHARTS
+	--------------------------------------- */
+
+.ams-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-family: 'Inter', sans-serif;
+}
+
+.ams-table thead tr {
+  background: var(--surface-bright);
+  border-bottom: 1px solid var(--border-line);
+}
+
+.ams-table th {
+  padding: 12px 22px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+.ams-table tbody tr {
+  border-bottom: 1px solid var(--border-line);
+  transition: background 0.15s ease;
+}
+
+.ams-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.ams-table tbody tr:hover {
+  background: var(--surface-low);
+}
+
+.ams-table td {
+  padding: 12px 22px;
+  font-size: 13.5px;
+  color: var(--navy);
+}
+
+.ams-table tbody tr:nth-child(4n+2) .dashboard-employee-avatar {
+  background: #ffdad6;
+  color: var(--coral);
+}
+.ams-table tbody tr:nth-child(4n+3) .dashboard-employee-avatar {
+  background: #dee8ff;
+  color: var(--blue);
+}
+.ams-table tbody tr:nth-child(4n+4) .dashboard-employee-avatar {
+  background: #d6e3ff;
+  color: #0040a0;
+}
+
+.ams-table thead tr {
+  background: #fafbff;
+  border-bottom: 1px solid var(--border-line);
+}
+
+.ams-table th {
+  padding: 12px 22px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+.ams-table tbody tr {
+  border-bottom: 1px solid var(--border-line);
+  transition: background 0.15s ease;
+}
+
+.ams-table tbody tr:last-child { border-bottom: none; }
+.ams-table tbody tr:hover { background: var(--surface-low); }
+
+.ams-table td {
+  padding: 12px 22px;
+  font-size: 13.5px;
+  color: var(--navy);
+}
+
+.ams-table thead tr {
+  background: #eef4ff;
+  border-bottom: 1px solid #c3c6d5;
+}
+.ams-table thead th {
+  padding: 12px 20px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #434653;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.ams-table tbody td {
+  padding: 13px 20px;
+  font-size: 14px;
+  color: #121c28;
+  border-bottom: 1px solid #eef4ff;
+  vertical-align: middle;
+}
+.ams-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.ams-table tbody tr:hover td {
+  background: #f0f7ff;
+}
+
+/* ----------------------------------------
+	END EMPLOYEE TABLE
+	--------------------------------------- */
+
+.dashboard-employee-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-right: 12px;
+  background: #dae2ff;
+  color: var(--blue);
+}
+
+.dashboard-employee-name {
+  font-weight: 500;
+  color: var(--navy);
+}
+
+.room-status-hbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: opacity 0.2s ease;
+}
+
+.room-status-hbar-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 128px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--navy);
+  flex-shrink: 0;
+}
+
+.room-status-hbar-label i {
+  font-size: 16px;
+  color: var(--rs-color, var(--slate));
+}
+
+.room-status-hbar-track {
+  flex: 1;
+  margin: 0 16px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--surface-low);
+  overflow: hidden;
+}
+
+.room-status-hbar-fill {
+  height: 100%;
+  min-width: 3px;
+  border-radius: 9999px;
+  transition: width 0.5s ease;
+}
+
+.room-status-hbar-value {
+  width: 44px;
+  text-align: right;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.room-status-hbar-value .pct {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--slate);
+}
+
+.room-status-types-card {
+  background: var(--surface-low);
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.room-status-types-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.room-status-summary-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--navy);
+}
+
+.room-status-summary-label i {
+  font-size: 16px;
+  color: var(--navy);
+}
+
+.room-status-types-total {
+  background: #d6e3ff;
+  color: #001847;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+
+.room-status-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.room-status-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid var(--border-line);
+  border-radius: 6px;
+  padding: 6px 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.045);
+}
+
+.room-status-chip-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #44474d;
+}
+
+.room-status-chip-count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+.dashboard-employee-name {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  color: var(--navy);
+}
+
+.total-count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1;
+}
+
+.total-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+.room-status-hbar-track {
+  flex: 1;
+  margin: 0 16px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--surface-low);
+  overflow: hidden;
+}
+
+.room-status-hbar-fill {
+  height: 100%;
+  min-width: 3px;
+  border-radius: 9999px;
+  transition: width 0.5s ease;
+}
+
+.room-status-hbar-value {
+  width: 40px;
+  text-align: right;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.room-status-hbar-value .pct {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--slate);
+}
+
+.room-status-types-card {
+  background: var(--surface-low);
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.room-status-types-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.room-status-summary-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--navy);
+}
+
+.room-status-summary-label i {
+  font-size: 14px;
+  color: var(--navy);
+}
+
+.room-status-types-total {
+  background: #d6e3ff;
+  color: #001847;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.room-status-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.room-status-chip {
+  background: #fff;
+  border: 1px solid var(--border-line);
+  border-radius: 6px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.045);
+}
+
+.room-status-chip-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #44474d;
+}
+
+.room-status-chip-count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue);
 }
 
 .dashboard-room-status-label {
@@ -339,11 +805,6 @@ body {
   gap: 8px;
   width: 110px;
   flex-shrink: 0;
-}
-
-.dashboard-status-label {
-  font-size: 13px;
-  color: #434653;
 }
 
 .dashboard-room-status-value {
@@ -398,28 +859,6 @@ body {
   border-radius: 9999px;
 }
 
-.dashboard-room-status-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 110px;
-  flex-shrink: 0;
-}
-
-.dashboard-room-status-value {
-  font-size: 13px;
-  font-weight: 700;
-  color: #121c28;
-  width: 48px;
-  text-align: right;
-}
-
-.dashboard-room-status-percent {
-  font-weight: 400;
-  color: #737784;
-  font-size: 11px;
-}
-
 .room-status-row {
   display: flex;
   align-items: center;
@@ -463,19 +902,9 @@ body {
   color: #434653;
 }
 
-.dashboard-room-status-value {
-  font-size: 13px;
-  font-weight: 700;
-  color: #121c28;
-  width: 48px;
-  text-align: right;
-}
-
-.dashboard-room-status-percent {
-  font-weight: 400;
-  color: #737784;
-  font-size: 11px;
-}
+/* --------------------------------
+	Room Status Chart
+	------------------------------- */
 
 .dashboard-activity-row {
   border-bottom: 1px solid #eef4ff;
@@ -521,9 +950,6 @@ body {
   border: 1px solid #fecaca;
 }
 
-.kpi-value--primary {
-  color: #003686;
-}
 .kpi-value--success {
   color: #15803d;
 }
@@ -534,18 +960,129 @@ body {
   border-left: 4px solid #22c55e;
 }
 
-/* Dashboard Grid Charts */
+/* Room Status Chart */
+.room-status-hbar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
 
-.dashboard-grid-charts {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 1.5rem;
+.room-status-hbar-track {
+  width: 100%;
+  height: 10px;
+  border-radius: 9999px;
+  background: #eef0f5;
+  overflow: hidden;
 }
-@media (max-width: 992px) {
-  .dashboard-grid-charts {
-    grid-template-columns: 1fr;
-  }
+
+.room-status-hbar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.5s ease;
+  min-width: 2px;
 }
+
+.room-status-hbar-value {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #121c28;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.room-status-hbar-value .pct {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  color: #737784;
+}
+
+.room-status-hbar-row.is-zero .room-status-hbar-label,
+.room-status-hbar-row.is-zero .room-status-hbar-value {
+  color: #a3a7b3;
+}
+
+.room-status-types-card {
+  padding: 12px;
+  border: 1px solid #dce3ef;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f8fbff 0%, #f3f7fc 100%);
+}
+
+.room-status-types-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.room-status-types-heading .room-status-summary-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  color: #334155;
+}
+
+.room-status-types-heading .room-status-summary-label i {
+  color: #00639d;
+}
+
+.room-status-types-total {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #e2edf8;
+  color: #00639d;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.room-status-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.room-status-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid #d6e2ef;
+  border-radius: 7px;
+  background: #fff;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.room-status-chip-name {
+  min-width: 0;
+  overflow: hidden;
+  padding: 5px 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-status-chip-count {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-left: 1px solid #d6e2ef;
+  background: #eaf3fb;
+  color: #00639d;
+  font-variant-numeric: tabular-nums;
+}
+
+/* -------------------------------------
+	End Room Status CharT
+	------------------------------------*/
+
+/* Dashboard Grid Charts */
 
 .dashboard-chart-panel--wide {
   min-width: 0;
@@ -1390,13 +1927,6 @@ body {
   justify-content: space-between;
 }
 
-.ams-card {
-  background: #fff;
-  border: 1px solid #c3c6d5;
-  border-radius: 12px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-}
-
 .status-badge {
   display: inline-flex;
   align-items: center;
@@ -1541,49 +2071,6 @@ body {
   background: #fff;
 }
 
-.ams-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: var(--font-sans);
-}
-.ams-table thead tr {
-  background: #eef4ff;
-  border-bottom: 1px solid #c3c6d5;
-}
-.ams-table thead th {
-  padding: 12px 20px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #434653;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-}
-.ams-table tbody td {
-  padding: 13px 20px;
-  font-size: 14px;
-  color: #121c28;
-  border-bottom: 1px solid #eef4ff;
-  vertical-align: middle;
-}
-.ams-table tbody tr:last-child td {
-  border-bottom: none;
-}
-.ams-table tbody tr:hover td {
-  background: #f0f7ff;
-}
-
-.badge-active,
-.badge-inactive,
-.badge-default {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 700;
-  font-family: var(--font-sans);
-}
 .badge-active {
   background: #dcfce7;
   color: #15803d;
@@ -1594,12 +2081,6 @@ body {
   color: #b91c1c;
   border: 1px solid #fecaca;
 }
-.badge-default {
-  background: #e5eeff;
-  color: #003686;
-  border: 1px solid #c3c6d5;
-}
-
 .action-btn {
   display: inline-flex;
   align-items: center;
@@ -1728,7 +2209,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.8px;
   font-weight: 600;
-  color: var(--sb-muted);
+  color: var(--ams-primary);
   padding: 14px 10px 6px;
   margin: 0;
 }

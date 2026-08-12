@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
+function initDashboard() {
   function getLocalDateString(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -10,8 +10,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let departmentChartInstance = null;
 
-  function fetchJSON(url) {
-    return fetch(url)
+  function fetchJSON(url, options = {}) {
+    return fetch(url, options)
       .then((response) =>
         response.ok ? response.json() : Promise.reject(response),
       )
@@ -27,97 +27,166 @@ document.addEventListener("DOMContentLoaded", function () {
       : (fallback ?? 0);
   }
 
-  function renderRoomStatusPanel(statusCounts, total) {
-    const panel = document.getElementById("dashboard-room-status");
-    const palette = {
-      Occupied: "#00639d",
-      Available: "#22c55e",
-      Reserved: "#f97316",
-      Maintenance: "#ba1a1a",
-      Other: "#6b7280",
-    };
-
-    const rows = Object.keys(statusCounts).map((label) => {
-      const count = statusCounts[label];
-      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-      const color = palette[label] || palette.Other;
-      return `
-            <div class="room-status-row">
-                <div class="dashboard-room-status-label">
-                    <div class="room-status-dot" style="background:${color};"></div>
-                    <span class="dashboard-status-label">${label}</span>
-                </div>
-                <div class="room-status-bar-track">
-                    <div class="room-status-bar-fill" style="width:${pct}%; background:${color};"></div>
-                </div>
-                <span class="dashboard-room-status-value">${count} <span class="dashboard-room-status-percent">(${pct}%)</span></span>
-            </div>`;
-    });
-
-    panel.innerHTML = rows.join("");
+  function setTextValue(id, value) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.textContent = value;
+    }
   }
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>'"]/g, (character) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "'": "&#039;",
+      '"': "&quot;",
+    })[character]);
+  }
+
+//   Rooms Status Panel
+
+function renderRoomStatusPanel(summary, total) {
+  const panel = document.getElementById("dashboard-room-status");
+  if (!panel) return;
+
+  const meta = {
+    Occupied: { color: "var(--blue)", icon: "bi-person-fill" },
+    Available: { color: "var(--teal-dim)", icon: "bi-door-open-fill" },
+    Reserved: { color: "var(--amber)", icon: "bi-bookmark-fill" },
+    Maintenance: { color: "var(--coral)", icon: "bi-tools" },
+  };
+
+  const totalRooms = summary.total_rooms ?? total ?? 0;
+
+  const statuses = [
+    { label: "Occupied", value: summary.occupied_rooms ?? 0 },
+    { label: "Available", value: summary.available_rooms ?? 0 },
+    { label: "Reserved", value: summary.reserved_rooms ?? 0 },
+    { label: "Maintenance", value: summary.maintenance_rooms ?? 0 },
+  ];
+
+  const rows = statuses
+    .map(({ label, value }) => {
+      const pct = totalRooms > 0 ? Math.round((value / totalRooms) * 100) : 0;
+      const { color, icon } = meta[label];
+      const isZero = value === 0;
+      return `
+      <div class="room-status-hbar-row${isZero ? " is-zero" : ""}">
+        <div class="room-status-hbar-label" style="--rs-color:${color}"><i class="bi ${icon}"></i>${label}</div>
+        <div class="room-status-hbar-track">
+          <div class="room-status-hbar-fill" style="width:${pct}%; background:${color};"></div>
+        </div>
+        <div class="room-status-hbar-value">${value}<span class="pct">${pct}%</span></div>
+      </div>`;
+    })
+    .join("");
+
+  const roomTypes = Object.entries(summary.room_types || {})
+    .map(([name, count]) => ({ name: name.trim(), count: Number(count) || 0 }))
+    .filter((type) => type.name);
+
+  const chips = roomTypes.length
+    ? roomTypes
+        .map(
+          (t) =>
+            `<span class="room-status-chip" title="${escapeHtml(t.name)}">
+              <span class="room-status-chip-name">${escapeHtml(t.name)}</span>
+              <span class="room-status-chip-count">${t.count}</span>
+            </span>`,
+        )
+        .join("")
+    : `<span class="room-status-chip room-status-chip--empty">None</span>`;
+
+  panel.innerHTML = `
+  <div class="room-status-total-line">
+    <span class="total-count">${totalRooms}</span>
+    <span class="total-label">Total Rooms</span>
+  </div>
+  <div class="room-status-hbar-list">${rows}</div>
+  <div class="room-status-types-card">
+    <div class="room-status-types-heading">
+      <div class="room-status-summary-label"><i class="bi bi-grid-fill"></i>Room Types</div>
+      <span class="room-status-types-total">${roomTypes.length} ${roomTypes.length === 1 ? "type" : "types"}</span>
+    </div>
+    <div class="room-status-chip-row">${chips}</div>
+  </div>`;
+}
+
+function renderRoomStatusMessage(message) {
+  const panel = document.getElementById("dashboard-room-status");
+  if (panel)
+    panel.innerHTML = `<div class="dashboard-loading-state">${message}</div>`;
+}
 
   function loadDashboardSummary() {
     Promise.all([
       fetchJSON("api/employees.php"),
-      fetchJSON("api/rooms.php"),
+      fetchJSON("api/room_status_summary.php", { cache: "no-store" }),
       fetchJSON("api/departments.php"),
-    ]).then(([employees, rooms, departments]) => {
-      const employeeList = Array.isArray(employees) ? employees : [];
-      const roomList = Array.isArray(rooms) ? rooms : [];
-      const departmentList = Array.isArray(departments) ? departments : [];
+    ])
+      .then(([employees, roomSummary, departments]) => {
+        if (!roomSummary || roomSummary.success === false) {
+          throw new Error("Invalid room status summary response");
+        }
 
-      const totalEmployees = employeeList.length;
-      const activeEmployees = employeeList.filter(
-        (emp) => String(emp.status || "").toLowerCase() === "active",
-      ).length;
-      const occupiedRooms = roomList.filter(
-        (room) => String(room.status || "").toLowerCase() === "occupied",
-      ).length;
-      const availableRooms = roomList.filter(
-        (room) => String(room.status || "").toLowerCase() === "available",
-      ).length;
-      const reservedRooms = roomList.filter(
-        (room) => String(room.status || "").toLowerCase() === "reserved",
-      ).length;
-      const maintenanceRooms = roomList.filter(
-        (room) => String(room.status || "").toLowerCase() === "maintenance",
-      ).length;
-      const totalRooms = roomList.length;
-      const activePct =
-        totalEmployees > 0
-          ? Math.round((activeEmployees / totalEmployees) * 100)
-          : 0;
-      const occupiedPct =
-        totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
-      const availablePct =
-        totalRooms > 0 ? Math.round((availableRooms / totalRooms) * 100) : 0;
+        const employeeList = Array.isArray(employees) ? employees : [];
+        const summary = roomSummary;
+        const departmentList = Array.isArray(departments) ? departments : [];
 
-      setKpiValue("kpi-total-employees", totalEmployees, 0);
-      setKpiValue("kpi-active-employees", activeEmployees, 0);
-      document.getElementById("kpi-active-pct").textContent = activePct + "%";
+        const totalEmployees = employeeList.length;
+        const activeEmployees = employeeList.filter(
+          (emp) => String(emp.status || "").toLowerCase() === "active",
+        ).length;
 
-      setKpiValue("kpi-total-rooms", totalRooms, 0);
-      setKpiValue("kpi-occupied", occupiedRooms, 0);
-      setKpiValue("kpi-available", availableRooms, 0);
-      document.getElementById("kpi-occupied-pct").textContent =
-        occupiedPct + "%";
-      document.getElementById("kpi-available-pct").textContent =
-        availablePct + "%";
-      setKpiValue("kpi-departments", departmentList.length, 0);
-      loadCompanyCarKPIs();
+        const totalRooms = Number(summary.total_rooms || 0);
+        const occupiedRooms = Number(summary.occupied_rooms || 0);
+        const availableRooms = Number(summary.available_rooms || 0);
+        const reservedRooms = Number(summary.reserved_rooms || 0);
+        const maintenanceRooms = Number(summary.maintenance_rooms || 0);
+        const roomTypes = summary.room_types || {};
+        const roomTypesText = Object.entries(roomTypes)
+          .map(([type, count]) => `${type} ${count}`)
+          .join(" | ");
 
-      renderRoomStatusPanel(
-        {
-          Occupied: occupiedRooms,
-          Available: availableRooms,
-          Reserved: reservedRooms,
-          Maintenance: maintenanceRooms,
-          Other: 0,
-        },
-        totalRooms,
-      );
-    });
+        const activePct =
+          totalEmployees > 0
+            ? Math.round((activeEmployees / totalEmployees) * 100)
+            : 0;
+        const occupiedPct =
+          totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
+        const availablePct =
+          totalRooms > 0 ? Math.round((availableRooms / totalRooms) * 100) : 0;
+
+        setKpiValue("kpi-total-employees", totalEmployees, 0);
+        setKpiValue("kpi-active-employees", activeEmployees, 0);
+        setTextValue("kpi-active-pct", activePct + "%");
+
+        setKpiValue("kpi-total-rooms", totalRooms, 0);
+        setKpiValue("kpi-occupied", occupiedRooms, 0);
+        setKpiValue("kpi-available", availableRooms, 0);
+        setTextValue("kpi-occupied-pct", occupiedPct + "%");
+        setTextValue("kpi-available-pct", availablePct + "%");
+        setKpiValue("kpi-departments", departmentList.length, 0);
+        loadCompanyCarKPIs();
+
+        renderRoomStatusPanel(
+          {
+            total_rooms: totalRooms,
+            occupied_rooms: occupiedRooms,
+            available_rooms: availableRooms,
+            reserved_rooms: reservedRooms,
+          maintenance_rooms: maintenanceRooms,
+          room_types: roomTypes,
+          room_types_text: roomTypesText || "None",
+          },
+          totalRooms,
+        );
+      })
+      .catch((error) => {
+        console.error("Dashboard summary load failed:", error);
+        renderRoomStatusMessage("Unable to load room status.");
+      });
   }
 
   function loadCompanyCarKPIs() {
@@ -133,6 +202,10 @@ document.addEventListener("DOMContentLoaded", function () {
       setKpiValue("kpi-companycar-available", stats.available_vehicles, 0);
     });
   }
+
+  //   End of Rooms Status Panel
+
+//   RECENT EMPLOYEES PANEL
 
   function loadRecentEmployees() {
     fetchJSON("api/employees.php").then((data) => {
@@ -178,6 +251,8 @@ document.addEventListener("DOMContentLoaded", function () {
         .join("");
     });
   }
+
+//   END RECENT EMPLOYEES PANEL 
 
   function navigateToEmployees(filters) {
     const params = new URLSearchParams();
@@ -518,7 +593,11 @@ document.addEventListener("DOMContentLoaded", function () {
         employee_count: Number(item.employee_count),
       }));
 
-      if (data.some((item) => item.department === "" || Number.isNaN(item.employee_count))) {
+      if (
+        data.some(
+          (item) => item.department === "" || Number.isNaN(item.employee_count),
+        )
+      ) {
         throw new Error("Invalid department summary data");
       }
 
@@ -540,7 +619,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (canvasEl) {
         const parentWidth = canvasEl.parentElement?.clientWidth || 800;
-        const minCanvasWidth = labels.length > 10 ? labels.length * 80 : parentWidth;
+        const minCanvasWidth =
+          labels.length > 10 ? labels.length * 80 : parentWidth;
         const canvasWidth = Math.max(parentWidth, minCanvasWidth);
 
         canvasEl.width = canvasWidth;
@@ -860,7 +940,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   loadDashboard();
   window.dashboardRefreshInterval = setInterval(loadDashboard, 30000);
-});
+}
+
+document.addEventListener("DOMContentLoaded", initDashboard);
 
 // Pie chart for gender
 

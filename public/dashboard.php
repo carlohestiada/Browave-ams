@@ -2,6 +2,8 @@
 <?php include 'layouts/sidebar.php'; ?>
 
 <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet">
 
 <div class="content-wrapper">
 
@@ -283,11 +285,6 @@
     </div>
 
 </div>
-
-
-
-<script src="assets/js/dashboard.js"></script>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-
+<script src="assets/js/dashboard.js?v=<?= filemtime(__DIR__ . '/assets/js/dashboard.js') ?>"></script>
 <?php include 'layouts/footer.php'; ?>
