@@ -5,6 +5,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
 
 ?>
 
+<link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
 
 <div class="sidebar">
 
@@ -225,6 +226,14 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
             <?php endif; ?>
 
         </ul>
+
+    </div>
+    <!-- Sign Out -->
+    <div class="sidebar-signout-wrap">
+        <button type="button" class="sidebar-signout-btn" onclick="document.getElementById('logout-form') ? document.getElementById('logout-form').submit() : window.location.href='logout.php'">
+            <i class="bi bi-box-arrow-right nav-icon"></i>
+            <span>Sign Out</span>
+        </button>
     </div>
 </div>
 </div>

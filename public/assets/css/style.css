@@ -351,17 +351,16 @@ body {
 :root {
   --navy: #000d23;
   --blue: #0054cb;
-  --coral: #EF6461;
-  --amber: #F2A93B;
+  --coral: #ef6461;
+  --amber: #f2a93b;
   --teal-dim: #5fdac7;
   --teal-fixed: #7ef7e3;
   --teal-text: #009b8b;
-  --slate: #94A3B8;
-  --border-line: #E4E9F2;
+  --slate: #94a3b8;
+  --border-line: #e4e9f2;
   --surface-low: #f0f3ff;
   --surface-bright: #f9f9ff;
 }
-
 
 .dashboard-card-panel {
   padding: 0;
@@ -380,14 +379,14 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-family: 'Sora', sans-serif;
+  font-family: "Sora", sans-serif;
   font-size: 15px;
   font-weight: 700;
   color: var(--navy);
 }
 
 .dashboard-card-link {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 11px;
   font-weight: 600;
   color: var(--blue);
@@ -406,7 +405,7 @@ body {
   text-align: center;
   padding: 24px;
   color: var(--slate);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13px;
 }
 
@@ -418,7 +417,7 @@ body {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 .ams-table thead tr {
@@ -454,15 +453,15 @@ body {
   color: var(--navy);
 }
 
-.ams-table tbody tr:nth-child(4n+2) .dashboard-employee-avatar {
+.ams-table tbody tr:nth-child(4n + 2) .dashboard-employee-avatar {
   background: #ffdad6;
   color: var(--coral);
 }
-.ams-table tbody tr:nth-child(4n+3) .dashboard-employee-avatar {
+.ams-table tbody tr:nth-child(4n + 3) .dashboard-employee-avatar {
   background: #dee8ff;
   color: var(--blue);
 }
-.ams-table tbody tr:nth-child(4n+4) .dashboard-employee-avatar {
+.ams-table tbody tr:nth-child(4n + 4) .dashboard-employee-avatar {
   background: #d6e3ff;
   color: #0040a0;
 }
@@ -486,8 +485,12 @@ body {
   transition: background 0.15s ease;
 }
 
-.ams-table tbody tr:last-child { border-bottom: none; }
-.ams-table tbody tr:hover { background: var(--surface-low); }
+.ams-table tbody tr:last-child {
+  border-bottom: none;
+}
+.ams-table tbody tr:hover {
+  background: var(--surface-low);
+}
 
 .ams-table td {
   padding: 12px 22px;
@@ -533,7 +536,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 11px;
   font-weight: 700;
   flex-shrink: 0;
@@ -559,7 +562,7 @@ body {
   align-items: center;
   gap: 8px;
   width: 128px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13.5px;
   font-weight: 500;
   color: var(--navy);
@@ -590,7 +593,7 @@ body {
 .room-status-hbar-value {
   width: 44px;
   text-align: right;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 12px;
   font-weight: 700;
   color: var(--navy);
@@ -598,7 +601,7 @@ body {
 
 .room-status-hbar-value .pct {
   display: block;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 9px;
   font-weight: 500;
   color: var(--slate);
@@ -621,7 +624,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13.5px;
   font-weight: 500;
   color: var(--navy);
@@ -635,7 +638,7 @@ body {
 .room-status-types-total {
   background: #d6e3ff;
   color: #001847;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 10px;
   font-weight: 700;
   padding: 2px 9px;
@@ -661,27 +664,27 @@ body {
 }
 
 .room-status-chip-name {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 500;
   color: #44474d;
 }
 
 .room-status-chip-count {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 12px;
   font-weight: 700;
   color: var(--blue);
 }
 
 .dashboard-employee-name {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-weight: 500;
   color: var(--navy);
 }
 
 .total-count {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 30px;
   font-weight: 700;
   color: var(--navy);
@@ -689,7 +692,7 @@ body {
 }
 
 .total-label {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 1.1px;
@@ -716,7 +719,7 @@ body {
 .room-status-hbar-value {
   width: 40px;
   text-align: right;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 12px;
   font-weight: 700;
   color: var(--navy);
@@ -724,7 +727,7 @@ body {
 
 .room-status-hbar-value .pct {
   display: block;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 9px;
   font-weight: 500;
   color: var(--slate);
@@ -747,7 +750,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 13.5px;
   font-weight: 500;
   color: var(--navy);
@@ -761,7 +764,7 @@ body {
 .room-status-types-total {
   background: #d6e3ff;
   color: #001847;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 10px;
   font-weight: 700;
   padding: 2px 8px;
@@ -782,18 +785,18 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.045);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.045);
 }
 
 .room-status-chip-name {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 500;
   color: #44474d;
 }
 
 .room-status-chip-count {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: "IBM Plex Mono", monospace;
   font-size: 12px;
   font-weight: 700;
   color: var(--blue);
@@ -1655,6 +1658,53 @@ body {
   opacity: 0.88;
   color: #ffffff;
 }
+
+/* ------------------------------
+	SIDEBAR <SIGNOUT>
+	----------------------------- */
+.sidebar-signout-wrap {
+  padding: 10px 30px 8px;
+  margin-top: auto;
+  border-top: 1px solid var(--border-line, #e4e9f2);
+}
+
+.sidebar-signout-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 4px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-family: "Inter", sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--coral, #ef6461);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.sidebar-signout-btn:hover {
+  background: rgba(239, 100, 97, 0.1);
+  color: var(--coral, #ef6461);
+}
+
+.sidebar-signout-btn .nav-icon {
+  font-size: 18px;
+  color: inherit;
+}
+
+/* fixed bottom sidebar */
+.sidebar {
+  display: flex;
+  flex-direction: column;	
+  height: 100vh;
+}
+/* -----------------------------------
+	END SIDEBAR <SIGNOUT>
+	----------------------------- */
 
 /* ----------------------------
   	Shared page components
