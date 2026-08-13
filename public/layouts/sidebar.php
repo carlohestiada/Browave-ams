@@ -6,6 +6,8 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
 ?>
 
 <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
+<link rel="stylesheet" href="assets/css/bootstrap.min.css?v=<?= filemtime(__DIR__ . '/assets/css/bootstrap.min.css') ?>">
+<link rel="stylesheet" href="assets/css/bootstrap.css?v=<?= filemtime(__DIR__ . '/assets/css/bootstrap.css') ?>">
 
 <div class="sidebar">
 
@@ -237,3 +239,4 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
     </div>
 </div>
 </div>
+<script src="/Browave-ams/public/assets/js/bootstrap.bundle.min.js"></script>
