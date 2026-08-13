@@ -1412,6 +1412,87 @@ body {
   color: #64748b;
 }
 
+/* DASHBOARD <ARRIVAL AND DEPARTURE CHART> */
+.traffic-chart-subtitle {
+  font-size: 0.8125rem;
+  color: #717881;
+  margin-top: 2px;
+  font-weight: 400;
+}
+.traffic-chart-links {
+  display: flex;
+  gap: 1rem;
+}
+.traffic-link-departure {
+  color: #b45309;
+}
+.traffic-link-departure:hover {
+  color: #92400e;
+}
+
+.traffic-chart-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 500px;
+}
+.traffic-chart-stats {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+.traffic-chart-stat {
+  text-align: right;
+}
+.traffic-chart-stat-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #717881;
+  margin-bottom: 4px;
+}
+.traffic-chart-stat-value {
+  font-family: "Sora", sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0b1c30;
+}
+
+.traffic-chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+.traffic-chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #414750;
+}
+.traffic-legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  display: inline-block;
+}
+.traffic-legend-arrival {
+  background: #00639d;
+}
+.traffic-legend-departure {
+  background: #b45309;
+}
+
+.traffic-chart-canvas-wrap {
+  flex: 1;
+  position: relative;
+  min-height: 350px;
+}
+/* END DASHBOARD <ARRIVAL AND DEPARTURE CHART> */
+
+/* DASHBOARD END */
+
 .gender-arc-animate {
   cursor: pointer;
   transition:
@@ -1629,7 +1710,9 @@ body {
   font-family: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .ams-user-trigger:hover,

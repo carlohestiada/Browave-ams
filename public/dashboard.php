@@ -253,35 +253,42 @@
 
     </div>
 
-    <!-- Arrivals & Departures Today -->
-    <div class="dashboard-grid-twocol">
-
-        <!-- Today's Arrivals -->
-        <div class="ams-card dashboard-card-panel">
-            <div class="dashboard-card-header">
-                <div class="dashboard-card-title">
-                    <span>Today's Arrivals</span>
-                </div>
-                <a href="arrivals.php" class="dashboard-card-link">Manage &rarr;</a>
+    <!-- Arrival & Departure Overview -->
+    <div class="ams-card dashboard-card-panel dashboard-section-spacing traffic-chart-card">
+        <div class="dashboard-card-header">
+            <div class="dashboard-card-title">
+                <span>Arrival &amp; Departure Overview</span>
             </div>
-            <div class="dashboard-card-body" id="dashboard-arrivals">
-                <div class="dashboard-loading-state">Loading...</div>
+            <div class="traffic-chart-links">
+                <a href="arrivals.php" class="dashboard-card-link">Arrivals &rarr;</a>
+                <a href="departures.php" class="dashboard-card-link traffic-link-departure">Departures &rarr;</a>
             </div>
         </div>
-
-        <!-- Today's Departures -->
-        <div class="ams-card dashboard-card-panel">
-            <div class="dashboard-card-header">
-                <div class="dashboard-card-title">
-                    <span>Today's Departures</span>
+        <div class="dashboard-card-body traffic-chart-body">
+            <div class="traffic-chart-stats">
+                <div class="traffic-chart-stat">
+                    <div class="traffic-chart-stat-label">Total Today</div>
+                    <div class="traffic-chart-stat-value" id="traffic-total-today">-</div>
                 </div>
-                <a href="departures.php" class="dashboard-card-link">Manage &rarr;</a>
+                <div class="traffic-chart-stat">
+                    <div class="traffic-chart-stat-label">Total This Week</div>
+                    <div class="traffic-chart-stat-value" id="traffic-total-week">-</div>
+                </div>
             </div>
-            <div class="dashboard-card-body" id="dashboard-departures">
-                <div class="dashboard-loading-state">Loading...</div>
+            <div class="traffic-chart-legend">
+                <div class="traffic-chart-legend-item">
+                    <span class="traffic-legend-swatch traffic-legend-arrival"></span>
+                    <span>Arrival</span>
+                </div>
+                <div class="traffic-chart-legend-item">
+                    <span class="traffic-legend-swatch traffic-legend-departure"></span>
+                    <span>Departure</span>
+                </div>
+            </div>
+            <div class="traffic-chart-canvas-wrap">
+                <canvas id="groupedTrafficChart" role="img" aria-label="Bar chart comparing arrivals and departures"></canvas>
             </div>
         </div>
-
     </div>
 
 </div>

@@ -12,10 +12,17 @@ function initDashboard() {
 
   function fetchJSON(url, options = {}) {
     return fetch(url, options)
-      .then((response) =>
-        response.ok ? response.json() : Promise.reject(response),
-      )
-      .catch(() => null);
+      .then((response) => {
+        if (!response.ok) {
+          console.warn(`API Error [${response.status}]: ${url}`);
+          return Promise.reject(response);
+        }
+        return response.json();
+      })
+      .catch((error) => {
+        console.error(`Fetch failed for ${url}:`, error);
+        return null;
+      });
   }
 
   function setKpiValue(id, value, fallback = "-") {
@@ -926,17 +933,18 @@ function initDashboard() {
     loadDashboardSummary();
     loadRecentEmployees();
     loadCharts();
+    loadTrafficOverviewChart();
     loadTransactionCards(
       "arrival",
       "dashboard-arrivals",
       "badge-status-arriving",
-      "No arrivals scheduled today.",
+      "No arrivals scheduled today."
     );
     loadTransactionCards(
       "departure",
       "dashboard-departures",
       "badge-status-departing",
-      "No departures scheduled today.",
+      "No departures scheduled today."
     );
   };
 
@@ -947,6 +955,270 @@ function initDashboard() {
 
   loadDashboard();
   window.dashboardRefreshInterval = setInterval(loadDashboard, 30000);
+
+  let trafficChartInstance = null;
+
+  function getMonday(date) {
+    const d = new Date(date);
+    const day = d.getDay(); // 0 = Sunday ... 6 = Saturday
+    // Calculate days to subtract to get to Monday
+    // Monday is 1, so: if Monday, subtract 0; if Tuesday, subtract 1; etc.
+    // If Sunday (0), subtract -6 (i.e., add 1 day... wait that's wrong)
+    // Sunday should go back to previous Monday (6 days back)
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    
+    console.debug("getMonday calculation:", {
+      originalDate: new Date(date).toISOString().split('T')[0],
+      dayOfWeek: day, // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+      dayName: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day],
+      diff: diff,
+      resultDate: d.toISOString().split('T')[0],
+    });
+    
+    return d;
+  }
+
+  function showTrafficChartLoading() {
+    const canvasWrap = document.querySelector(".traffic-chart-canvas-wrap");
+    if (!canvasWrap) return;
+    
+    canvasWrap.innerHTML = '<div class="dashboard-loading-state" style="min-height: 350px; display: flex; align-items: center; justify-content: center;">Loading arrival & departure data...</div>';
+    document.getElementById("traffic-total-today").textContent = "-";
+    document.getElementById("traffic-total-week").textContent = "-";
+  }
+
+  function showTrafficChartError(message) {
+    const canvasWrap = document.querySelector(".traffic-chart-canvas-wrap");
+    if (!canvasWrap) return;
+    
+    canvasWrap.innerHTML = `<div class="dashboard-loading-state" style="color: #b91c1c; background: #fee2e2;">${message}</div>`;
+    document.getElementById("traffic-total-today").textContent = "-";
+    document.getElementById("traffic-total-week").textContent = "-";
+  }
+
+  function showTrafficChartEmpty() {
+    const canvasWrap = document.querySelector(".traffic-chart-canvas-wrap");
+    if (!canvasWrap) return;
+    
+    canvasWrap.innerHTML = '<div class="dashboard-loading-state">No arrival or departure data available</div>';
+    document.getElementById("traffic-total-today").textContent = "0";
+    document.getElementById("traffic-total-week").textContent = "0";
+  }
+
+  function loadTrafficOverviewChart() {
+    showTrafficChartLoading();
+
+    const weekStart = getLocalDateString(getMonday(new Date()));
+    const weekEnd = today;
+
+    const arrivalTodayUrl = `api/transactions/index.php/type/arrival?date_from=${today}&date_to=${today}`;
+    const departureTodayUrl = `api/transactions/index.php/type/departure?date_from=${today}&date_to=${today}`;
+    const arrivalWeekUrl = `api/transactions/index.php/type/arrival?date_from=${weekStart}&date_to=${weekEnd}`;
+    const departureWeekUrl = `api/transactions/index.php/type/departure?date_from=${weekStart}&date_to=${weekEnd}`;
+
+    console.group("Traffic Chart - Data Loading");
+    console.log("📅 Week Period: %c" + weekStart + " → " + weekEnd, "color: #0284c7; font-weight: bold");
+    console.log("📅 Today: %c" + today, "color: #0284c7; font-weight: bold");
+    console.log("API Endpoints:");
+    console.log("  • Arrival Today:", arrivalTodayUrl);
+    console.log("  • Departure Today:", departureTodayUrl);
+    console.log("  • Arrival Week (Mon→Today):", arrivalWeekUrl);
+    console.log("  • Departure Week (Mon→Today):", departureWeekUrl);
+    console.groupEnd();
+
+    Promise.all([
+      fetchJSON(arrivalTodayUrl),
+      fetchJSON(departureTodayUrl),
+      fetchJSON(arrivalWeekUrl),
+      fetchJSON(departureWeekUrl),
+    ]).then(([arrivalToday, departureToday, arrivalWeek, departureWeek]) => {
+      // Check for API errors
+      if (
+        arrivalToday === null ||
+        departureToday === null ||
+        arrivalWeek === null ||
+        departureWeek === null
+      ) {
+        console.error("Traffic chart API request failed");
+        showTrafficChartError("Unable to load arrival & departure data.");
+        return;
+      }
+
+      const counts = {
+        arrivalToday: Array.isArray(arrivalToday) ? arrivalToday.length : 0,
+        departureToday: Array.isArray(departureToday) ? departureToday.length : 0,
+        arrivalWeek: Array.isArray(arrivalWeek) ? arrivalWeek.length : 0,
+        departureWeek: Array.isArray(departureWeek) ? departureWeek.length : 0,
+      };
+
+      console.group("Traffic Chart - Data Summary");
+      console.log("TODAY (%c" + today + "%c):", "color: #ea580c; font-weight: bold", "color: inherit");
+      console.log("  • Arrivals: %c" + counts.arrivalToday, "color: #00639d; font-weight: bold");
+      console.log("  • Departures: %c" + counts.departureToday, "color: #b45309; font-weight: bold");
+      console.log("THIS WEEK (%c" + weekStart + " → " + weekEnd + "%c):", "color: #059669; font-weight: bold", "color: inherit");
+      console.log("  • Total Arrivals: %c" + counts.arrivalWeek, "color: #00639d; font-weight: bold");
+      console.log("  • Total Departures: %c" + counts.departureWeek, "color: #b45309; font-weight: bold");
+      console.groupEnd();
+
+      const totalData = counts.arrivalToday + counts.departureToday + counts.arrivalWeek + counts.departureWeek;
+      
+      if (totalData === 0) {
+        showTrafficChartEmpty();
+        return;
+      }
+
+      document.getElementById("traffic-total-today").textContent = 
+        counts.arrivalToday + counts.departureToday;
+      document.getElementById("traffic-total-week").textContent = 
+        counts.arrivalWeek + counts.departureWeek;
+
+      console.log("✅ Rendering chart with data:", counts);
+      renderTrafficChart(counts);
+    });
+  }
+
+  function renderTrafficChart(counts) {
+    const canvasWrap = document.querySelector(".traffic-chart-canvas-wrap");
+
+    if (!canvasWrap) {
+      console.error("Traffic chart canvas wrapper not found");
+      return;
+    }
+
+    // Check if we need to replace the canvas (loading state is showing)
+    const loadingState = canvasWrap.querySelector(".dashboard-loading-state");
+    if (loadingState) {
+      // Destroy old chart instance if it exists and we're replacing canvas
+      if (trafficChartInstance) {
+        trafficChartInstance.destroy();
+        trafficChartInstance = null;
+      }
+      
+      canvasWrap.innerHTML = `<canvas id="groupedTrafficChart" width="800" height="400" role="img" aria-label="Bar chart comparing arrivals and departures"></canvas>`;
+    }
+
+    // Get canvas reference
+    const freshCanvas = document.getElementById("groupedTrafficChart");
+    if (!freshCanvas) {
+      console.error("Failed to get traffic chart canvas");
+      return;
+    }
+    
+    console.log("Canvas element found:", freshCanvas, "Size:", freshCanvas.width, "x", freshCanvas.height);
+
+    const dataLabelsPlugin = {
+      id: "trafficDataLabels",
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        ctx.save();
+        ctx.font = "500 12px Inter";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillStyle = "#414750";
+        chart.data.datasets.forEach((dataset, i) => {
+          const meta = chart.getDatasetMeta(i);
+          if (!meta.hidden) {
+            meta.data.forEach((element, index) => {
+              const value = dataset.data[index];
+              if (value > 0) {
+                ctx.fillText(String(value), element.x, element.y - 6);
+              }
+            });
+          }
+        });
+        ctx.restore();
+      },
+    };
+
+    // Chart Configuration
+    // Grouped bar chart: "Today" vs "This Week" totals
+    // This Week = Total accumulated arrivals/departures from Monday through today
+    // Chart structure:
+    //         Today              This Week
+    //      Arr | Dep           Arr | Dep
+    //       █  |  █             █  |  █
+    const config = {
+      type: "bar",
+      data: {
+        labels: ["Today", "This Week"],
+        datasets: [
+          {
+            label: "Arrival",
+            // [count for today only, sum of all arrivals Mon→Today]
+            data: [counts.arrivalToday, counts.arrivalWeek],
+            backgroundColor: "#00639d",
+            borderRadius: 4,
+            barPercentage: 0.6,
+            categoryPercentage: 0.7,
+          },
+          {
+            label: "Departure",
+            // [count for today only, sum of all departures Mon→Today]
+            data: [counts.departureToday, counts.departureWeek],
+            backgroundColor: "#b45309",
+            borderRadius: 4,
+            barPercentage: 0.6,
+            categoryPercentage: 0.7,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: "#213145",
+            titleFont: { family: "Sora", size: 12 },
+            bodyFont: { family: "Inter", size: 12 },
+            padding: 12,
+            cornerRadius: 8,
+            callbacks: {
+              label: (context) => `${context.dataset.label}: ${context.parsed.y} employees`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { family: "Inter", size: 13, weight: "500" }, color: "#414750" },
+            border: { display: false },
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: "#e2e8f0", drawTicks: false },
+            ticks: { font: { family: "Inter", size: 11 }, color: "#717881", padding: 12 },
+            border: { display: false },
+          },
+        },
+        layout: { padding: { top: 24 } },
+      },
+      plugins: [dataLabelsPlugin],
+    };
+
+    if (trafficChartInstance) {
+      console.log("Updating existing chart instance");
+      trafficChartInstance.data.labels = config.data.labels;
+      trafficChartInstance.data.datasets = config.data.datasets;
+      trafficChartInstance.options = config.options;
+      trafficChartInstance.update();
+      console.log("Traffic chart updated");
+    } else {
+      try {
+        const ctx = freshCanvas.getContext("2d");
+        if (!ctx) {
+          throw new Error("Failed to get canvas 2D context");
+        }
+        console.log("Creating new Chart.js instance");
+        trafficChartInstance = new Chart(ctx, config);
+        console.log("Traffic chart created successfully");
+      } catch (error) {
+        console.error("Failed to render traffic chart:", error);
+        showTrafficChartError("Unable to render chart. Please refresh the page.");
+      }
+    }
+  }
 }
 
 document.addEventListener("DOMContentLoaded", initDashboard);
