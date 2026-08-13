@@ -1413,12 +1413,6 @@ body {
 }
 
 /* DASHBOARD <ARRIVAL AND DEPARTURE CHART> */
-.traffic-chart-subtitle {
-  font-size: 0.8125rem;
-  color: #717881;
-  margin-top: 2px;
-  font-weight: 400;
-}
 .traffic-chart-links {
   display: flex;
   gap: 1rem;
@@ -1435,25 +1429,34 @@ body {
   flex-direction: column;
   min-height: 500px;
 }
-.traffic-chart-stats {
+.traffic-chart-header {
+  align-items: flex-start;
+}
+
+.traffic-summary-grid {
   display: flex;
   justify-content: flex-end;
-  gap: 2rem;
-  margin-bottom: 1.5rem;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
 }
-.traffic-chart-stat {
+
+.traffic-summary-item {
   text-align: right;
+  min-width: 170px;
 }
-.traffic-chart-stat-label {
-  font-size: 0.75rem;
+
+.traffic-summary-label {
+  font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   color: #717881;
   margin-bottom: 4px;
 }
-.traffic-chart-stat-value {
+
+.traffic-summary-value {
   font-family: "Sora", sans-serif;
-  font-size: 1.5rem;
+  font-size: 0.96rem;
   font-weight: 700;
   color: #0b1c30;
 }

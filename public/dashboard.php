@@ -65,8 +65,10 @@
                 <div class="dept-chart-title">Department Chart</div>
                 <div class="dept-chart-legend">
                     <span class="dept-chart-legend-swatch"></span>
-                    Employees
+                    Employees &nbsp;&nbsp;&nbsp;
+                    <a href="departments.php" class="dashboard-card-link">View all &rarr;</a>
                 </div>
+                
             </div>
             <div class="dept-chart-body">
                 <div class="dept-chart-canvas-wrap">
@@ -255,9 +257,11 @@
 
     <!-- Arrival & Departure Overview -->
     <div class="ams-card dashboard-card-panel dashboard-section-spacing traffic-chart-card">
-        <div class="dashboard-card-header">
-            <div class="dashboard-card-title">
-                <span>Arrival &amp; Departure Overview</span>
+        <div class="dashboard-card-header traffic-chart-header">
+            <div>
+                <div class="dashboard-card-title">
+                    <span>Arrival &amp; Departure Activity</span>
+                </div>
             </div>
             <div class="traffic-chart-links">
                 <a href="arrivals.php" class="dashboard-card-link">Arrivals &rarr;</a>
@@ -265,14 +269,14 @@
             </div>
         </div>
         <div class="dashboard-card-body traffic-chart-body">
-            <div class="traffic-chart-stats">
-                <div class="traffic-chart-stat">
-                    <div class="traffic-chart-stat-label">Total Today</div>
-                    <div class="traffic-chart-stat-value" id="traffic-total-today">-</div>
+            <div class="traffic-summary-grid">
+                <div class="traffic-summary-item">
+                    <div class="traffic-summary-label">This Week</div>
+                    <div class="traffic-summary-value" id="traffic-week-summary">Loading...</div>
                 </div>
-                <div class="traffic-chart-stat">
-                    <div class="traffic-chart-stat-label">Total This Week</div>
-                    <div class="traffic-chart-stat-value" id="traffic-total-week">-</div>
+                <div class="traffic-summary-item">
+                    <div class="traffic-summary-label">Today</div>
+                    <div class="traffic-summary-value" id="traffic-today-summary">Loading...</div>
                 </div>
             </div>
             <div class="traffic-chart-legend">
@@ -286,7 +290,7 @@
                 </div>
             </div>
             <div class="traffic-chart-canvas-wrap">
-                <canvas id="groupedTrafficChart" role="img" aria-label="Bar chart comparing arrivals and departures"></canvas>
+                <canvas id="groupedTrafficChart" role="img" aria-label="Bar chart showing daily arrival and departure activity for the current week"></canvas>
             </div>
         </div>
     </div>
