@@ -189,7 +189,7 @@ function renderMealPlannerRow(meal) {
   }
 
   return `
-        <tr class="${rowClass}">
+        <tr class="${rowClass}" data-date="${meal.date}">
             <td>
                 <div class="meal-planner-day-title">
                     <span>${mealEscapeHtml(dayLabel)}</span>
@@ -207,6 +207,16 @@ function renderMealPlannerRow(meal) {
     `;
 }
 
+function highlightCurrentDateInMealTable() {
+  const today = getLocalDateString();
+  
+  // Remove previous highlights
+  $(".meal-planner-table tbody tr").removeClass("current-date");
+  
+  // Find and highlight today's row
+  $(".meal-planner-table tbody tr[data-date='" + today + "']").addClass("current-date");
+}
+
 function renderMealPlannerTable(meals) {
   window.currentMealPlannerRows = meals || [];
 
@@ -218,6 +228,7 @@ function renderMealPlannerTable(meals) {
   }
 
   $("#mealTable").html(meals.map(renderMealPlannerRow).join(""));
+  highlightCurrentDateInMealTable();
 }
 
 function loadMealPlans() {
@@ -352,4 +363,23 @@ $(function () {
   $("#filterWeek").val(getLocalWeekString());
   $("#filterMonth").val(getLocalMonthString());
   loadMealPlans();
+  
+  // Setup automatic highlight update at midnight
+  setupMidnightMealTableHighlightRefresh();
 });
+
+function setupMidnightMealTableHighlightRefresh() {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 1, 0); // 00:00:01
+  
+  const timeUntilMidnight = tomorrow.getTime() - now.getTime();
+  
+  setTimeout(() => {
+    // Re-highlight the meal table at midnight
+    highlightCurrentDateInMealTable();
+    // Schedule the next midnight refresh
+    setupMidnightMealTableHighlightRefresh();
+  }, timeUntilMidnight);
+}

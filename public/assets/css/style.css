@@ -1944,6 +1944,10 @@ body {
   background-color: #f0f7ff;
 }
 
+/* ----------------------------------------------
+  MEAL MODULE
+  ----------------------------------------------- */
+
 .meal-headcount-summary {
   display: flex;
   align-items: center;
@@ -2057,6 +2061,15 @@ body {
   font-size: 12px;
   color: #334155;
 }
+.meal-planner-table tbody tr.current-date {
+  background: #e8f3ff;
+}
+.meal-planner-table tbody tr.current-date td {
+  background: #e8f3ff !important;
+}
+.meal-planner-table tbody tr.current-date td:first-child {
+  border-left: 4px solid #0284c7;
+}
 @media (max-width: 576px) {
   .meal-headcount-summary {
     align-items: flex-start;
@@ -2066,6 +2079,10 @@ body {
     text-align: left;
   }
 }
+
+/* ---------------------------------------------------
+  END MEAL MODULE
+  ---------------------------------------------------- */
 
 .table-footer-bar {
   padding: 14px 24px;
