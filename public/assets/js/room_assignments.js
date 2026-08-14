@@ -154,7 +154,7 @@ function initializeAssignmentDateBounds() {
 }
 
 function renderAssignmentRow(r, lookup) {
-  const trClass = r.status === "Transferred" ? "table-warning" : "";
+  const trClass = r.status === "Transferred" ? "table-light" : "";
   const assignmentId = String(r.id);
   const checked = selectedAssignmentIds.has(assignmentId) ? "checked" : "";
   let transferredTo = "";
