@@ -60,15 +60,18 @@
     <div class="dashboard-grid-charts dashboard-section-spacing">
 
         <!-- Department -->
-        <div class="ams-card dept-chart-card">
+        <div class="ams-card dashboard-card-panel">
             <div class="dept-chart-header">
-                <div class="dept-chart-title">Department Chart</div>
+                <div class="dashboard-card-title">
+                    <span>Department Chart</span>
+                </div>
                 <div class="dept-chart-legend">
-                    <span class="dept-chart-legend-swatch"></span>
-                    Employees &nbsp;&nbsp;&nbsp;
+
+                <span class="gender-chart-subtitle"><span class="dept-chart-legend-swatch"></span>
+                    &nbsp;&nbsp;Employees
+                </span>
                     <a href="departments.php" class="dashboard-card-link">View all &rarr;</a>
                 </div>
-                
             </div>
             <div class="dept-chart-body">
                 <div class="dept-chart-canvas-wrap">
@@ -84,7 +87,11 @@
                 <div class="dashboard-card-title">
                     <span>Gender Distribution</span>
                 </div>
-                <span class="gender-chart-subtitle">All employees</span>
+
+                <span class="gender-chart-subtitle"><span class="dept-chart-legend-swatch">
+                    </span>&nbsp;&nbsp;&nbsp;All employees
+                </span>
+                <a href="employees.php" class="dashboard-card-link">View all &rarr;</a>
             </div>
             <div class="dashboard-card-body dashboard-donut-body">
 
@@ -183,7 +190,7 @@
                             </svg>
                         </div>
                         <div>
-                            <p class="dashboard-donut-legend-label">Other</p>
+                            <p class="dashboard-donut-legend-label">Others</p>
                             <p class="dashboard-donut-legend-value" id="gender-pct-other">-</p>
                         </div>
                     </div>
@@ -199,7 +206,7 @@
                     <div class="gender-bar-labels">
                         <span id="gender-bar-label-male">Male 0%</span>
                         <span id="gender-bar-label-female">Female 0%</span>
-                        <span id="gender-bar-label-other">Other 0%</span>
+                        <span id="gender-bar-label-other">Others 0%</span>
                     </div>
                 </div>
 
@@ -300,7 +307,7 @@
         <aside class="department-employee-panel" role="dialog" aria-modal="true" aria-labelledby="departmentEmployeeTitle">
             <div class="department-employee-header">
                 <div>
-                    <p class="department-employee-kicker">Department</p>
+                    <p id="departmentEmployeeKicker" class="department-employee-kicker">Department</p>
                     <h3 id="departmentEmployeeTitle">Employee Details</h3>
                     <div id="departmentEmployeeMeta" class="department-employee-meta">0 employees</div>
                 </div>

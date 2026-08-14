@@ -15,6 +15,7 @@ class Employee
         $status = null,
         $departmentId = null,
         $search = null,
+        $gender = null,
         $excludeTransactionType = null,
         $excludeTransactionDate = null
     )
@@ -60,6 +61,20 @@ class Employee
             $params[] = $searchTerm;
             $params[] = $searchTerm;
             $params[] = $searchTerm;
+        }
+
+        if (!empty($gender)) {
+            $normalizedGender = $this->normalizeGenderFilterValue($gender);
+            if ($normalizedGender !== null) {
+                if ($normalizedGender === 'Other') {
+                    $conditions[] = '(LOWER(TRIM(CAST(e.gender AS TEXT))) IN (?, ?))';
+                    $params[] = 'other';
+                    $params[] = 'others';
+                } else {
+                    $conditions[] = 'LOWER(TRIM(CAST(e.gender AS TEXT))) = ?';
+                    $params[] = strtolower($normalizedGender);
+                }
+            }
         }
 
         if (!empty($excludeArrivedDate)) {
@@ -131,6 +146,34 @@ class Employee
         }
 
         return $value;
+    }
+
+    private function normalizeGenderFilterValue($value)
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $normalized = trim((string) $value);
+        if ($normalized === '') {
+            return null;
+        }
+
+        $lower = strtolower($normalized);
+
+        if ($lower === 'male') {
+            return 'Male';
+        }
+
+        if ($lower === 'female') {
+            return 'Female';
+        }
+
+        if ($lower === 'other' || $lower === 'others') {
+            return 'Other';
+        }
+
+        return null;
     }
 
     public function create($data)

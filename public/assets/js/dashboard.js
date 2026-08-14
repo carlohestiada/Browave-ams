@@ -11,7 +11,9 @@ function initDashboard() {
   let departmentChartInstance = null;
   let departmentChartData = [];
   let departmentEmployeeCache = [];
+  let genderEmployeeCache = [];
   let currentDepartmentSelection = null;
+  let currentGenderSelection = null;
 
   function fetchJSON(url, options = {}) {
     return fetch(url, options)
@@ -649,6 +651,75 @@ function initDashboard() {
     `;
   }
 
+  function renderGenderEmployeeTable(rows) {
+    const contentEl = document.getElementById("departmentEmployeeContent");
+    if (!contentEl) return;
+
+    const searchValue = (document.getElementById("departmentEmployeeSearch")?.value || "").trim().toLowerCase();
+    const filtered = Array.isArray(rows)
+      ? rows.filter((employee) => {
+          if (!searchValue) return true;
+          const haystack = [
+            employee.english_name,
+            employee.chinese_name,
+            employee.employee_code,
+            employee.department_name,
+            employee.gender,
+            employee.status,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(searchValue);
+        })
+      : [];
+
+    if (filtered.length === 0) {
+      contentEl.innerHTML = '<div class="department-employee-empty">No employees found</div>';
+      return;
+    }
+
+    const rowsHtml = filtered
+      .map((employee) => {
+        const name = employee.english_name || employee.chinese_name || employee.employee_code || "Unknown";
+        const status = String(employee.status || "Inactive");
+        const statusClass = status === "Active" ? "" : "inactive";
+        const departmentName = employee.department_name || "-";
+        const employeeCode = employee.employee_code || "-";
+        const gender = employee.gender || currentGenderSelection || "-";
+
+        return `
+          <tr>
+            <td class="department-employee-name">${escapeHtml(name)}</td>
+            <td>${escapeHtml(employeeCode)}</td>
+            <td>${escapeHtml(departmentName)}</td>
+            <td>${escapeHtml(gender)}</td>
+            <td><span class="department-employee-status ${statusClass}">${escapeHtml(status)}</span></td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    contentEl.innerHTML = `
+      <div class="department-employee-table-wrap">
+        <table class="department-employee-table">
+          <thead>
+            <tr>
+              <th>Employee Name</th>
+              <th>Employee ID</th>
+              <th>Department</th>
+              <th>Gender</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
   function renderDepartmentEmployeeError(message) {
     const contentEl = document.getElementById("departmentEmployeeContent");
     if (!contentEl) return;
@@ -665,6 +736,26 @@ function initDashboard() {
     if (retryButton && currentDepartmentSelection) {
       retryButton.addEventListener("click", () => {
         fetchDepartmentEmployees(currentDepartmentSelection.id);
+      });
+    }
+  }
+
+  function renderGenderEmployeeError(message) {
+    const contentEl = document.getElementById("departmentEmployeeContent");
+    if (!contentEl) return;
+    contentEl.innerHTML = `
+      <div class="department-employee-error">
+        <div>
+          <div>${message}</div>
+          <button type="button" class="department-employee-retry" data-retry-gender="true">Retry</button>
+        </div>
+      </div>
+    `;
+
+    const retryButton = contentEl.querySelector("[data-retry-gender]");
+    if (retryButton && currentGenderSelection) {
+      retryButton.addEventListener("click", () => {
+        fetchGenderEmployees(currentGenderSelection);
       });
     }
   }
@@ -689,21 +780,48 @@ function initDashboard() {
       });
   }
 
+  function fetchGenderEmployees(genderLabel) {
+    const contentEl = document.getElementById("departmentEmployeeContent");
+    const metaEl = document.getElementById("departmentEmployeeMeta");
+    if (!contentEl || !metaEl) return;
+    contentEl.innerHTML = '<div class="department-employee-loading">Loading employees...</div>';
+
+    const queryGender = genderLabel === "Others" ? "Other" : genderLabel;
+    fetchJSON(`api/employees.php?gender=${encodeURIComponent(queryGender)}`)
+      .then((data) => {
+        if (!Array.isArray(data)) {
+          throw new Error("Invalid employee response");
+        }
+
+        genderEmployeeCache = data;
+        const count = data.length;
+        metaEl.textContent = `${count} ${count === 1 ? "employee" : "employees"}`;
+        renderGenderEmployeeTable(data);
+      })
+      .catch((error) => {
+        console.error("Gender employee fetch failed:", error);
+        renderGenderEmployeeError("Unable to load employee details.\nPlease try again.");
+      });
+  }
+
   function openDepartmentEmployeeDrawer(department) {
     const drawer = document.getElementById("departmentEmployeeDrawer");
     const titleEl = document.getElementById("departmentEmployeeTitle");
     const metaEl = document.getElementById("departmentEmployeeMeta");
+    const kickerEl = document.getElementById("departmentEmployeeKicker");
     const searchInput = document.getElementById("departmentEmployeeSearch");
     const contentEl = document.getElementById("departmentEmployeeContent");
 
-    if (!drawer || !titleEl || !metaEl || !searchInput || !contentEl) {
+    if (!drawer || !titleEl || !metaEl || !searchInput || !contentEl || !kickerEl) {
       return;
     }
 
+    currentGenderSelection = null;
     currentDepartmentSelection = department || currentDepartmentSelection;
     const deptName = currentDepartmentSelection?.department || "Department";
     const total = Number(currentDepartmentSelection?.employee_count || 0);
 
+    kickerEl.textContent = "Department";
     titleEl.textContent = deptName;
     metaEl.textContent = `${total} employees`;
     searchInput.value = "";
@@ -714,6 +832,36 @@ function initDashboard() {
     fetchDepartmentEmployees(currentDepartmentSelection?.id || department?.id);
   }
 
+  function openGenderEmployeeDrawer(genderLabel) {
+    const drawer = document.getElementById("departmentEmployeeDrawer");
+    const titleEl = document.getElementById("departmentEmployeeTitle");
+    const metaEl = document.getElementById("departmentEmployeeMeta");
+    const kickerEl = document.getElementById("departmentEmployeeKicker");
+    const searchInput = document.getElementById("departmentEmployeeSearch");
+    const contentEl = document.getElementById("departmentEmployeeContent");
+
+    if (!drawer || !titleEl || !metaEl || !searchInput || !contentEl || !kickerEl) {
+      return;
+    }
+
+    currentDepartmentSelection = null;
+    currentGenderSelection = genderLabel || currentGenderSelection || "Male";
+    const safeGender = currentGenderSelection === "Others" ? "Others" : currentGenderSelection;
+    const total = Array.isArray(genderEmployeeCache)
+      ? genderEmployeeCache.length
+      : 0;
+
+    kickerEl.textContent = "Gender";
+    titleEl.textContent = safeGender;
+    metaEl.textContent = `${total} ${total === 1 ? "employee" : "employees"}`;
+    searchInput.value = "";
+    drawer.classList.add("is-open");
+    drawer.setAttribute("aria-hidden", "false");
+    contentEl.innerHTML = '<div class="department-employee-loading">Loading employees...</div>';
+
+    fetchGenderEmployees(safeGender);
+  }
+
   function closeDepartmentEmployeeDrawer() {
     const drawer = document.getElementById("departmentEmployeeDrawer");
     if (!drawer) return;
@@ -722,7 +870,9 @@ function initDashboard() {
     const searchInput = document.getElementById("departmentEmployeeSearch");
     if (searchInput) searchInput.value = "";
     currentDepartmentSelection = null;
+    currentGenderSelection = null;
     departmentEmployeeCache = [];
+    genderEmployeeCache = [];
   }
 
   // DEPARTMENT TREND CHART
@@ -918,7 +1068,11 @@ function initDashboard() {
 
     const searchInput = document.getElementById("departmentEmployeeSearch");
     searchInput?.addEventListener("input", () => {
-      renderDepartmentEmployeeTable(departmentEmployeeCache);
+      if (currentGenderSelection) {
+        renderGenderEmployeeTable(genderEmployeeCache);
+      } else {
+        renderDepartmentEmployeeTable(departmentEmployeeCache);
+      }
     });
 
     const closeButton = drawer.querySelector(".department-employee-close");
@@ -976,18 +1130,19 @@ function initDashboard() {
     const showTooltip = (event, label, count, pct) => {
       if (!tooltip) return;
       const safePct = Number.isFinite(pct) ? pct : 0;
+      const normalizedLabel = label === "Others" ? "Others" : label;
       const color =
-        label === "Female"
+        normalizedLabel === "Female"
           ? "#e879a0"
-          : label === "Other"
+          : normalizedLabel === "Others"
             ? "#f59e0b"
             : "#00639d";
       tooltip.innerHTML = `
                 <span class="dashboard-gender-tooltip-indicator" style="background:${color}"></span>
                 <div>
-                    <div class="dashboard-gender-tooltip-title">${label}</div>
+                    <div class="dashboard-gender-tooltip-title">${normalizedLabel}</div>
                     <div class="dashboard-gender-tooltip-value">${count} employees</div>
-                    <div class="dashboard-gender-tooltip-meta">${safePct}% of total</div>
+                    <div class="dashboard-gender-tooltip-meta">Click to view employees</div>
                 </div>`;
 
       const wrap = tooltip.parentElement;
@@ -1013,7 +1168,8 @@ function initDashboard() {
       maleArc.setAttribute("data-gender", "Male");
       maleArc.setAttribute("data-count", maleCount);
       maleArc.setAttribute("data-percent", malePct);
-      maleArc.onclick = () => navigateToEmployees({ gender: "Male" });
+      maleArc.style.cursor = "pointer";
+      maleArc.onclick = () => openGenderEmployeeDrawer("Male");
       maleArc.onmouseenter = (event) => {
         setArcState(maleArc);
         showTooltip(event, "Male", maleCount, malePct);
@@ -1031,7 +1187,8 @@ function initDashboard() {
       femaleArc.setAttribute("data-gender", "Female");
       femaleArc.setAttribute("data-count", femaleCount);
       femaleArc.setAttribute("data-percent", femalePct);
-      femaleArc.onclick = () => navigateToEmployees({ gender: "Female" });
+      femaleArc.style.cursor = "pointer";
+      femaleArc.onclick = () => openGenderEmployeeDrawer("Female");
       femaleArc.onmouseenter = (event) => {
         setArcState(femaleArc);
         showTooltip(event, "Female", femaleCount, femalePct);
@@ -1046,17 +1203,18 @@ function initDashboard() {
     if (otherArc) {
       otherArc.setAttribute("stroke-dasharray", `${otherPct} 100`);
       otherArc.setAttribute("stroke-dashoffset", `${-(malePct + femalePct)}`);
-      otherArc.setAttribute("data-gender", "Other");
+      otherArc.setAttribute("data-gender", "Others");
       otherArc.setAttribute("data-count", otherCount);
       otherArc.setAttribute("data-percent", otherPct);
-      otherArc.onclick = () => navigateToEmployees({ gender: "Other" });
+      otherArc.style.cursor = "pointer";
+      otherArc.onclick = () => openGenderEmployeeDrawer("Others");
       otherArc.onmouseenter = (event) => {
         setArcState(otherArc);
-        showTooltip(event, "Other", otherCount, otherPct);
+        showTooltip(event, "Others", otherCount, otherPct);
       };
       otherArc.onmousemove = (event) => {
         setArcState(otherArc);
-        showTooltip(event, "Other", otherCount, otherPct);
+        showTooltip(event, "Others", otherCount, otherPct);
       };
       otherArc.onmouseleave = hideTooltip;
     }
@@ -1064,6 +1222,15 @@ function initDashboard() {
     document
       .querySelectorAll(".dashboard-donut-legend-item")
       .forEach((item) => {
+        item.style.cursor = "pointer";
+        item.onclick = () => {
+          const label = item
+            .querySelector(".dashboard-donut-legend-label")
+            ?.textContent?.trim();
+          if (label === "Male" || label === "Female" || label === "Others") {
+            openGenderEmployeeDrawer(label);
+          }
+        };
         item.onmouseenter = () => {
           const label = item
             .querySelector(".dashboard-donut-legend-label")
@@ -1071,14 +1238,15 @@ function initDashboard() {
           const arc =
             label === "Female"
               ? femaleArc
-              : label === "Other"
+              : label === "Others"
                 ? otherArc
                 : maleArc;
           setArcState(arc);
           if (arc && tooltip) {
+            const displayLabel = label === "Others" ? "Others" : label;
             showTooltip(
               { clientX: 0, clientY: 0 },
-              label,
+              displayLabel,
               Number(arc.getAttribute("data-count") || 0),
               Number(arc.getAttribute("data-percent") || 0),
             );

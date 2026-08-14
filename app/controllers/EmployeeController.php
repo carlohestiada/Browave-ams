@@ -22,6 +22,7 @@ class EmployeeController
         $status = $_GET['status'] ?? null;
         $departmentId = $_GET['department_id'] ?? null;
         $search = $_GET['search'] ?? null;
+        $gender = $_GET['gender'] ?? null;
 
         echo json_encode(
             $this->employee->getAll(
@@ -30,6 +31,7 @@ class EmployeeController
                 $status,
                 $departmentId,
                 $search,
+                $gender,
                 $excludeTransactionType,
                 $excludeTransactionDate
             )

@@ -366,12 +366,18 @@ body {
   overflow: hidden;
 }
 
+.dashboard-card-panel .border-top {
+  border-top: 1px solid var(--border-line) !important;
+  background: #fff;
+}
+
 .dashboard-card-header {
-  padding: 20px 22px;
+  padding: 18px 24px;
   border-bottom: 1px solid var(--border-line);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: #fff;
 }
 
 .dashboard-card-title {
@@ -382,6 +388,11 @@ body {
   font-size: 15px;
   font-weight: 700;
   color: var(--navy);
+}
+
+.dashboard-card-title i {
+  color: var(--blue);
+  font-size: 16px;
 }
 
 .dashboard-card-link {
@@ -1120,24 +1131,12 @@ body {
 /* ---------------------------------------
 	Department Chart 
 	--------------------------------------*/
-
-.dept-chart-card {
-  padding: 0;
-  overflow: hidden;
-}
-
 .dept-chart-header {
   padding: 16px 20px;
   border-bottom: 1px solid #c3c6d5;
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.dept-chart-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #121c28;
 }
 
 .dept-chart-legend {
@@ -1529,7 +1528,6 @@ body {
   font-size: 11px;
   font-weight: 600;
   color: #9ca3af;
-  text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
@@ -5945,34 +5943,6 @@ body {
 }
 
 /* ---- Card header ---- */
-.dashboard-card-panel {
-  overflow: hidden;
-}
-
-.dashboard-card-header {
-  padding: 18px 24px;
-  border-bottom: 1px solid var(--border-line);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #fff;
-}
-
-.dashboard-card-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: "Sora", sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--navy);
-}
-
-.dashboard-card-title i {
-  color: var(--blue);
-  font-size: 16px;
-}
-
 #scheduleCount {
   font-family: "Inter", sans-serif;
   font-size: 11px;
@@ -6155,10 +6125,6 @@ body {
 }
 
 /* ---- Pagination footer ---- */
-.dashboard-card-panel .border-top {
-  border-top: 1px solid var(--border-line) !important;
-  background: #fff;
-}
 
 #schedulePagination .page-link {
   font-family: "Inter", sans-serif;
