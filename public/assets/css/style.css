@@ -1189,6 +1189,207 @@ body {
 	END DEPARTMENT CHART 
 	-----------------------------------------------------*/
 
+.department-employee-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.department-employee-drawer.is-open {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+.department-employee-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.28);
+}
+
+.department-employee-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: min(520px, 100%);
+  height: 100%;
+  background: #ffffff;
+  border-left: 1px solid #dfe3ec;
+  box-shadow: -16px 0 36px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+}
+
+.department-employee-drawer.is-open .department-employee-panel {
+  transform: translateX(0);
+}
+
+.department-employee-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid #edf0f5;
+  background: #fbfcfe;
+}
+
+.department-employee-kicker {
+  margin: 0 0 0.2rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.department-employee-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.department-employee-meta {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: #475467;
+}
+
+.department-employee-close {
+  border: 1px solid #dfe3ec;
+  background: #fff;
+  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.department-employee-search-wrap {
+  padding: 1rem 1.25rem 0.75rem;
+}
+
+.department-employee-search-wrap input {
+  width: 100%;
+  border: 1px solid #dde3ef;
+  background: #fff;
+  border-radius: 10px;
+  height: 42px;
+  padding: 0 12px;
+  color: #111827;
+  font-size: 0.92rem;
+}
+
+.department-employee-search-wrap input:focus {
+  outline: 2px solid rgba(0, 99, 157, 0.2);
+  border-color: #00639d;
+}
+
+.department-employee-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 1.25rem 1.25rem;
+}
+
+.department-employee-loading,
+.department-employee-empty,
+.department-employee-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  text-align: center;
+  color: #667085;
+  background: #f8fafc;
+  border: 1px dashed #dfe3ec;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.department-employee-error {
+  color: #b42318;
+  background: #fff5f5;
+  border-style: solid;
+  border-color: #fecaca;
+}
+
+.department-employee-retry {
+  display: inline-block;
+  margin-top: 0.75rem;
+  border: 0;
+  background: #00639d;
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+}
+
+.department-employee-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #edf0f5;
+  border-radius: 12px;
+}
+
+.department-employee-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.87rem;
+}
+
+.department-employee-table th,
+.department-employee-table td {
+  padding: 0.8rem 0.75rem;
+  border-bottom: 1px solid #eef2f7;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.department-employee-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+  color: #4b5563;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.7rem;
+}
+
+.department-employee-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.department-employee-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+.department-employee-name {
+  font-weight: 600;
+  color: #111827;
+}
+
+.department-employee-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.department-employee-status.inactive {
+  background: #f2f4f7;
+  color: #475467;
+}
+
 .dashboard-chart-tooltip {
   position: absolute;
   z-index: 20;

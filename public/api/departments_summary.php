@@ -9,6 +9,7 @@ try {
 
     $sql = <<<SQL
 SELECT
+    d.id AS id,
     d.department_name AS department,
     COUNT(e.id) AS employee_count
 FROM departments d

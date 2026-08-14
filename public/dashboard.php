@@ -295,6 +295,28 @@
         </div>
     </div>
 
+    <div id="departmentEmployeeDrawer" class="department-employee-drawer" aria-hidden="true">
+        <div class="department-employee-backdrop" data-close-drawer="true"></div>
+        <aside class="department-employee-panel" role="dialog" aria-modal="true" aria-labelledby="departmentEmployeeTitle">
+            <div class="department-employee-header">
+                <div>
+                    <p class="department-employee-kicker">Department</p>
+                    <h3 id="departmentEmployeeTitle">Employee Details</h3>
+                    <div id="departmentEmployeeMeta" class="department-employee-meta">0 employees</div>
+                </div>
+                <button type="button" class="department-employee-close" aria-label="Close employee details" data-close-drawer="true">&times;</button>
+            </div>
+
+            <div class="department-employee-search-wrap">
+                <input id="departmentEmployeeSearch" type="search" placeholder="Search employees..." aria-label="Search employees in selected department" />
+            </div>
+
+            <div id="departmentEmployeeContent" class="department-employee-content">
+                <div class="department-employee-loading">Loading employees...</div>
+            </div>
+        </aside>
+    </div>
+
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="assets/js/dashboard.js?v=<?= filemtime(__DIR__ . '/assets/js/dashboard.js') ?>"></script>

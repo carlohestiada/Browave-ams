@@ -9,6 +9,9 @@ function initDashboard() {
   const today = getLocalDateString(new Date());
 
   let departmentChartInstance = null;
+  let departmentChartData = [];
+  let departmentEmployeeCache = [];
+  let currentDepartmentSelection = null;
 
   function fetchJSON(url, options = {}) {
     return fetch(url, options)
@@ -577,6 +580,151 @@ function initDashboard() {
       .join("");
   }
 
+  function renderDepartmentEmployeeTable(rows) {
+    const contentEl = document.getElementById("departmentEmployeeContent");
+    if (!contentEl) return;
+
+    const searchValue = (document.getElementById("departmentEmployeeSearch")?.value || "").trim().toLowerCase();
+    const filtered = Array.isArray(rows)
+      ? rows.filter((employee) => {
+          if (!searchValue) return true;
+          const haystack = [
+            employee.english_name,
+            employee.chinese_name,
+            employee.employee_code,
+            employee.department_name,
+            employee.gender,
+            employee.status,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(searchValue);
+        })
+      : [];
+
+    if (filtered.length === 0) {
+      contentEl.innerHTML = '<div class="department-employee-empty">No employees found</div>';
+      return;
+    }
+
+    const rowsHtml = filtered
+      .map((employee) => {
+        const name = employee.english_name || employee.chinese_name || employee.employee_code || "Unknown";
+        const status = String(employee.status || "Inactive");
+        const statusClass = status === "Active" ? "" : "inactive";
+        const departmentName = employee.department_name || currentDepartmentSelection?.department || "-";
+        const employeeCode = employee.employee_code || "-";
+        const gender = employee.gender || "-";
+
+        return `
+          <tr>
+            <td class="department-employee-name">${escapeHtml(name)}</td>
+            <td>${escapeHtml(employeeCode)}</td>
+            <td>${escapeHtml(departmentName)}</td>
+            <td>${escapeHtml(gender)}</td>
+            <td><span class="department-employee-status ${statusClass}">${escapeHtml(status)}</span></td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    contentEl.innerHTML = `
+      <div class="department-employee-table-wrap">
+        <table class="department-employee-table">
+          <thead>
+            <tr>
+              <th>Employee Name</th>
+              <th>Employee ID</th>
+              <th>Department</th>
+              <th>Gender</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderDepartmentEmployeeError(message) {
+    const contentEl = document.getElementById("departmentEmployeeContent");
+    if (!contentEl) return;
+    contentEl.innerHTML = `
+      <div class="department-employee-error">
+        <div>
+          <div>${message}</div>
+          <button type="button" class="department-employee-retry" data-retry-department="true">Retry</button>
+        </div>
+      </div>
+    `;
+
+    const retryButton = contentEl.querySelector("[data-retry-department]");
+    if (retryButton && currentDepartmentSelection) {
+      retryButton.addEventListener("click", () => {
+        fetchDepartmentEmployees(currentDepartmentSelection.id);
+      });
+    }
+  }
+
+  function fetchDepartmentEmployees(departmentId) {
+    const contentEl = document.getElementById("departmentEmployeeContent");
+    if (!contentEl) return;
+    contentEl.innerHTML = '<div class="department-employee-loading">Loading employees...</div>';
+
+    fetchJSON(`api/employees.php?department_id=${encodeURIComponent(departmentId)}`)
+      .then((data) => {
+        if (!Array.isArray(data)) {
+          throw new Error("Invalid employee response");
+        }
+
+        departmentEmployeeCache = data;
+        renderDepartmentEmployeeTable(data);
+      })
+      .catch((error) => {
+        console.error("Department employee fetch failed:", error);
+        renderDepartmentEmployeeError("Unable to load employee details.\nPlease try again.");
+      });
+  }
+
+  function openDepartmentEmployeeDrawer(department) {
+    const drawer = document.getElementById("departmentEmployeeDrawer");
+    const titleEl = document.getElementById("departmentEmployeeTitle");
+    const metaEl = document.getElementById("departmentEmployeeMeta");
+    const searchInput = document.getElementById("departmentEmployeeSearch");
+    const contentEl = document.getElementById("departmentEmployeeContent");
+
+    if (!drawer || !titleEl || !metaEl || !searchInput || !contentEl) {
+      return;
+    }
+
+    currentDepartmentSelection = department || currentDepartmentSelection;
+    const deptName = currentDepartmentSelection?.department || "Department";
+    const total = Number(currentDepartmentSelection?.employee_count || 0);
+
+    titleEl.textContent = deptName;
+    metaEl.textContent = `${total} employees`;
+    searchInput.value = "";
+    drawer.classList.add("is-open");
+    drawer.setAttribute("aria-hidden", "false");
+    contentEl.innerHTML = '<div class="department-employee-loading">Loading employees...</div>';
+
+    fetchDepartmentEmployees(currentDepartmentSelection?.id || department?.id);
+  }
+
+  function closeDepartmentEmployeeDrawer() {
+    const drawer = document.getElementById("departmentEmployeeDrawer");
+    if (!drawer) return;
+    drawer.classList.remove("is-open");
+    drawer.setAttribute("aria-hidden", "true");
+    const searchInput = document.getElementById("departmentEmployeeSearch");
+    if (searchInput) searchInput.value = "";
+    currentDepartmentSelection = null;
+    departmentEmployeeCache = [];
+  }
+
   // DEPARTMENT TREND CHART
   async function loadDepartmentChart() {
     const statusEl = document.getElementById("departmentChartStatus");
@@ -603,9 +751,12 @@ function initDashboard() {
       }
 
       const data = json.map((item) => ({
+        id: Number(item.id ?? 0) || null,
         department: String(item.department ?? "").trim(),
-        employee_count: Number(item.employee_count),
+        employee_count: Number(item.employee_count || 0),
       }));
+
+      departmentChartData = data;
 
       if (
         data.some(
@@ -671,16 +822,37 @@ function initDashboard() {
         options: {
           responsive: false,
           maintainAspectRatio: false,
+          animation: {
+            duration: 250,
+          },
           plugins: {
             legend: {
               display: false,
             },
             tooltip: {
               callbacks: {
+                title: (items) => {
+                  const idx = items[0]?.dataIndex ?? 0;
+                  return departmentChartData[idx]?.department || items[0]?.label || "Department";
+                },
                 label: (item) =>
                   `${item.parsed.y} employee${item.parsed.y === 1 ? "" : "s"}`,
               },
             },
+          },
+          onHover: (event, elements) => {
+            const canvas = event?.native?.target || event?.target;
+            if (canvas) {
+              canvas.style.cursor = elements.length ? "pointer" : "default";
+            }
+          },
+          onClick: (event, elements) => {
+            if (!elements.length) return;
+            const index = elements[0].index;
+            const selected = departmentChartData[index];
+            if (selected && selected.id) {
+              openDepartmentEmployeeDrawer(selected);
+            }
           },
           scales: {
             x: {
@@ -727,6 +899,47 @@ function initDashboard() {
       }
     }
   }
+
+  function bindDepartmentDrawerControls() {
+    const drawer = document.getElementById("departmentEmployeeDrawer");
+    if (!drawer) return;
+
+    drawer.onclick = (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      const closeTrigger = target.closest("[data-close-drawer='true']");
+      if (closeTrigger) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeDepartmentEmployeeDrawer();
+      }
+    };
+
+    const searchInput = document.getElementById("departmentEmployeeSearch");
+    searchInput?.addEventListener("input", () => {
+      renderDepartmentEmployeeTable(departmentEmployeeCache);
+    });
+
+    const closeButton = drawer.querySelector(".department-employee-close");
+    if (closeButton instanceof HTMLElement) {
+      closeButton.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closeDepartmentEmployeeDrawer();
+      };
+    }
+
+    document.onkeydown = (event) => {
+      if (event.key === "Escape" && drawer.classList.contains("is-open")) {
+        closeDepartmentEmployeeDrawer();
+      }
+    };
+  }
+
+  // initDashboard already runs after DOMContentLoaded, so bind the drawer
+  // controls now instead of waiting for an event that has already fired.
+  bindDepartmentDrawerControls();
 
   // END DEPARTMENT TREND CHART
 
