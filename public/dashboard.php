@@ -358,6 +358,68 @@
     </div>
 
 </div>
+
+<!-- Room Status Details Drawer -->
+<div id="roomStatusDrawer" class="drawer drawer--right">
+    <div class="drawer-backdrop" id="roomStatusDrawerBackdrop"></div>
+    <div class="drawer-panel">
+        <div class="drawer-header">
+            <div class="drawer-header-content">
+                <h2 class="drawer-title">
+                    <span id="roomStatusDrawerTitle">Room Status</span>
+                    <span id="roomStatusDrawerCount" class="drawer-count-badge">0</span>
+                </h2>
+                <p id="roomStatusDrawerSubtitle" class="drawer-subtitle">Loading...</p>
+            </div>
+            <button type="button" class="drawer-close-btn" id="roomStatusDrawerClose" title="Close">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+
+        <div class="drawer-search">
+            <div class="drawer-search-input-wrap">
+                <i class="bi bi-search"></i>
+                <input 
+                    type="text" 
+                    id="roomStatusDrawerSearch" 
+                    class="drawer-search-input" 
+                    placeholder="Search..." 
+                    aria-label="Search employees or rooms"
+                />
+                <button type="button" class="drawer-search-clear" id="roomStatusDrawerSearchClear" title="Clear search" style="display: none;">
+                    <i class="bi bi-x-circle-fill"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="drawer-content">
+            <div id="roomStatusDrawerContent" class="drawer-table-container">
+                <div class="drawer-loading-state">
+                    <div class="drawer-spinner"></div>
+                    <p>Loading room details...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="roomStatusDrawerEmpty" class="drawer-empty-state" style="display: none;">
+            <div class="drawer-empty-icon">
+                <i class="bi bi-inbox"></i>
+            </div>
+            <p class="drawer-empty-title">No records found</p>
+            <p class="drawer-empty-text" id="roomStatusDrawerEmptyText">Unable to find matching records for this room status.</p>
+        </div>
+
+        <div id="roomStatusDrawerError" class="drawer-error-state" style="display: none;">
+            <div class="drawer-error-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <p class="drawer-error-title">Unable to load details</p>
+            <p class="drawer-error-text" id="roomStatusDrawerErrorText">Please try again.</p>
+            <button type="button" class="btn btn-primary btn-sm" id="roomStatusDrawerRetry">Retry</button>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="assets/js/dashboard.js?v=<?= filemtime(__DIR__ . '/assets/js/dashboard.js') ?>"></script>
 <?php include 'layouts/footer.php'; ?>

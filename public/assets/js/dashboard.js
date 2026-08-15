@@ -88,7 +88,7 @@ function initDashboard() {
         const { color, icon } = meta[label];
         const isZero = value === 0;
         return `
-      <div class="room-status-hbar-row${isZero ? " is-zero" : ""}">
+      <div class="room-status-hbar-row${isZero ? " is-zero" : ""}" data-room-status="${label}" role="button" tabindex="0" title="Click to view ${label.toLowerCase()} details">
         <div class="room-status-hbar-label" style="--rs-color:${color}"><i class="bi ${icon}"></i>${label}</div>
         <div class="room-status-hbar-track">
           <div class="room-status-hbar-fill" style="width:${pct}%; background:${color};"></div>
@@ -219,6 +219,262 @@ function initDashboard() {
         0,
       );
       setKpiValue("kpi-companycar-available", stats.available_vehicles, 0);
+    });
+  }
+
+  // Room Status Drawer Functions
+  let roomStatusDrawerCache = {};
+  let roomStatusDrawerCurrentType = null;
+  let roomStatusDrawerCurrentStatus = null;
+
+  function openRoomStatusDrawer(status) {
+    const drawer = document.getElementById("roomStatusDrawer");
+    if (!drawer) return;
+
+    roomStatusDrawerCurrentStatus = status;
+    showRoomStatusDrawerLoading();
+
+    // Fetch data for the selected status
+    fetchJSON(`api/rooms/by_status.php?status=${encodeURIComponent(status)}`)
+      .then((data) => {
+        if (!data || !data.success) {
+          showRoomStatusDrawerError("Failed to load " + status.toLowerCase() + " details.");
+          return;
+        }
+
+        roomStatusDrawerCache = data;
+        roomStatusDrawerCurrentType = data.type;
+
+        // Show the drawer
+        drawer.classList.add("drawer--open");
+        document.body.style.overflow = "hidden";
+
+        // Update header
+        const countBadge = document.getElementById("roomStatusDrawerCount");
+        countBadge.textContent = data.count;
+
+        const subtitle = document.getElementById("roomStatusDrawerSubtitle");
+        if (data.type === "employees") {
+          subtitle.textContent = `${data.count} ${data.count === 1 ? "Employee" : "Employees"}`;
+        } else {
+          subtitle.textContent = `${data.count} ${data.count === 1 ? "Room" : "Rooms"}`;
+        }
+
+        // Render the table
+        renderRoomStatusDrawerTable(data.records, data.type);
+
+        // Update search placeholder
+        const searchInput = document.getElementById("roomStatusDrawerSearch");
+        searchInput.placeholder = data.type === "employees" ? "Search employees..." : "Search rooms...";
+        searchInput.value = "";
+      })
+      .catch((error) => {
+        showRoomStatusDrawerError("Unable to load room details. Please try again.");
+        console.error("Room status drawer error:", error);
+      });
+  }
+
+  function showRoomStatusDrawerLoading() {
+    const drawer = document.getElementById("roomStatusDrawer");
+    if (!drawer) return;
+
+    const contentDiv = document.getElementById("roomStatusDrawerContent");
+    const emptyDiv = document.getElementById("roomStatusDrawerEmpty");
+    const errorDiv = document.getElementById("roomStatusDrawerError");
+
+    contentDiv.innerHTML = `
+      <div class="drawer-loading-state">
+        <div class="drawer-spinner"></div>
+        <p>Loading details...</p>
+      </div>
+    `;
+    contentDiv.style.display = "block";
+    emptyDiv.style.display = "none";
+    errorDiv.style.display = "none";
+  }
+
+  function showRoomStatusDrawerError(message) {
+    const contentDiv = document.getElementById("roomStatusDrawerContent");
+    const emptyDiv = document.getElementById("roomStatusDrawerEmpty");
+    const errorDiv = document.getElementById("roomStatusDrawerError");
+    const errorText = document.getElementById("roomStatusDrawerErrorText");
+
+    contentDiv.style.display = "none";
+    emptyDiv.style.display = "none";
+    errorDiv.style.display = "block";
+    errorText.textContent = message;
+  }
+
+  function renderRoomStatusDrawerTable(records, type) {
+    const contentDiv = document.getElementById("roomStatusDrawerContent");
+    const emptyDiv = document.getElementById("roomStatusDrawerEmpty");
+
+    if (!records || records.length === 0) {
+      contentDiv.style.display = "none";
+      emptyDiv.style.display = "block";
+      return;
+    }
+
+    contentDiv.style.display = "block";
+    emptyDiv.style.display = "none";
+
+    if (type === "employees") {
+      renderRoomStatusEmployeeTable(records);
+    } else {
+      renderRoomStatusRoomTable(records);
+    }
+  }
+
+  function renderRoomStatusEmployeeTable(employees) {
+    const contentDiv = document.getElementById("roomStatusDrawerContent");
+
+    const table = document.createElement("table");
+    table.className = "drawer-table";
+
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    headerRow.innerHTML = `
+      <th>Name</th>
+      <th>Department</th>
+      <th>Location</th>
+      <th>Room</th>
+    `;
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    employees.forEach((emp) => {
+      const row = document.createElement("tr");
+      row.className = "drawer-table-row";
+      row.innerHTML = `
+        <td class="employee-name">${escapeHtml(emp.english_name || emp.chinese_name || "N/A")}</td>
+        <td>${escapeHtml(emp.department_name || "N/A")}</td>
+        <td>${escapeHtml(emp.location || "N/A")}</td>
+        <td class="room-number">${escapeHtml(emp.room_no || "N/A")}</td>
+      `;
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+
+    contentDiv.innerHTML = "";
+    contentDiv.appendChild(table);
+  }
+
+  function renderRoomStatusRoomTable(rooms) {
+    const contentDiv = document.getElementById("roomStatusDrawerContent");
+
+    const table = document.createElement("table");
+    table.className = "drawer-table";
+
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    headerRow.innerHTML = `
+      <th>Room</th>
+      <th>Building</th>
+      <th>Floor</th>
+      <th>Type</th>
+    `;
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    rooms.forEach((room) => {
+      const row = document.createElement("tr");
+      row.className = "drawer-table-row";
+      row.innerHTML = `
+        <td class="room-number">${escapeHtml(room.room_no || "N/A")}</td>
+        <td>${escapeHtml(room.building_name || "N/A")}</td>
+        <td>${escapeHtml(room.floor_name || "N/A")}</td>
+        <td>${escapeHtml(room.room_type || "N/A")}</td>
+      `;
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+
+    contentDiv.innerHTML = "";
+    contentDiv.appendChild(table);
+  }
+
+  function closeRoomStatusDrawer() {
+    const drawer = document.getElementById("roomStatusDrawer");
+    if (!drawer) return;
+
+    drawer.classList.remove("drawer--open");
+    document.body.style.overflow = "";
+
+    roomStatusDrawerCache = {};
+    roomStatusDrawerCurrentType = null;
+    roomStatusDrawerCurrentStatus = null;
+  }
+
+  function filterRoomStatusDrawerTable(searchTerm) {
+    const rows = document.querySelectorAll(".drawer-table-row");
+    const term = searchTerm.toLowerCase().trim();
+
+    rows.forEach((row) => {
+      const text = row.textContent.toLowerCase();
+      row.style.display = text.includes(term) ? "" : "none";
+    });
+  }
+
+  function bindRoomStatusDrawerControls() {
+    // Close button
+    const closeBtn = document.getElementById("roomStatusDrawerClose");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", closeRoomStatusDrawer);
+    }
+
+    // Backdrop click
+    const backdrop = document.getElementById("roomStatusDrawerBackdrop");
+    if (backdrop) {
+      backdrop.addEventListener("click", closeRoomStatusDrawer);
+    }
+
+    // Search input
+    const searchInput = document.getElementById("roomStatusDrawerSearch");
+    const searchClear = document.getElementById("roomStatusDrawerSearchClear");
+    if (searchInput) {
+      searchInput.addEventListener("input", (e) => {
+        const value = e.target.value;
+        searchClear.style.display = value ? "block" : "none";
+        filterRoomStatusDrawerTable(value);
+      });
+    }
+
+    if (searchClear) {
+      searchClear.addEventListener("click", () => {
+        searchInput.value = "";
+        searchClear.style.display = "none";
+        filterRoomStatusDrawerTable("");
+      });
+    }
+
+    // Retry button
+    const retryBtn = document.getElementById("roomStatusDrawerRetry");
+    if (retryBtn) {
+      retryBtn.addEventListener("click", () => {
+        if (roomStatusDrawerCurrentStatus) {
+          openRoomStatusDrawer(roomStatusDrawerCurrentStatus);
+        }
+      });
+    }
+
+    // Room status rows click handlers
+    document.addEventListener("click", (e) => {
+      const row = e.target.closest("[data-room-status]");
+      if (row && !row.classList.contains("is-zero")) {
+        const status = row.getAttribute("data-room-status");
+        if (status) {
+          openRoomStatusDrawer(status);
+        }
+      }
+    });
+
+    // Keyboard support
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeRoomStatusDrawer();
+      }
     });
   }
 
@@ -1144,6 +1400,7 @@ function initDashboard() {
   // initDashboard already runs after DOMContentLoaded, so bind the drawer
   // controls now instead of waiting for an event that has already fired.
   bindDepartmentDrawerControls();
+  bindRoomStatusDrawerControls();
 
   // END DEPARTMENT TREND CHART
 
