@@ -2072,6 +2072,11 @@ body {
 
 .ams-user-dropdown {
   position: relative;
+  z-index: 1100;
+}
+
+.ams-user-menu {
+  z-index: 1200;
 }
 
 .ams-user-trigger {
