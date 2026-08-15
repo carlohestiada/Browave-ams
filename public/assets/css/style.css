@@ -1693,6 +1693,81 @@ body {
 }
 /* END DASHBOARD <ARRIVAL AND DEPARTURE CHART> */
 
+/* ---- Loading / empty state row ---- */
+.dashboard-card-table-body tbody td.text-center.text-muted {
+  padding: 32px 16px;
+  color: var(--slate) !important;
+  font-size: 13px;
+}
+
+/* Meal status DESIGN */
+.lunchbox-chart-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  color: #737784;
+  margin: 2px 0 0;
+}
+
+.lunchbox-chart-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.lunchbox-summary-grid {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 20px;
+  background: #eef4ff;
+  border: 1px solid #E4E9F2;
+  border-radius: 10px;
+}
+
+.lunchbox-summary-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lunchbox-summary-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #737784;
+}
+
+.lunchbox-summary-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 26px;
+  font-weight: 700;
+  color: #003686;
+}
+
+.lunchbox-summary-divider {
+  width: 1px;
+  align-self: stretch;
+  background: #E4E9F2;
+}
+
+.lunchbox-chart-canvas-wrap {
+  position: relative;
+  height: 280px;
+  width: 100%;
+}
+
+.lunchbox-chart-source {
+  text-align: right;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-style: italic;
+  color: #94a3b8;
+}
+/* END Meal status DESIGN */
+
 /* DASHBOARD END */
 
 .gender-arc-animate {
@@ -6146,13 +6221,6 @@ body {
 #schedulePagination .page-link:hover {
   background: var(--surface-low);
   color: var(--navy);
-}
-
-/* ---- Loading / empty state row ---- */
-.dashboard-card-table-body tbody td.text-center.text-muted {
-  padding: 32px 16px;
-  color: var(--slate) !important;
-  font-size: 13px;
 }
 
 /* ---- Pickup Timeline card ---- */

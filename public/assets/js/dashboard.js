@@ -586,7 +586,11 @@ function initDashboard() {
     const contentEl = document.getElementById("departmentEmployeeContent");
     if (!contentEl) return;
 
-    const searchValue = (document.getElementById("departmentEmployeeSearch")?.value || "").trim().toLowerCase();
+    const searchValue = (
+      document.getElementById("departmentEmployeeSearch")?.value || ""
+    )
+      .trim()
+      .toLowerCase();
     const filtered = Array.isArray(rows)
       ? rows.filter((employee) => {
           if (!searchValue) return true;
@@ -606,16 +610,24 @@ function initDashboard() {
       : [];
 
     if (filtered.length === 0) {
-      contentEl.innerHTML = '<div class="department-employee-empty">No employees found</div>';
+      contentEl.innerHTML =
+        '<div class="department-employee-empty">No employees found</div>';
       return;
     }
 
     const rowsHtml = filtered
       .map((employee) => {
-        const name = employee.english_name || employee.chinese_name || employee.employee_code || "Unknown";
+        const name =
+          employee.english_name ||
+          employee.chinese_name ||
+          employee.employee_code ||
+          "Unknown";
         const status = String(employee.status || "Inactive");
         const statusClass = status === "Active" ? "" : "inactive";
-        const departmentName = employee.department_name || currentDepartmentSelection?.department || "-";
+        const departmentName =
+          employee.department_name ||
+          currentDepartmentSelection?.department ||
+          "-";
         const employeeCode = employee.employee_code || "-";
         const gender = employee.gender || "-";
 
@@ -655,7 +667,11 @@ function initDashboard() {
     const contentEl = document.getElementById("departmentEmployeeContent");
     if (!contentEl) return;
 
-    const searchValue = (document.getElementById("departmentEmployeeSearch")?.value || "").trim().toLowerCase();
+    const searchValue = (
+      document.getElementById("departmentEmployeeSearch")?.value || ""
+    )
+      .trim()
+      .toLowerCase();
     const filtered = Array.isArray(rows)
       ? rows.filter((employee) => {
           if (!searchValue) return true;
@@ -675,13 +691,18 @@ function initDashboard() {
       : [];
 
     if (filtered.length === 0) {
-      contentEl.innerHTML = '<div class="department-employee-empty">No employees found</div>';
+      contentEl.innerHTML =
+        '<div class="department-employee-empty">No employees found</div>';
       return;
     }
 
     const rowsHtml = filtered
       .map((employee) => {
-        const name = employee.english_name || employee.chinese_name || employee.employee_code || "Unknown";
+        const name =
+          employee.english_name ||
+          employee.chinese_name ||
+          employee.employee_code ||
+          "Unknown";
         const status = String(employee.status || "Inactive");
         const statusClass = status === "Active" ? "" : "inactive";
         const departmentName = employee.department_name || "-";
@@ -763,9 +784,12 @@ function initDashboard() {
   function fetchDepartmentEmployees(departmentId) {
     const contentEl = document.getElementById("departmentEmployeeContent");
     if (!contentEl) return;
-    contentEl.innerHTML = '<div class="department-employee-loading">Loading employees...</div>';
+    contentEl.innerHTML =
+      '<div class="department-employee-loading">Loading employees...</div>';
 
-    fetchJSON(`api/employees.php?department_id=${encodeURIComponent(departmentId)}`)
+    fetchJSON(
+      `api/employees.php?department_id=${encodeURIComponent(departmentId)}`,
+    )
       .then((data) => {
         if (!Array.isArray(data)) {
           throw new Error("Invalid employee response");
@@ -776,7 +800,9 @@ function initDashboard() {
       })
       .catch((error) => {
         console.error("Department employee fetch failed:", error);
-        renderDepartmentEmployeeError("Unable to load employee details.\nPlease try again.");
+        renderDepartmentEmployeeError(
+          "Unable to load employee details.\nPlease try again.",
+        );
       });
   }
 
@@ -784,7 +810,8 @@ function initDashboard() {
     const contentEl = document.getElementById("departmentEmployeeContent");
     const metaEl = document.getElementById("departmentEmployeeMeta");
     if (!contentEl || !metaEl) return;
-    contentEl.innerHTML = '<div class="department-employee-loading">Loading employees...</div>';
+    contentEl.innerHTML =
+      '<div class="department-employee-loading">Loading employees...</div>';
 
     const queryGender = genderLabel === "Others" ? "Other" : genderLabel;
     fetchJSON(`api/employees.php?gender=${encodeURIComponent(queryGender)}`)
@@ -800,7 +827,9 @@ function initDashboard() {
       })
       .catch((error) => {
         console.error("Gender employee fetch failed:", error);
-        renderGenderEmployeeError("Unable to load employee details.\nPlease try again.");
+        renderGenderEmployeeError(
+          "Unable to load employee details.\nPlease try again.",
+        );
       });
   }
 
@@ -812,7 +841,14 @@ function initDashboard() {
     const searchInput = document.getElementById("departmentEmployeeSearch");
     const contentEl = document.getElementById("departmentEmployeeContent");
 
-    if (!drawer || !titleEl || !metaEl || !searchInput || !contentEl || !kickerEl) {
+    if (
+      !drawer ||
+      !titleEl ||
+      !metaEl ||
+      !searchInput ||
+      !contentEl ||
+      !kickerEl
+    ) {
       return;
     }
 
@@ -827,7 +863,8 @@ function initDashboard() {
     searchInput.value = "";
     drawer.classList.add("is-open");
     drawer.setAttribute("aria-hidden", "false");
-    contentEl.innerHTML = '<div class="department-employee-loading">Loading employees...</div>';
+    contentEl.innerHTML =
+      '<div class="department-employee-loading">Loading employees...</div>';
 
     fetchDepartmentEmployees(currentDepartmentSelection?.id || department?.id);
   }
@@ -840,13 +877,21 @@ function initDashboard() {
     const searchInput = document.getElementById("departmentEmployeeSearch");
     const contentEl = document.getElementById("departmentEmployeeContent");
 
-    if (!drawer || !titleEl || !metaEl || !searchInput || !contentEl || !kickerEl) {
+    if (
+      !drawer ||
+      !titleEl ||
+      !metaEl ||
+      !searchInput ||
+      !contentEl ||
+      !kickerEl
+    ) {
       return;
     }
 
     currentDepartmentSelection = null;
     currentGenderSelection = genderLabel || currentGenderSelection || "Male";
-    const safeGender = currentGenderSelection === "Others" ? "Others" : currentGenderSelection;
+    const safeGender =
+      currentGenderSelection === "Others" ? "Others" : currentGenderSelection;
     const total = Array.isArray(genderEmployeeCache)
       ? genderEmployeeCache.length
       : 0;
@@ -857,7 +902,8 @@ function initDashboard() {
     searchInput.value = "";
     drawer.classList.add("is-open");
     drawer.setAttribute("aria-hidden", "false");
-    contentEl.innerHTML = '<div class="department-employee-loading">Loading employees...</div>';
+    contentEl.innerHTML =
+      '<div class="department-employee-loading">Loading employees...</div>';
 
     fetchGenderEmployees(safeGender);
   }
@@ -983,7 +1029,11 @@ function initDashboard() {
               callbacks: {
                 title: (items) => {
                   const idx = items[0]?.dataIndex ?? 0;
-                  return departmentChartData[idx]?.department || items[0]?.label || "Department";
+                  return (
+                    departmentChartData[idx]?.department ||
+                    items[0]?.label ||
+                    "Department"
+                  );
                 },
                 label: (item) =>
                   `${item.parsed.y} employee${item.parsed.y === 1 ? "" : "s"}`,
@@ -1317,17 +1367,18 @@ function initDashboard() {
     loadRecentEmployees();
     loadCharts();
     loadTrafficOverviewChart();
+    loadLunchboxChart();
     loadTransactionCards(
       "arrival",
       "dashboard-arrivals",
       "badge-status-arriving",
-      "No arrivals scheduled today."
+      "No arrivals scheduled today.",
     );
     loadTransactionCards(
       "departure",
       "dashboard-departures",
       "badge-status-departing",
-      "No departures scheduled today."
+      "No departures scheduled today.",
     );
   };
 
@@ -1350,15 +1401,15 @@ function initDashboard() {
     // Sunday should go back to previous Monday (6 days back)
     const diff = day === 0 ? -6 : 1 - day;
     d.setDate(d.getDate() + diff);
-    
+
     console.debug("getMonday calculation:", {
-      originalDate: new Date(date).toISOString().split('T')[0],
+      originalDate: new Date(date).toISOString().split("T")[0],
       dayOfWeek: day, // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-      dayName: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day],
+      dayName: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][day],
       diff: diff,
-      resultDate: d.toISOString().split('T')[0],
+      resultDate: d.toISOString().split("T")[0],
     });
-    
+
     return d;
   }
 
@@ -1381,18 +1432,25 @@ function initDashboard() {
     });
 
     (Array.isArray(arrivalRecords) ? arrivalRecords : []).forEach((record) => {
-      const key = record.transaction_date || record.transactionDate || record.date;
+      const key =
+        record.transaction_date || record.transactionDate || record.date;
       if (!key || !byDate.has(key)) return;
       byDate.get(key).arrivals += 1;
     });
 
-    (Array.isArray(departureRecords) ? departureRecords : []).forEach((record) => {
-      const key = record.transaction_date || record.transactionDate || record.date;
-      if (!key || !byDate.has(key)) return;
-      byDate.get(key).departures += 1;
-    });
+    (Array.isArray(departureRecords) ? departureRecords : []).forEach(
+      (record) => {
+        const key =
+          record.transaction_date || record.transactionDate || record.date;
+        if (!key || !byDate.has(key)) return;
+        byDate.get(key).departures += 1;
+      },
+    );
 
-    return weekDates.map((entry) => byDate.get(entry.date) || { ...entry, arrivals: 0, departures: 0 });
+    return weekDates.map(
+      (entry) =>
+        byDate.get(entry.date) || { ...entry, arrivals: 0, departures: 0 },
+    );
   }
 
   function showTrafficChartLoading() {
@@ -1400,7 +1458,8 @@ function initDashboard() {
     if (!canvasWrap) return;
 
     if (!canvasWrap.querySelector("#groupedTrafficChart")) {
-      canvasWrap.innerHTML = '<canvas id="groupedTrafficChart" width="900" height="420" role="img" aria-label="Daily arrival and departure activity chart"></canvas>';
+      canvasWrap.innerHTML =
+        '<canvas id="groupedTrafficChart" width="900" height="420" role="img" aria-label="Daily arrival and departure activity chart"></canvas>';
     }
 
     setTrafficSummaryText("traffic-week-summary", "Loading...");
@@ -1412,7 +1471,8 @@ function initDashboard() {
     if (!canvasWrap) return;
 
     if (!canvasWrap.querySelector("#groupedTrafficChart")) {
-      canvasWrap.innerHTML = '<canvas id="groupedTrafficChart" width="900" height="420" role="img" aria-label="Daily arrival and departure activity chart"></canvas>';
+      canvasWrap.innerHTML =
+        '<canvas id="groupedTrafficChart" width="900" height="420" role="img" aria-label="Daily arrival and departure activity chart"></canvas>';
     }
 
     setTrafficSummaryText("traffic-week-summary", "Unable to load data");
@@ -1428,7 +1488,15 @@ function initDashboard() {
       date.setDate(monday.getDate() + index);
       return {
         date: getLocalDateString(date),
-        label: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][index],
+        label: [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday",
+        ][index],
       };
     });
 
@@ -1438,35 +1506,57 @@ function initDashboard() {
     const departureWeekUrl = `api/transactions/index.php/type/departure?date_from=${weekStart}&date_to=${weekEnd}`;
 
     console.group("Traffic Chart - Weekly Daily Data");
-    console.log("📅 Week: %c" + weekStart + " → " + weekEnd, "color: #0284c7; font-weight: bold");
+    console.log(
+      "📅 Week: %c" + weekStart + " → " + weekEnd,
+      "color: #0284c7; font-weight: bold",
+    );
     console.log("📅 Today: %c" + today, "color: #0284c7; font-weight: bold");
     console.log("Arrival URL:", arrivalWeekUrl);
     console.log("Departure URL:", departureWeekUrl);
     console.groupEnd();
 
-    Promise.all([
-      fetchJSON(arrivalWeekUrl),
-      fetchJSON(departureWeekUrl),
-    ]).then(([arrivalWeek, departureWeek]) => {
-      if (arrivalWeek === null || departureWeek === null) {
-        console.error("Traffic chart API request failed");
-        showTrafficChartError("Unable to load arrival & departure data.");
-        return;
-      }
+    Promise.all([fetchJSON(arrivalWeekUrl), fetchJSON(departureWeekUrl)]).then(
+      ([arrivalWeek, departureWeek]) => {
+        if (arrivalWeek === null || departureWeek === null) {
+          console.error("Traffic chart API request failed");
+          showTrafficChartError("Unable to load arrival & departure data.");
+          return;
+        }
 
-      const dailyData = buildWeekTrafficData(arrivalWeek, departureWeek, weekDates);
-      const totalArrivals = dailyData.reduce((sum, entry) => sum + entry.arrivals, 0);
-      const totalDepartures = dailyData.reduce((sum, entry) => sum + entry.departures, 0);
-      const todayEntry = dailyData.find((entry) => entry.date === today) || { arrivals: 0, departures: 0 };
+        const dailyData = buildWeekTrafficData(
+          arrivalWeek,
+          departureWeek,
+          weekDates,
+        );
+        const totalArrivals = dailyData.reduce(
+          (sum, entry) => sum + entry.arrivals,
+          0,
+        );
+        const totalDepartures = dailyData.reduce(
+          (sum, entry) => sum + entry.departures,
+          0,
+        );
+        const todayEntry = dailyData.find((entry) => entry.date === today) || {
+          arrivals: 0,
+          departures: 0,
+        };
 
-      setTrafficSummaryText("traffic-week-summary", formatTrafficSummary(totalArrivals, totalDepartures));
-      setTrafficSummaryText("traffic-today-summary", formatTrafficSummary(todayEntry.arrivals, todayEntry.departures));
+        setTrafficSummaryText(
+          "traffic-week-summary",
+          formatTrafficSummary(totalArrivals, totalDepartures),
+        );
+        setTrafficSummaryText(
+          "traffic-today-summary",
+          formatTrafficSummary(todayEntry.arrivals, todayEntry.departures),
+        );
 
-      console.log("✅ Rendering daily traffic chart:", dailyData);
-      renderTrafficChart(dailyData);
-    });
+        console.log("✅ Rendering daily traffic chart:", dailyData);
+        renderTrafficChart(dailyData);
+      },
+    );
   }
 
+  // ARRIVAL & DEPARTURE TRAFFIC CHART
   function renderTrafficChart(dailyData) {
     const canvasWrap = document.querySelector(".traffic-chart-canvas-wrap");
 
@@ -1477,7 +1567,8 @@ function initDashboard() {
 
     const currentChartCanvas = canvasWrap.querySelector("#groupedTrafficChart");
     if (!currentChartCanvas) {
-      canvasWrap.innerHTML = '<canvas id="groupedTrafficChart" width="900" height="420" role="img" aria-label="Daily arrival and departure activity chart"></canvas>';
+      canvasWrap.innerHTML =
+        '<canvas id="groupedTrafficChart" width="900" height="420" role="img" aria-label="Daily arrival and departure activity chart"></canvas>';
     }
 
     const freshCanvas = document.getElementById("groupedTrafficChart");
@@ -1499,8 +1590,16 @@ function initDashboard() {
 
         if (!arrivalBar || !departureBar) return;
 
-        const left = Math.min(arrivalBar.x - arrivalBar.width / 2, departureBar.x - departureBar.width / 2) - 12;
-        const right = Math.max(arrivalBar.x + arrivalBar.width / 2, departureBar.x + departureBar.width / 2) + 12;
+        const left =
+          Math.min(
+            arrivalBar.x - arrivalBar.width / 2,
+            departureBar.x - departureBar.width / 2,
+          ) - 12;
+        const right =
+          Math.max(
+            arrivalBar.x + arrivalBar.width / 2,
+            departureBar.x + departureBar.width / 2,
+          ) + 12;
         const top = chart.chartArea.top;
         const bottom = chart.chartArea.bottom;
 
@@ -1524,7 +1623,9 @@ function initDashboard() {
         ctx.fillStyle = "#414750";
 
         chart.data.datasets.forEach((dataset) => {
-          const meta = chart.getDatasetMeta(chart.data.datasets.indexOf(dataset));
+          const meta = chart.getDatasetMeta(
+            chart.data.datasets.indexOf(dataset),
+          );
           if (!meta.hidden) {
             meta.data.forEach((element, index) => {
               const value = dataset.data[index];
@@ -1584,7 +1685,8 @@ function initDashboard() {
             cornerRadius: 8,
             callbacks: {
               title: (items) => items[0]?.label || "",
-              label: (context) => `${context.dataset.label}: ${context.parsed.y} employees`,
+              label: (context) =>
+                `${context.dataset.label}: ${context.parsed.y} employees`,
             },
           },
         },
@@ -1601,7 +1703,13 @@ function initDashboard() {
           },
           y: {
             beginAtZero: true,
-            suggestedMax: Math.max(...dailyData.flatMap((entry) => [entry.arrivals, entry.departures]), 5),
+            suggestedMax: Math.max(
+              ...dailyData.flatMap((entry) => [
+                entry.arrivals,
+                entry.departures,
+              ]),
+              5,
+            ),
             grid: { color: "#e2e8f0", drawTicks: false },
             ticks: {
               font: { family: "Inter", size: 11 },
@@ -1630,10 +1738,142 @@ function initDashboard() {
         trafficChartInstance = new Chart(ctx, config);
       } catch (error) {
         console.error("Failed to render traffic chart:", error);
-        showTrafficChartError("Unable to render chart. Please refresh the page.");
+        showTrafficChartError(
+          "Unable to render chart. Please refresh the page.",
+        );
       }
     }
   }
+  // END ARRIVAL & DEPARTURE TRAFFIC CHART
+
+  // MEAL CHART
+  let lunchboxChartInstance = null;
+
+  function loadLunchboxChart() {
+    const statusEl = document.getElementById("lunchboxChartStatus");
+    const canvasEl = document.getElementById("lunchboxChart");
+
+    if (statusEl) {
+      statusEl.textContent = "Loading lunch box data...";
+      statusEl.style.display = "flex";
+    }
+    if (canvasEl) canvasEl.style.display = "none";
+
+    const monday = getMonday(new Date());
+    const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+    const thisWeekDates = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      return getLocalDateString(d);
+    });
+
+    const nextMonday = new Date(monday);
+    nextMonday.setDate(monday.getDate() + 7);
+    const nextWeekDates = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(nextMonday);
+      d.setDate(nextMonday.getDate() + i);
+      return getLocalDateString(d);
+    });
+
+    const startDate = thisWeekDates[0];
+    const endDate = nextWeekDates[6];
+
+    fetchJSON(
+      `api/meals/lunchbox_summary.php?date_from=${startDate}&date_to=${endDate}`,
+    ).then((data) => {
+      if (!data || !data.daily_counts) {
+        if (statusEl) {
+          statusEl.textContent = "Unable to load lunch box data.";
+          statusEl.style.display = "flex";
+        }
+        return;
+      }
+
+      const counts = data.daily_counts;
+
+      const thisWeekValues = thisWeekDates.map((d) => Number(counts[d] || 0));
+      const weekTotal = thisWeekValues.reduce((sum, v) => sum + v, 0);
+      const nextWeekTotal = nextWeekDates.reduce(
+        (sum, d) => sum + Number(counts[d] || 0),
+        0,
+      );
+
+      setKpiValue("lunchbox-week-total", weekTotal, 0);
+      setKpiValue("lunchbox-nextweek-total", nextWeekTotal, 0);
+
+      if (weekTotal === 0 && nextWeekTotal === 0) {
+        if (statusEl) {
+          statusEl.textContent = "No lunch box data available.";
+          statusEl.style.display = "flex";
+        }
+        return;
+      }
+
+      if (statusEl) statusEl.style.display = "none";
+      if (canvasEl) canvasEl.style.display = "block";
+
+      const ctx = canvasEl?.getContext("2d");
+      if (!ctx) return;
+
+      // Build labels with day name and date (e.g., "Mon 8/10/26")
+      const chartLabels = thisWeekDates.map((dateStr, idx) => {
+        const [year, month, day] = dateStr.split("-");
+        const shortYear = year.slice(-2);
+        return `${dayNames[idx]} ${month}/${day}/${shortYear}`;
+      });
+
+      const chartConfig = {
+        type: "bar",
+        data: {
+          labels: chartLabels,
+          datasets: [
+            {
+              label: "Lunch Boxes",
+              data: thisWeekValues,
+              backgroundColor: thisWeekValues.map((_, i) =>
+                i >= 5 ? "rgba(0, 54, 134, 0.35)" : "#003686",
+              ),
+              borderRadius: 4,
+              maxBarThickness: 48,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 250 },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (item) => `${item.parsed.y} Lunch Boxes`,
+              },
+            },
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: "#737784", font: { size: 12 } },
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { precision: 0, color: "#737784" },
+              grid: { color: "#eef0f5" },
+            },
+          },
+        },
+      };
+
+      if (lunchboxChartInstance) {
+        lunchboxChartInstance.data.datasets[0].data = thisWeekValues;
+        lunchboxChartInstance.update();
+      } else {
+        lunchboxChartInstance = new Chart(ctx, chartConfig);
+      }
+    });
+  }
+  // END MEAL CHART
 }
 
 document.addEventListener("DOMContentLoaded", initDashboard);

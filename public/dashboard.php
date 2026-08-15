@@ -67,9 +67,9 @@
                 </div>
                 <div class="dept-chart-legend">
 
-                <span class="gender-chart-subtitle"><span class="dept-chart-legend-swatch"></span>
-                    &nbsp;&nbsp;Employees
-                </span>
+                    <span class="gender-chart-subtitle"><span class="dept-chart-legend-swatch"></span>
+                        &nbsp;&nbsp;Employees
+                    </span>
                     <a href="departments.php" class="dashboard-card-link">View all &rarr;</a>
                 </div>
             </div>
@@ -214,6 +214,39 @@
         </div>
 
     </div>
+
+    <!-- Meal Summary -->
+    <!-- Lunch Box Requirement -->
+    <div class="ams-card dashboard-card-panel lunchbox-chart-card dashboard-section-spacing">
+        <div class="dashboard-card-header">
+            <div>
+                <div class="dashboard-card-title">
+                    <span>Lunch Box</span>
+                </div>
+                <p class="lunchbox-chart-subtitle">Daily lunch box</p>
+            </div>
+            <a href="meals.php" class="dashboard-card-link">Meal Planner &rarr;</a>
+        </div>
+        <div class="dashboard-card-body lunchbox-chart-body">
+            <div class="lunchbox-summary-grid">
+                <div class="lunchbox-summary-item">
+                    <span class="lunchbox-summary-label">This Week</span>
+                    <span class="lunchbox-summary-value" id="lunchbox-week-total">-</span>
+                </div>
+                <div class="lunchbox-summary-divider"></div>
+                <div class="lunchbox-summary-item">
+                    <span class="lunchbox-summary-label">Next Week</span>
+                    <span class="lunchbox-summary-value" id="lunchbox-nextweek-total">-</span>
+                </div>
+            </div>
+            <div class="lunchbox-chart-canvas-wrap">
+                <canvas id="lunchboxChart" role="img" aria-label="Bar chart of daily lunch box requirement"></canvas>
+                <div id="lunchboxChartStatus" class="dept-chart-empty">Loading lunch box data...</div>
+            </div>
+            <div class="lunchbox-chart-source">Meal Module</div>
+        </div>
+    </div>
+    <!-- End Meal Summary -->
 
     <!-- Recent Employees & Room Status -->
     <div class="dashboard-grid-twocol dashboard-section-spacing">
