@@ -60,6 +60,34 @@ function initDashboard() {
     );
   }
 
+  function getRoomFieldValue(room, keys, fallback = null) {
+    if (!room || typeof room !== "object") return fallback;
+
+    for (const key of keys) {
+      if (
+        Object.prototype.hasOwnProperty.call(room, key) &&
+        room[key] !== null &&
+        room[key] !== undefined &&
+        String(room[key]).trim() !== ""
+      ) {
+        return room[key];
+      }
+    }
+
+    return fallback;
+  }
+
+  function normalizeRoomStatus(rawStatus) {
+    const status = String(rawStatus ?? "").trim();
+    return status || "Unknown";
+  }
+
+  function normalizeRoomCapacity(rawCapacity) {
+    const value = rawCapacity ?? "";
+    if (value === null || value === undefined || value === "") return "N/A";
+    return value;
+  }
+
   //   Rooms Status Panel
 
   function renderRoomStatusPanel(summary, total) {
@@ -457,17 +485,26 @@ function initDashboard() {
 
     const tbody = document.createElement("tbody");
     rooms.forEach((room) => {
-      const roomStatus = String(room.status || "Unknown");
+      const roomStatus = normalizeRoomStatus(
+        getRoomFieldValue(room, ["status", "room_status", "roomStatus", "room_status_name"], "Unknown"),
+      );
+      const roomNumber = getRoomFieldValue(room, ["room_no", "room_no", "roomNumber", "room_number", "roomNo"], "N/A");
+      const buildingName = getRoomFieldValue(room, ["building_name", "buildingName", "building", "building_name_text"], "N/A");
+      const floorName = getRoomFieldValue(room, ["floor_name", "floorName", "floor", "floor_name_text"], "N/A");
+      const capacity = normalizeRoomCapacity(
+        getRoomFieldValue(room, ["capacity", "room_capacity", "roomCapacity", "room_capacity_value"], null),
+      );
+      const occupied = getRoomFieldValue(room, ["current_occupancy", "currentOccupancy", "occupied_count", "occupiedCount"], 0);
       const badgeClass = roomStatus.toLowerCase().replace(/\s+/g, "-");
       const row = document.createElement("tr");
       row.className = "drawer-table-row";
       row.innerHTML = `
-        <td class="room-number">${escapeHtml(room.room_no || "N/A")}</td>
-        <td>${escapeHtml(room.building_name || "N/A")}</td>
-        <td>${escapeHtml(room.floor_name || "N/A")}</td>
+        <td class="room-number">${escapeHtml(roomNumber)}</td>
+        <td>${escapeHtml(buildingName)}</td>
+        <td>${escapeHtml(floorName)}</td>
         <td><span class="status-badge status-badge--${badgeClass}">${escapeHtml(roomStatus)}</span></td>
-        <td>${escapeHtml(room.capacity ?? "N/A")}</td>
-        <td>${escapeHtml(room.current_occupancy ?? "0")}</td>
+        <td>${escapeHtml(capacity)}</td>
+        <td>${escapeHtml(occupied)}</td>
       `;
       tbody.appendChild(row);
     });

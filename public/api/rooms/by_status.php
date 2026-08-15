@@ -61,6 +61,9 @@ try {
                 r.id,
                 r.room_no,
                 r.room_type,
+                r.status,
+                r.capacity,
+                r.current_occupancy,
                 b.building_name,
                 f.floor_name
              FROM rooms r
@@ -89,6 +92,9 @@ try {
                 r.id,
                 r.room_no,
                 r.room_type,
+                r.status,
+                r.capacity,
+                r.current_occupancy,
                 b.building_name,
                 f.floor_name
              FROM rooms r
@@ -117,6 +123,9 @@ try {
                 r.id,
                 r.room_no,
                 r.room_type,
+                r.status,
+                r.capacity,
+                r.current_occupancy,
                 r.reserved_by_employee_id,
                 e.english_name AS reserved_by_name,
                 e.employee_code,
