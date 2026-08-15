@@ -14,6 +14,7 @@ function initDashboard() {
   let genderEmployeeCache = [];
   let currentDepartmentSelection = null;
   let currentGenderSelection = null;
+  let dashboardLoading = false;
 
   function fetchJSON(url, options = {}) {
     return fetch(url, options)
@@ -1752,32 +1753,50 @@ function initDashboard() {
   };
 
   const loadDashboard = () => {
-    loadDashboardSummary();
-    loadRecentEmployees();
-    loadCharts();
-    loadTrafficOverviewChart();
-    loadLunchboxChart();
-    loadTransactionCards(
-      "arrival",
-      "dashboard-arrivals",
-      "badge-status-arriving",
-      "No arrivals scheduled today.",
-    );
-    loadTransactionCards(
-      "departure",
-      "dashboard-departures",
-      "badge-status-departing",
-      "No departures scheduled today.",
-    );
+    if (dashboardLoading) {
+      return Promise.resolve();
+    }
+
+    dashboardLoading = true;
+
+    const refreshPromise = Promise.allSettled([
+      loadDashboardSummary(),
+      loadRecentEmployees(),
+      loadCharts(),
+      loadTrafficOverviewChart(),
+      loadLunchboxChart(),
+      loadTransactionCards(
+        "arrival",
+        "dashboard-arrivals",
+        "badge-status-arriving",
+        "No arrivals scheduled today.",
+      ),
+      loadTransactionCards(
+        "departure",
+        "dashboard-departures",
+        "badge-status-departing",
+        "No departures scheduled today.",
+      ),
+    ]).finally(() => {
+      dashboardLoading = false;
+    });
+
+    return refreshPromise;
   };
 
   const refreshButton = document.getElementById("dashboardRefreshBtn");
   if (refreshButton) {
-    refreshButton.addEventListener("click", loadDashboard);
+    refreshButton.addEventListener("click", () => {
+      loadDashboard();
+    });
+  }
+
+  if (window.dashboardRefreshInterval) {
+    clearInterval(window.dashboardRefreshInterval);
+    delete window.dashboardRefreshInterval;
   }
 
   loadDashboard();
-  window.dashboardRefreshInterval = setInterval(loadDashboard, 30000);
 
   let trafficChartInstance = null;
 
