@@ -61,6 +61,18 @@ class MealPlanningController
         echo json_encode(array_values($this->calculationService->attachTransactionsToHeadcounts($rows, $startDate, $endDate)));
     }
 
+    public function getLunchboxEmployees($date)
+    {
+        if (!$this->isValidDate($date)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Invalid date']);
+            return;
+        }
+
+        $employees = $this->calculationService->getLunchboxEligibleEmployees($date);
+        echo json_encode($employees);
+    }
+
     public function saveSundayLunchBox($date)
     {
         if (!$this->isValidDate($date)) {

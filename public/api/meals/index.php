@@ -16,6 +16,11 @@ $action = $parts[1] ?? null;
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
+    if (!empty($_GET['mode']) && $_GET['mode'] === 'lunchbox_employees' && !empty($_GET['date'])) {
+        $controller->getLunchboxEmployees($_GET['date']);
+        return;
+    }
+
     if ($id === 'range' && !empty($_GET['start_date']) && !empty($_GET['end_date'])) {
         $controller->getRange($_GET['start_date'], $_GET['end_date']);
         return;

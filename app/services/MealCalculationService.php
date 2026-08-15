@@ -18,38 +18,7 @@ class MealCalculationService
     public function calculateActiveCount($date)
     {
         $targetDate = date('Y-m-d', strtotime($date));
-
-        $stmt = $this->db->prepare(
-            "SELECT id, status, created_at FROM employees WHERE DATE(created_at) <= ?"
-        );
-        $stmt->execute([$targetDate]);
-        $employees = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $activeCount = 0;
-
-        foreach ($employees as $employee) {
-            $latestStmt = $this->db->prepare(
-                "SELECT transaction_type
-                 FROM transactions
-                 WHERE employee_id = ? AND DATE(transaction_date) <= ?
-                 ORDER BY DATE(transaction_date) DESC, id DESC
-                 LIMIT 1"
-            );
-            $latestStmt->execute([$employee['id'], $targetDate]);
-            $latestTransaction = $latestStmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($latestTransaction) {
-                if ($latestTransaction['transaction_type'] === 'arrival') {
-                    $activeCount++;
-                }
-            } else {
-                if ($employee['status'] === 'Active') {
-                    $activeCount++;
-                }
-            }
-        }
-
-        return $activeCount;
+        return count($this->getLunchboxEligibleEmployees($targetDate));
     }
 
     public function calculateMealCount($date)
@@ -102,6 +71,50 @@ class MealCalculationService
         }
 
         return $rows;
+    }
+
+    public function getLunchboxEligibleEmployees($date)
+    {
+        $normalizedDate = date('Y-m-d', strtotime($date));
+        if (!$this->isValidDate($normalizedDate)) {
+            return [];
+        }
+
+        $stmt = $this->db->prepare(
+            "SELECT e.id, e.employee_code, e.english_name, e.chinese_name, e.gender, e.status, e.department_id, d.department_name, e.created_at
+             FROM employees e
+             LEFT JOIN departments d ON d.id = e.department_id
+             WHERE DATE(e.created_at) <= ?
+             ORDER BY e.id ASC"
+        );
+        $stmt->execute([$normalizedDate]);
+        $employees = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $eligible = [];
+        foreach ($employees as $employee) {
+            $latestStmt = $this->db->prepare(
+                "SELECT transaction_type, DATE(transaction_date) AS transaction_date
+                 FROM transactions
+                 WHERE employee_id = ? AND DATE(transaction_date) <= ?
+                 ORDER BY DATE(transaction_date) DESC, id DESC
+                 LIMIT 1"
+            );
+            $latestStmt->execute([$employee['id'], $normalizedDate]);
+            $latestTransaction = $latestStmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($latestTransaction) {
+                if ($latestTransaction['transaction_type'] === 'arrival') {
+                    $eligible[] = $employee;
+                }
+                continue;
+            }
+
+            if (($employee['status'] ?? '') === 'Active') {
+                $eligible[] = $employee;
+            }
+        }
+
+        return $eligible;
     }
 
     public function getTransactionsForDateRange($startDate, $endDate)

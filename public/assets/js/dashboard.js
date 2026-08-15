@@ -12,8 +12,11 @@ function initDashboard() {
   let departmentChartData = [];
   let departmentEmployeeCache = [];
   let genderEmployeeCache = [];
+  let lunchboxEmployeeCache = [];
+  let lunchboxChartPoints = [];
   let currentDepartmentSelection = null;
   let currentGenderSelection = null;
+  let currentLunchBoxSelection = null;
   let dashboardLoading = false;
 
   function fetchJSON(url, options = {}) {
@@ -1150,6 +1153,84 @@ function initDashboard() {
     }
   }
 
+  function renderLunchboxEmployeeTable(rows) {
+    const contentEl = document.getElementById("departmentEmployeeContent");
+    if (!contentEl) return;
+
+    const searchValue = (
+      document.getElementById("departmentEmployeeSearch")?.value || ""
+    )
+      .trim()
+      .toLowerCase();
+    const filtered = Array.isArray(rows)
+      ? rows.filter((employee) => {
+          if (!searchValue) return true;
+          const haystack = [
+            employee.english_name,
+            employee.chinese_name,
+            employee.employee_code,
+            employee.department_name,
+            employee.gender,
+            employee.status,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(searchValue);
+        })
+      : [];
+
+    if (filtered.length === 0) {
+      contentEl.innerHTML =
+        '<div class="department-employee-empty">No lunch box employees for this date.</div>';
+      return;
+    }
+
+    const rowsHtml = filtered
+      .map((employee) => {
+        const name =
+          employee.english_name ||
+          employee.chinese_name ||
+          employee.employee_code ||
+          "Unknown";
+        const status = String(employee.status || "Inactive");
+        const statusClass = status === "Active" ? "" : "inactive";
+        const departmentName = employee.department_name || "-";
+        const employeeCode = employee.employee_code || "-";
+        const gender = employee.gender || "-";
+
+        return `
+          <tr>
+            <td class="department-employee-name">${escapeHtml(name)}</td>
+            <td>${escapeHtml(employeeCode)}</td>
+            <td>${escapeHtml(departmentName)}</td>
+            <td>${escapeHtml(gender)}</td>
+            <td><span class="department-employee-status ${statusClass}">${escapeHtml(status)}</span></td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    contentEl.innerHTML = `
+      <div class="department-employee-table-wrap">
+        <table class="department-employee-table">
+          <thead>
+            <tr>
+              <th>Employee Name</th>
+              <th>Employee ID</th>
+              <th>Department</th>
+              <th>Gender</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
   function renderGenderEmployeeError(message) {
     const contentEl = document.getElementById("departmentEmployeeContent");
     if (!contentEl) return;
@@ -1166,6 +1247,26 @@ function initDashboard() {
     if (retryButton && currentGenderSelection) {
       retryButton.addEventListener("click", () => {
         fetchGenderEmployees(currentGenderSelection);
+      });
+    }
+  }
+
+  function renderLunchboxEmployeeError(message) {
+    const contentEl = document.getElementById("departmentEmployeeContent");
+    if (!contentEl) return;
+    contentEl.innerHTML = `
+      <div class="department-employee-error">
+        <div>
+          <div>${message}</div>
+          <button type="button" class="department-employee-retry" data-retry-lunchbox="true">Retry</button>
+        </div>
+      </div>
+    `;
+
+    const retryButton = contentEl.querySelector("[data-retry-lunchbox]");
+    if (retryButton && currentLunchBoxSelection) {
+      retryButton.addEventListener("click", () => {
+        fetchLunchboxEmployees(currentLunchBoxSelection);
       });
     }
   }
@@ -1222,6 +1323,52 @@ function initDashboard() {
       });
   }
 
+  function fetchLunchboxEmployees(dateString) {
+    const contentEl = document.getElementById("departmentEmployeeContent");
+    const metaEl = document.getElementById("departmentEmployeeMeta");
+    if (!contentEl || !metaEl) return;
+    contentEl.innerHTML =
+      '<div class="department-employee-loading">Loading lunch box employees...</div>';
+
+    const queryDate = dateString || currentLunchBoxSelection;
+    if (!queryDate) {
+      renderLunchboxEmployeeError(
+        "Unable to load lunch box employee details.\nPlease try again.",
+      );
+      return;
+    }
+
+    fetchJSON(
+      `api/meals/index.php?mode=lunchbox_employees&date=${encodeURIComponent(queryDate)}`,
+    )
+      .then((data) => {
+        if (!Array.isArray(data)) {
+          throw new Error("Invalid lunch box employee response");
+        }
+
+        lunchboxEmployeeCache = data;
+        const count = data.length;
+        const expectedCount = Number(
+          lunchboxChartPoints.find((point) => point.date === queryDate)?.count || 0,
+        );
+
+        if (expectedCount > 0 && count !== expectedCount) {
+          console.warn(
+            `Lunch box count mismatch for ${queryDate}: chart reported ${expectedCount}, drawer found ${count}.`,
+          );
+        }
+
+        metaEl.textContent = `${count} ${count === 1 ? "employee" : "employees"}`;
+        renderLunchboxEmployeeTable(data);
+      })
+      .catch((error) => {
+        console.error("Lunch box employee fetch failed:", error);
+        renderLunchboxEmployeeError(
+          "Unable to load lunch box employees for this date.\nPlease try again.",
+        );
+      });
+  }
+
   function openDepartmentEmployeeDrawer(department) {
     const drawer = document.getElementById("departmentEmployeeDrawer");
     const titleEl = document.getElementById("departmentEmployeeTitle");
@@ -1242,6 +1389,7 @@ function initDashboard() {
     }
 
     currentGenderSelection = null;
+    currentLunchBoxSelection = null;
     currentDepartmentSelection = department || currentDepartmentSelection;
     const deptName = currentDepartmentSelection?.department || "Department";
     const total = Number(currentDepartmentSelection?.employee_count || 0);
@@ -1256,6 +1404,50 @@ function initDashboard() {
       '<div class="department-employee-loading">Loading employees...</div>';
 
     fetchDepartmentEmployees(currentDepartmentSelection?.id || department?.id);
+  }
+
+  function openLunchBoxEmployeeDrawer(dateString) {
+    const drawer = document.getElementById("departmentEmployeeDrawer");
+    const titleEl = document.getElementById("departmentEmployeeTitle");
+    const metaEl = document.getElementById("departmentEmployeeMeta");
+    const kickerEl = document.getElementById("departmentEmployeeKicker");
+    const searchInput = document.getElementById("departmentEmployeeSearch");
+    const contentEl = document.getElementById("departmentEmployeeContent");
+
+    if (!drawer || !titleEl || !metaEl || !searchInput || !contentEl || !kickerEl) {
+      return;
+    }
+
+    currentDepartmentSelection = null;
+    currentGenderSelection = null;
+    currentLunchBoxSelection = dateString || currentLunchBoxSelection;
+    const rawDate = currentLunchBoxSelection;
+    if (!rawDate) {
+      return;
+    }
+
+    const dateLabel = new Date(`${rawDate}T00:00:00`);
+    const labels = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    const dayName = labels[dateLabel.getDay()];
+
+    kickerEl.textContent = "Lunch Box";
+    titleEl.textContent = `${dayName}`;
+    metaEl.textContent = "0 employees";
+    searchInput.value = "";
+    drawer.classList.add("is-open");
+    drawer.setAttribute("aria-hidden", "false");
+    contentEl.innerHTML =
+      '<div class="department-employee-loading">Loading lunch box employees...</div>';
+
+    fetchLunchboxEmployees(rawDate);
   }
 
   function openGenderEmployeeDrawer(genderLabel) {
@@ -1306,8 +1498,10 @@ function initDashboard() {
     if (searchInput) searchInput.value = "";
     currentDepartmentSelection = null;
     currentGenderSelection = null;
+    currentLunchBoxSelection = null;
     departmentEmployeeCache = [];
     genderEmployeeCache = [];
+    lunchboxEmployeeCache = [];
   }
 
   // DEPARTMENT TREND CHART
@@ -1507,7 +1701,9 @@ function initDashboard() {
 
     const searchInput = document.getElementById("departmentEmployeeSearch");
     searchInput?.addEventListener("input", () => {
-      if (currentGenderSelection) {
+      if (currentLunchBoxSelection) {
+        renderLunchboxEmployeeTable(lunchboxEmployeeCache);
+      } else if (currentGenderSelection) {
         renderGenderEmployeeTable(genderEmployeeCache);
       } else {
         renderDepartmentEmployeeTable(departmentEmployeeCache);
@@ -2231,6 +2427,13 @@ function initDashboard() {
         return `${dayNames[idx]} ${month}/${day}/${shortYear}`;
       });
 
+      const todayDate = getLocalDateString(new Date());
+      lunchboxChartPoints = thisWeekDates.map((dateStr, idx) => ({
+        label: chartLabels[idx],
+        date: dateStr,
+        count: Number(thisWeekValues[idx] || 0),
+      }));
+
       const chartConfig = {
         type: "bar",
         data: {
@@ -2238,9 +2441,9 @@ function initDashboard() {
           datasets: [
             {
               label: "Lunch Boxes",
-              data: thisWeekValues,
-              backgroundColor: thisWeekValues.map((_, i) =>
-                i >= 5 ? "rgba(0, 54, 134, 0.35)" : "#003686",
+              data: lunchboxChartPoints.map((point) => point.count),
+              backgroundColor: thisWeekDates.map((dateStr) =>
+                dateStr === todayDate ? "#0f766e" : "#003686",
               ),
               borderRadius: 4,
               maxBarThickness: 48,
@@ -2251,11 +2454,29 @@ function initDashboard() {
           responsive: true,
           maintainAspectRatio: false,
           animation: { duration: 250 },
+          onHover: (event, elements) => {
+            const canvas = event?.native?.target || event?.target;
+            if (canvas) {
+              canvas.style.cursor = elements.length ? "pointer" : "default";
+            }
+          },
+          onClick: (event, elements) => {
+            if (!elements.length) return;
+            const index = elements[0].index;
+            const selectedDate = lunchboxChartPoints[index]?.date || thisWeekDates[index];
+            if (selectedDate) {
+              openLunchBoxEmployeeDrawer(selectedDate);
+            }
+          },
           plugins: {
             legend: { display: false },
             tooltip: {
               callbacks: {
-                label: (item) => `${item.parsed.y} Lunch Boxes`,
+                title: (items) => {
+                  const index = items[0]?.dataIndex ?? 0;
+                  return lunchboxChartPoints[index]?.label || chartLabels[index] || "Lunch Box";
+                },
+                label: (item) => `${item.parsed.y} Lunch Boxes — click to view employees`,
               },
             },
           },
@@ -2274,7 +2495,10 @@ function initDashboard() {
       };
 
       if (lunchboxChartInstance) {
-        lunchboxChartInstance.data.datasets[0].data = thisWeekValues;
+        lunchboxChartInstance.data.labels = chartLabels;
+        lunchboxChartInstance.data.datasets[0].data = chartConfig.data.datasets[0].data;
+        lunchboxChartInstance.data.datasets[0].backgroundColor = chartConfig.data.datasets[0].backgroundColor;
+        lunchboxChartInstance.options = chartConfig.options;
         lunchboxChartInstance.update();
       } else {
         lunchboxChartInstance = new Chart(ctx, chartConfig);
