@@ -2282,6 +2282,43 @@ function initDashboard() {
     );
   }
 
+  function formatShortDate(dateString) {
+    if (!dateString) return "";
+
+    const date = new Date(`${dateString}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return dateString;
+
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const year = String(date.getFullYear()).slice(-2);
+
+    return `${month}/${day}/${year}`;
+  }
+
+  function formatTrafficXLabel(dateString, weekdayLabel) {
+    const shortLabel = weekdayLabel
+      ? weekdayLabel.slice(0, 3)
+      : "";
+    const shortDate = formatShortDate(dateString);
+
+    if (!shortLabel || !shortDate) return weekdayLabel || "";
+    return `${shortLabel} ${shortDate}`;
+  }
+
+  function formatTrafficFullDate(dateString) {
+    if (!dateString) return "";
+
+    const date = new Date(`${dateString}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return dateString;
+
+    const weekday = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(date);
+    const month = new Intl.DateTimeFormat("en-US", { month: "long" }).format(date);
+    const day = date.getDate();
+    const year = date.getFullYear();
+
+    return `${weekday}, ${month} ${day}, ${year}`;
+  }
+
   function showTrafficChartLoading() {
     const canvasWrap = document.querySelector(".traffic-chart-canvas-wrap");
     if (!canvasWrap) return;
@@ -2472,7 +2509,9 @@ function initDashboard() {
     const config = {
       type: "bar",
       data: {
-        labels: dailyData.map((entry) => entry.label),
+        labels: dailyData.map((entry) =>
+          formatTrafficXLabel(entry.date, entry.label),
+        ),
         datasets: [
           {
             label: "Arrival",
@@ -2548,11 +2587,16 @@ function initDashboard() {
             padding: 12,
             cornerRadius: 8,
             callbacks: {
-              title: (items) => items[0]?.label || "",
+              title: (items) => {
+                const date = dailyData[items[0]?.dataIndex]?.date;
+                return formatTrafficFullDate(date);
+              },
               label: (context) => {
                 const date = dailyData[context.dataIndex]?.date;
                 const movement = context.datasetIndex === 0 ? "Arrival" : "Departure";
-                return `${movement}: ${context.parsed.y} employees (${date || ""})`;
+                const count = Number(context.parsed.y || 0);
+                const label = count === 1 ? "employee" : "employees";
+                return `${movement}\n${count} ${label}`;
               },
             },
           },
@@ -2577,12 +2621,18 @@ function initDashboard() {
               ]),
               5,
             ),
+            precision: 0,
             grid: { color: "#e2e8f0", drawTicks: false },
             ticks: {
               font: { family: "Inter", size: 11 },
               color: "#717881",
               padding: 10,
-              callback: (value) => Number(value),
+              precision: 0,
+              callback: (value) => {
+                if (!Number.isFinite(Number(value))) return "";
+                const integerValue = Number(value);
+                return Number.isInteger(integerValue) ? integerValue : "";
+              },
             },
             border: { display: false },
           },
