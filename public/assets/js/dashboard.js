@@ -109,7 +109,7 @@ function initDashboard() {
       ? roomTypes
           .map(
             (t) =>
-              `<span class="room-status-chip" title="${escapeHtml(t.name)}">
+              `<span class="room-status-chip" data-room-type="${escapeHtml(t.name)}" role="button" tabindex="0" title="${escapeHtml(t.name)}\n${t.count} rooms\nClick to view room details">
               <span class="room-status-chip-name">${escapeHtml(t.name)}</span>
               <span class="room-status-chip-count">${t.count}</span>
             </span>`,
@@ -232,9 +232,10 @@ function initDashboard() {
     if (!drawer) return;
 
     roomStatusDrawerCurrentStatus = status;
+    const title = document.getElementById("roomStatusDrawerTitle");
+    if (title) title.textContent = `${status} Rooms`;
     showRoomStatusDrawerLoading();
 
-    // Fetch data for the selected status
     fetchJSON(`api/rooms/by_status.php?status=${encodeURIComponent(status)}`)
       .then((data) => {
         if (!data || !data.success) {
@@ -245,32 +246,76 @@ function initDashboard() {
         roomStatusDrawerCache = data;
         roomStatusDrawerCurrentType = data.type;
 
-        // Show the drawer
         drawer.classList.add("drawer--open");
         document.body.style.overflow = "hidden";
 
-        // Update header
         const countBadge = document.getElementById("roomStatusDrawerCount");
-        countBadge.textContent = data.count;
+        if (countBadge) countBadge.textContent = data.count;
 
         const subtitle = document.getElementById("roomStatusDrawerSubtitle");
-        if (data.type === "employees") {
-          subtitle.textContent = `${data.count} ${data.count === 1 ? "Employee" : "Employees"}`;
-        } else {
-          subtitle.textContent = `${data.count} ${data.count === 1 ? "Room" : "Rooms"}`;
+        if (subtitle) {
+          if (data.type === "employees") {
+            subtitle.textContent = `${data.count} ${data.count === 1 ? "Employee" : "Employees"}`;
+          } else {
+            subtitle.textContent = `${data.count} ${data.count === 1 ? "Room" : "Rooms"}`;
+          }
         }
 
-        // Render the table
-        renderRoomStatusDrawerTable(data.records, data.type);
+        renderRoomStatusDrawerTable(data.records, data.type, data.status, data.summary || null);
 
-        // Update search placeholder
         const searchInput = document.getElementById("roomStatusDrawerSearch");
-        searchInput.placeholder = data.type === "employees" ? "Search employees..." : "Search rooms...";
-        searchInput.value = "";
+        if (searchInput) {
+          searchInput.placeholder = data.type === "employees" ? "Search employees..." : "Search rooms...";
+          searchInput.value = "";
+        }
       })
       .catch((error) => {
         showRoomStatusDrawerError("Unable to load room details. Please try again.");
         console.error("Room status drawer error:", error);
+      });
+  }
+
+  function openRoomTypeDrawer(roomType) {
+    const drawer = document.getElementById("roomStatusDrawer");
+    if (!drawer) return;
+
+    roomStatusDrawerCurrentStatus = roomType;
+    const title = document.getElementById("roomStatusDrawerTitle");
+    if (title) title.textContent = `${roomType} Rooms`;
+    showRoomStatusDrawerLoading();
+
+    fetchJSON(`api/rooms/by_type.php?room_type=${encodeURIComponent(roomType)}`)
+      .then((data) => {
+        if (!data || !data.success) {
+          showRoomStatusDrawerError("Unable to load room details. Please try again.");
+          return;
+        }
+
+        roomStatusDrawerCache = data;
+        roomStatusDrawerCurrentType = "room_type";
+
+        drawer.classList.add("drawer--open");
+        document.body.style.overflow = "hidden";
+
+        const countBadge = document.getElementById("roomStatusDrawerCount");
+        if (countBadge) countBadge.textContent = data.count;
+
+        const subtitle = document.getElementById("roomStatusDrawerSubtitle");
+        if (subtitle) {
+          subtitle.textContent = `${data.count} ${data.count === 1 ? "Room" : "Rooms"}`;
+        }
+
+        renderRoomStatusDrawerTable(data.records, "rooms", roomType, data.summary || null);
+
+        const searchInput = document.getElementById("roomStatusDrawerSearch");
+        if (searchInput) {
+          searchInput.placeholder = "Search rooms...";
+          searchInput.value = "";
+        }
+      })
+      .catch((error) => {
+        showRoomStatusDrawerError("Unable to load room details. Please try again.");
+        console.error("Room type drawer error:", error);
       });
   }
 
@@ -305,11 +350,17 @@ function initDashboard() {
     errorText.textContent = message;
   }
 
-  function renderRoomStatusDrawerTable(records, type) {
+  function renderRoomStatusDrawerTable(records, type, label = null, summary = null) {
     const contentDiv = document.getElementById("roomStatusDrawerContent");
     const emptyDiv = document.getElementById("roomStatusDrawerEmpty");
 
     if (!records || records.length === 0) {
+      const emptyText = document.getElementById("roomStatusDrawerEmptyText");
+      if (emptyText) {
+        emptyText.textContent = label
+          ? `No rooms found for this room type.`
+          : "No records found for this room status.";
+      }
       contentDiv.style.display = "none";
       emptyDiv.style.display = "block";
       return;
@@ -321,7 +372,7 @@ function initDashboard() {
     if (type === "employees") {
       renderRoomStatusEmployeeTable(records);
     } else {
-      renderRoomStatusRoomTable(records);
+      renderRoomStatusRoomTable(records, summary, label);
     }
   }
 
@@ -360,8 +411,33 @@ function initDashboard() {
     contentDiv.appendChild(table);
   }
 
-  function renderRoomStatusRoomTable(rooms) {
+  function renderRoomStatusRoomTable(rooms, summary = null, label = null) {
     const contentDiv = document.getElementById("roomStatusDrawerContent");
+    contentDiv.innerHTML = "";
+
+    if (summary) {
+      const summaryBox = document.createElement("div");
+      summaryBox.className = "room-type-summary";
+      summaryBox.innerHTML = `
+        <div class="room-type-summary-row">
+          <span>Total Rooms</span>
+          <strong>${summary.total_rooms ?? 0}</strong>
+        </div>
+        <div class="room-type-summary-row">
+          <span>Occupied</span>
+          <strong>${summary.occupied ?? 0}</strong>
+        </div>
+        <div class="room-type-summary-row">
+          <span>Available</span>
+          <strong>${summary.available ?? 0}</strong>
+        </div>
+        <div class="room-type-summary-row">
+          <span>Maintenance</span>
+          <strong>${summary.maintenance ?? 0}</strong>
+        </div>
+      `;
+      contentDiv.appendChild(summaryBox);
+    }
 
     const table = document.createElement("table");
     table.className = "drawer-table";
@@ -372,26 +448,31 @@ function initDashboard() {
       <th>Room</th>
       <th>Building</th>
       <th>Floor</th>
-      <th>Type</th>
+      <th>Status</th>
+      <th>Capacity</th>
+      <th>Occupied</th>
     `;
     thead.appendChild(headerRow);
     table.appendChild(thead);
 
     const tbody = document.createElement("tbody");
     rooms.forEach((room) => {
+      const roomStatus = String(room.status || "Unknown");
+      const badgeClass = roomStatus.toLowerCase().replace(/\s+/g, "-");
       const row = document.createElement("tr");
       row.className = "drawer-table-row";
       row.innerHTML = `
         <td class="room-number">${escapeHtml(room.room_no || "N/A")}</td>
         <td>${escapeHtml(room.building_name || "N/A")}</td>
         <td>${escapeHtml(room.floor_name || "N/A")}</td>
-        <td>${escapeHtml(room.room_type || "N/A")}</td>
+        <td><span class="status-badge status-badge--${badgeClass}">${escapeHtml(roomStatus)}</span></td>
+        <td>${escapeHtml(room.capacity ?? "N/A")}</td>
+        <td>${escapeHtml(room.current_occupancy ?? "0")}</td>
       `;
       tbody.appendChild(row);
     });
     table.appendChild(tbody);
 
-    contentDiv.innerHTML = "";
     contentDiv.appendChild(table);
   }
 
@@ -461,6 +542,13 @@ function initDashboard() {
 
     // Room status rows click handlers
     document.addEventListener("click", (e) => {
+      const roomTypeChip = e.target.closest("[data-room-type]");
+      if (roomTypeChip) {
+        const roomType = roomTypeChip.getAttribute("data-room-type");
+        if (roomType) openRoomTypeDrawer(roomType);
+        return;
+      }
+
       const row = e.target.closest("[data-room-status]");
       if (row && !row.classList.contains("is-zero")) {
         const status = row.getAttribute("data-room-status");
@@ -470,8 +558,15 @@ function initDashboard() {
       }
     });
 
-    // Keyboard support
     document.addEventListener("keydown", (e) => {
+      const target = e.target.closest("[data-room-type]");
+      if (target && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        const roomType = target.getAttribute("data-room-type");
+        if (roomType) openRoomTypeDrawer(roomType);
+        return;
+      }
+
       if (e.key === "Escape") {
         closeRoomStatusDrawer();
       }
