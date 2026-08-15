@@ -13,10 +13,13 @@ function initDashboard() {
   let departmentEmployeeCache = [];
   let genderEmployeeCache = [];
   let lunchboxEmployeeCache = [];
+  let trafficEmployeeCache = [];
   let lunchboxChartPoints = [];
   let currentDepartmentSelection = null;
   let currentGenderSelection = null;
   let currentLunchBoxSelection = null;
+  let currentTrafficSelection = null;
+  let currentTrafficType = null;
   let dashboardLoading = false;
 
   function fetchJSON(url, options = {}) {
@@ -1271,6 +1274,206 @@ function initDashboard() {
     }
   }
 
+  function renderTrafficEmployeeTable(rows) {
+    const contentEl = document.getElementById("departmentEmployeeContent");
+    if (!contentEl) return;
+
+    const searchValue = (
+      document.getElementById("departmentEmployeeSearch")?.value || ""
+    )
+      .trim()
+      .toLowerCase();
+
+    const filtered = Array.isArray(rows)
+      ? rows.filter((employee) => {
+          if (!searchValue) return true;
+          const haystack = [
+            employee.english_name,
+            employee.chinese_name,
+            employee.employee_code,
+            employee.department_name,
+            employee.gender,
+            employee.status,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(searchValue);
+        })
+      : [];
+
+    if (filtered.length === 0) {
+      const emptyLabel = currentTrafficType === "arrival" ? "No arrivals for this date." : "No departures for this date.";
+      contentEl.innerHTML = `<div class="department-employee-empty">${emptyLabel}</div>`;
+      return;
+    }
+
+    const rowsHtml = filtered
+      .map((employee) => {
+        const name =
+          employee.english_name ||
+          employee.chinese_name ||
+          employee.employee_code ||
+          "Unknown";
+        const status = String(employee.status || "Inactive");
+        const statusClass = status === "Active" ? "" : "inactive";
+        const departmentName = employee.department_name || "-";
+        const employeeCode = employee.employee_code || "-";
+        const gender = employee.gender || "-";
+
+        return `
+          <tr>
+            <td class="department-employee-name">${escapeHtml(name)}</td>
+            <td>${escapeHtml(employeeCode)}</td>
+            <td>${escapeHtml(departmentName)}</td>
+            <td>${escapeHtml(gender)}</td>
+            <td><span class="department-employee-status ${statusClass}">${escapeHtml(status)}</span></td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    contentEl.innerHTML = `
+      <div class="department-employee-table-wrap">
+        <table class="department-employee-table">
+          <thead>
+            <tr>
+              <th>Employee Name</th>
+              <th>Employee ID</th>
+              <th>Department</th>
+              <th>Gender</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderTrafficEmployeeError(message) {
+    const contentEl = document.getElementById("departmentEmployeeContent");
+    if (!contentEl) return;
+    contentEl.innerHTML = `
+      <div class="department-employee-error">
+        <div>
+          <div>${message}</div>
+          <button type="button" class="department-employee-retry" data-retry-traffic="true">Retry</button>
+        </div>
+      </div>
+    `;
+
+    const retryButton = contentEl.querySelector("[data-retry-traffic]");
+    if (retryButton && currentTrafficSelection && currentTrafficType) {
+      retryButton.addEventListener("click", () => {
+        fetchTrafficEmployees(currentTrafficSelection, currentTrafficType);
+      });
+    }
+  }
+
+  function fetchTrafficEmployees(dateString, type) {
+    const contentEl = document.getElementById("departmentEmployeeContent");
+    const metaEl = document.getElementById("departmentEmployeeMeta");
+    if (!contentEl || !metaEl) return;
+
+    const movementType = type === "departure" ? "departure" : "arrival";
+    const queryDate = dateString || currentTrafficSelection;
+    if (!queryDate || !movementType) {
+      renderTrafficEmployeeError(
+        `Unable to load ${movementType} employee details.\nPlease try again.`,
+      );
+      return;
+    }
+
+    contentEl.innerHTML =
+      `<div class="department-employee-loading">Loading ${movementType} employees...</div>`;
+
+    fetchJSON(
+      `api/transactions/index.php/type/${encodeURIComponent(movementType)}?date_from=${encodeURIComponent(queryDate)}&date_to=${encodeURIComponent(queryDate)}`,
+    )
+      .then((data) => {
+        if (!Array.isArray(data)) {
+          throw new Error(`Invalid ${movementType} employee response`);
+        }
+
+        const rows = data
+          .map((entry) => ({
+            id: entry.employee_id ?? entry.id ?? null,
+            employee_code: entry.employee_code ?? "-",
+            english_name: entry.english_name ?? "-",
+            chinese_name: entry.chinese_name ?? "",
+            gender: entry.gender || "-",
+            status: entry.status || "Active",
+            department_name: entry.department_name || "-",
+            ...entry,
+          }))
+          .filter((entry) => {
+            const transactionDate = entry.transaction_date || entry.date || entry.transactionDate;
+            return transactionDate === queryDate;
+          });
+
+        trafficEmployeeCache = rows;
+        const count = rows.length;
+        metaEl.textContent = `${count} ${count === 1 ? "employee" : "employees"}`;
+        renderTrafficEmployeeTable(rows);
+      })
+      .catch((error) => {
+        console.error(`${movementType} employee fetch failed:`, error);
+        renderTrafficEmployeeError(
+          `Unable to load ${movementType} employee details.\nPlease try again.`,
+        );
+      });
+  }
+
+  function openTrafficEmployeeDrawer(dateString, type) {
+    const drawer = document.getElementById("departmentEmployeeDrawer");
+    const titleEl = document.getElementById("departmentEmployeeTitle");
+    const metaEl = document.getElementById("departmentEmployeeMeta");
+    const kickerEl = document.getElementById("departmentEmployeeKicker");
+    const searchInput = document.getElementById("departmentEmployeeSearch");
+    const contentEl = document.getElementById("departmentEmployeeContent");
+
+    if (!drawer || !titleEl || !metaEl || !searchInput || !contentEl || !kickerEl) {
+      return;
+    }
+
+    currentDepartmentSelection = null;
+    currentGenderSelection = null;
+    currentLunchBoxSelection = null;
+    currentTrafficSelection = dateString || currentTrafficSelection;
+    currentTrafficType = type || currentTrafficType || "arrival";
+    const rawDate = currentTrafficSelection;
+    if (!rawDate) {
+      return;
+    }
+
+    const dateLabel = new Date(`${rawDate}T00:00:00`);
+    const labels = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    const dayName = labels[dateLabel.getDay()];
+    const typeLabel = currentTrafficType === "departure" ? "DEPARTURES" : "ARRIVALS";
+
+    kickerEl.textContent = typeLabel;
+    titleEl.textContent = dayName;
+    metaEl.textContent = "0 employees";
+    searchInput.value = "";
+    drawer.classList.add("is-open");
+    drawer.setAttribute("aria-hidden", "false");
+    contentEl.innerHTML =
+      `<div class="department-employee-loading">Loading ${currentTrafficType} employees...</div>`;
+
+    fetchTrafficEmployees(rawDate, currentTrafficType);
+  }
+
   function fetchDepartmentEmployees(departmentId) {
     const contentEl = document.getElementById("departmentEmployeeContent");
     if (!contentEl) return;
@@ -1499,9 +1702,12 @@ function initDashboard() {
     currentDepartmentSelection = null;
     currentGenderSelection = null;
     currentLunchBoxSelection = null;
+    currentTrafficSelection = null;
+    currentTrafficType = null;
     departmentEmployeeCache = [];
     genderEmployeeCache = [];
     lunchboxEmployeeCache = [];
+    trafficEmployeeCache = [];
   }
 
   // DEPARTMENT TREND CHART
@@ -1701,7 +1907,9 @@ function initDashboard() {
 
     const searchInput = document.getElementById("departmentEmployeeSearch");
     searchInput?.addEventListener("input", () => {
-      if (currentLunchBoxSelection) {
+      if (currentTrafficSelection) {
+        renderTrafficEmployeeTable(trafficEmployeeCache);
+      } else if (currentLunchBoxSelection) {
         renderLunchboxEmployeeTable(lunchboxEmployeeCache);
       } else if (currentGenderSelection) {
         renderGenderEmployeeTable(genderEmployeeCache);
@@ -2257,6 +2465,7 @@ function initDashboard() {
             borderSkipped: false,
             barPercentage: 0.7,
             categoryPercentage: 0.72,
+            dataDates: dailyData.map((entry) => entry.date),
           },
           {
             label: "Departure",
@@ -2266,6 +2475,7 @@ function initDashboard() {
             borderSkipped: false,
             barPercentage: 0.7,
             categoryPercentage: 0.72,
+            dataDates: dailyData.map((entry) => entry.date),
           },
         ],
         todayIndex: dailyData.findIndex((entry) => entry.date === today),
@@ -2276,6 +2486,23 @@ function initDashboard() {
         interaction: {
           mode: "index",
           intersect: false,
+        },
+        onHover: (event, elements) => {
+          const canvas = event?.native?.target || event?.target;
+          if (canvas) {
+            canvas.style.cursor = elements.length ? "pointer" : "default";
+          }
+        },
+        onClick: (event, elements) => {
+          if (!elements.length) return;
+          const element = elements[0];
+          const datasetIndex = element.datasetIndex;
+          const dateIndex = element.index;
+          const selectedDate = dailyData[dateIndex]?.date;
+          const selectedType = datasetIndex === 0 ? "arrival" : "departure";
+          if (selectedDate && selectedType) {
+            openTrafficEmployeeDrawer(selectedDate, selectedType);
+          }
         },
         plugins: {
           legend: { display: false },
@@ -2289,8 +2516,11 @@ function initDashboard() {
             cornerRadius: 8,
             callbacks: {
               title: (items) => items[0]?.label || "",
-              label: (context) =>
-                `${context.dataset.label}: ${context.parsed.y} employees`,
+              label: (context) => {
+                const date = dailyData[context.dataIndex]?.date;
+                const movement = context.datasetIndex === 0 ? "Arrival" : "Departure";
+                return `${movement}: ${context.parsed.y} employees (${date || ""})`;
+              },
             },
           },
         },
