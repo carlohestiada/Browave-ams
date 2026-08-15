@@ -53,7 +53,7 @@ class Transaction
 
     public function getByType($type)
     {
-        $sql = "SELECT t.*, DATE(t.transaction_date) AS transaction_date, e.employee_code, e.english_name, d.department_name
+        $sql = "SELECT t.*, DATE(t.transaction_date) AS transaction_date, e.employee_code, e.english_name, e.chinese_name, e.gender, e.status, d.department_name
              FROM transactions t
              LEFT JOIN employees e ON t.employee_id = e.id
              LEFT JOIN departments d ON e.department_id = d.id
@@ -93,7 +93,7 @@ class Transaction
     public function getById($id)
     {
         $stmt = $this->db->prepare(
-            "SELECT t.*, DATE(t.transaction_date) AS transaction_date, e.employee_code, e.english_name, d.department_name
+            "SELECT t.*, DATE(t.transaction_date) AS transaction_date, e.employee_code, e.english_name, e.chinese_name, e.gender, e.status, d.department_name
              FROM transactions t
              LEFT JOIN employees e ON t.employee_id = e.id
              LEFT JOIN departments d ON e.department_id = d.id

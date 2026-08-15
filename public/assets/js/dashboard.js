@@ -67,6 +67,22 @@ function initDashboard() {
     );
   }
 
+  function normalizeGenderDisplay(value) {
+    if (value === null || value === undefined || value === "") {
+      return "-";
+    }
+
+    const raw = String(value).trim();
+    if (!raw) return "-";
+
+    const normalized = raw.toLowerCase();
+    if (normalized === "male") return "Male";
+    if (normalized === "female") return "Female";
+    if (normalized === "other" || normalized === "others") return "Other";
+
+    return raw;
+  }
+
   function getRoomFieldValue(room, keys, fallback = null) {
     if (!room || typeof room !== "object") return fallback;
 
@@ -1024,7 +1040,7 @@ function initDashboard() {
           currentDepartmentSelection?.department ||
           "-";
         const employeeCode = employee.employee_code || "-";
-        const gender = employee.gender || "-";
+        const gender = normalizeGenderDisplay(employee.gender);
 
         return `
           <tr>
@@ -1102,7 +1118,7 @@ function initDashboard() {
         const statusClass = status === "Active" ? "" : "inactive";
         const departmentName = employee.department_name || "-";
         const employeeCode = employee.employee_code || "-";
-        const gender = employee.gender || currentGenderSelection || "-";
+        const gender = normalizeGenderDisplay(employee.gender || currentGenderSelection);
 
         return `
           <tr>
@@ -1200,7 +1216,7 @@ function initDashboard() {
         const statusClass = status === "Active" ? "" : "inactive";
         const departmentName = employee.department_name || "-";
         const employeeCode = employee.employee_code || "-";
-        const gender = employee.gender || "-";
+        const gender = normalizeGenderDisplay(employee.gender);
 
         return `
           <tr>
@@ -1319,7 +1335,7 @@ function initDashboard() {
         const statusClass = status === "Active" ? "" : "inactive";
         const departmentName = employee.department_name || "-";
         const employeeCode = employee.employee_code || "-";
-        const gender = employee.gender || "-";
+        const gender = normalizeGenderDisplay(employee.gender);
 
         return `
           <tr>
@@ -1400,14 +1416,14 @@ function initDashboard() {
 
         const rows = data
           .map((entry) => ({
+            ...entry,
             id: entry.employee_id ?? entry.id ?? null,
             employee_code: entry.employee_code ?? "-",
             english_name: entry.english_name ?? "-",
             chinese_name: entry.chinese_name ?? "",
-            gender: entry.gender || "-",
+            gender: normalizeGenderDisplay(entry.gender),
             status: entry.status || "Active",
             department_name: entry.department_name || "-",
-            ...entry,
           }))
           .filter((entry) => {
             const transactionDate = entry.transaction_date || entry.date || entry.transactionDate;
@@ -1442,8 +1458,9 @@ function initDashboard() {
     currentDepartmentSelection = null;
     currentGenderSelection = null;
     currentLunchBoxSelection = null;
+    const normalizedType = type === "departure" ? "departure" : "arrival";
     currentTrafficSelection = dateString || currentTrafficSelection;
-    currentTrafficType = type || currentTrafficType || "arrival";
+    currentTrafficType = normalizedType;
     const rawDate = currentTrafficSelection;
     if (!rawDate) {
       return;
@@ -2495,11 +2512,27 @@ function initDashboard() {
         },
         onClick: (event, elements) => {
           if (!elements.length) return;
-          const element = elements[0];
-          const datasetIndex = element.datasetIndex;
-          const dateIndex = element.index;
+
+          const chart = event?.chart;
+          const exactHit = chart
+            ? chart.getElementsAtEventForMode(
+                event,
+                "nearest",
+                { intersect: true },
+                true,
+              )[0]
+            : null;
+
+          const element = exactHit || elements[0];
+          const datasetIndex =
+            typeof element?.datasetIndex === "number"
+              ? element.datasetIndex
+              : 0;
+          const dateIndex =
+            typeof element?.index === "number" ? element.index : 0;
           const selectedDate = dailyData[dateIndex]?.date;
           const selectedType = datasetIndex === 0 ? "arrival" : "departure";
+
           if (selectedDate && selectedType) {
             openTrafficEmployeeDrawer(selectedDate, selectedType);
           }
