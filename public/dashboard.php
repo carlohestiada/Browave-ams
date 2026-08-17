@@ -248,34 +248,45 @@
     </div>
     <!-- End Meal Summary -->
 
-    <!-- Recent Employees & Room Status -->
+    <!-- Company Car / Transportation Overview & Room Status -->
     <div class="dashboard-grid-twocol dashboard-section-spacing">
 
-        <!-- Recent Employees -->
+        <!-- Company Car / Transportation Overview -->
         <div class="ams-card dashboard-card-panel">
             <div class="dashboard-card-header">
                 <div class="dashboard-card-title">
-                    <span>Recent Employees</span>
+                    <span>Company Car / Transportation Overview</span>
                 </div>
-                <a href="employees.php" class="dashboard-card-link">View all &rarr;</a>
+                <a href="company-car.php" class="dashboard-card-link">View all &rarr;</a>
             </div>
-            <div class="dashboard-card-table-body">
-                <table class="ams-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Department</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dashboard-employees">
-                        <tr>
-                            <td colspan="3" class="dashboard-loading-state">
-                                Loading...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="dashboard-card-body">
+                <!-- Transportation Summary Grid -->
+                <div class="transportation-summary-grid">
+                    <div class="transportation-summary-item">
+                        <div class="transportation-summary-label">Available Vehicles</div>
+                        <div class="transportation-summary-value" id="transportation-available-vehicles">-</div>
+                    </div>
+                    <div class="transportation-summary-item">
+                        <div class="transportation-summary-label">Available Drivers</div>
+                        <div class="transportation-summary-value" id="transportation-available-drivers">-</div>
+                    </div>
+                    <div class="transportation-summary-item">
+                        <div class="transportation-summary-label">Scheduled This Week</div>
+                        <div class="transportation-summary-value" id="transportation-scheduled-week">-</div>
+                    </div>
+                    <div class="transportation-summary-item">
+                        <div class="transportation-summary-label">Scheduled Today</div>
+                        <div class="transportation-summary-value" id="transportation-scheduled-today">-</div>
+                    </div>
+                </div>
+
+                <!-- Transportation Daily Chart -->
+                <div style="margin-top: 20px;">
+                    <h4 style="font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 12px;">Transportation Schedule - Current Week</h4>
+                    <div class="transportation-chart-canvas-wrap">
+                        <div id="transportationChartStatus" class="transportation-chart-empty">Loading transportation data...</div>
+                    </div>
+                </div>
             </div>
         </div>
 

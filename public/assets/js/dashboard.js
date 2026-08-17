@@ -637,52 +637,710 @@ function initDashboard() {
 
   //   RECENT EMPLOYEES PANEL
 
-  function loadRecentEmployees() {
-    fetchJSON("api/employees.php").then((data) => {
-      const tbody = document.getElementById("dashboard-employees");
-      if (!Array.isArray(data) || data.length === 0) {
-        tbody.innerHTML =
-          '<tr><td colspan="3" class="dashboard-loading-state">No employees found.</td></tr>';
+  function loadTransportationOverview() {
+    return fetchJSON("api/dashboard-transportation.php").then((data) => {
+      if (!data || !data.success) {
+        console.warn("Failed to load transportation data");
+        
+        // Set error state for summary cards
+        setTextValue("transportation-available-vehicles", "—");
+        setTextValue("transportation-available-drivers", "—");
+        setTextValue("transportation-scheduled-week", "—");
+        setTextValue("transportation-scheduled-today", "—");
+        
+        // Show error in chart area
+        const statusEl = document.getElementById("transportationChartStatus");
+        if (statusEl) {
+          statusEl.textContent = "Unable to load transportation data. Please refresh.";
+        }
         return;
       }
 
-      tbody.innerHTML = data
-        .slice(0, 5)
-        .map((emp) => {
-          const initials = (emp.english_name || "")
-            .split(" ")
-            .map((w) => w[0])
-            .slice(0, 2)
-            .join("")
-            .toUpperCase();
-          const colors = [
-            "#dbeafe:#1d4ed8",
-            "#ede9fe:#6d28d9",
-            "#fce7f3:#be185d",
-            "#ffedd5:#c2410c",
-            "#d1fae5:#065f46",
-          ];
-          const [bg, fg] =
-            colors[Math.abs(emp.id || 0) % colors.length].split(":");
-          const badge =
-            emp.status === "Active" ? "badge-active" : "badge-inactive";
-          return `
-                <tr>
-                    <td>
-                        <div class="dashboard-activity-name-wrap">
-                            <div class="dashboard-employee-avatar" style="background:${bg}; color:${fg};">${initials}</div>
-                            <span class="dashboard-employee-name">${emp.english_name ?? "-"}</span>
-                        </div>
-                    </td>
-                    <td class="dashboard-status-label">${emp.department_name ?? "-"}</td>
-                    <td><span class="${badge}">${emp.status ?? "-"}</span></td>
-                </tr>`;
-        })
-        .join("");
+      // Set summary values
+      setTextValue("transportation-available-vehicles", data.availableVehicles);
+      setTextValue("transportation-available-drivers", data.availableDrivers);
+      setTextValue("transportation-scheduled-week", data.scheduledThisWeek);
+      setTextValue("transportation-scheduled-today", data.scheduledToday);
+
+      // Hide loading state
+      const statusEl = document.getElementById("transportationChartStatus");
+      if (statusEl) {
+        statusEl.style.display = "none";
+      }
+
+      // Render the daily chart
+      renderTransportationChart(data.weekData, data.today);
+    }).catch((error) => {
+      console.error("Error loading transportation overview:", error);
+      
+      // Set error state
+      setTextValue("transportation-available-vehicles", "—");
+      setTextValue("transportation-available-drivers", "—");
+      setTextValue("transportation-scheduled-week", "—");
+      setTextValue("transportation-scheduled-today", "—");
+      
+      const statusEl = document.getElementById("transportationChartStatus");
+      if (statusEl) {
+        statusEl.textContent = "Error loading transportation data.";
+      }
     });
   }
 
-  //   END RECENT EMPLOYEES PANEL
+  function createTransportationKpiDrawer() {
+    let drawer = document.getElementById("transportationDetailsDrawer");
+
+    if (!drawer) {
+      drawer = document.createElement("div");
+      drawer.id = "transportationDetailsDrawer";
+      drawer.className = "transportation-details-drawer";
+      drawer.setAttribute("aria-hidden", "true");
+      document.body.appendChild(drawer);
+    }
+
+    drawer.onclick = (event) => {
+      if (event.target instanceof HTMLElement && event.target.closest("[data-close-drawer='true']")) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeTransportationDetails();
+      }
+    };
+
+    return drawer;
+  }
+
+  function renderTransportationKpiDrawer({
+    title,
+    subtitle,
+    meta,
+    records,
+    columns,
+    emptyText,
+    searchPlaceholder,
+  }) {
+    const drawer = createTransportationKpiDrawer();
+    const tableRows = records.length
+      ? records
+          .map((record) => {
+            const cells = columns
+              .map((column) => `<td>${escapeHtml(column.value(record))}</td>`)
+              .join("");
+            return `<tr class="kpi-table-row">${cells}</tr>`;
+          })
+          .join("")
+      : `<tr><td colspan="${columns.length}" class="dashboard-loading-state">${escapeHtml(emptyText)}</td></tr>`;
+
+    const headerCells = columns
+      .map((column) => `<th>${escapeHtml(column.label)}</th>`)
+      .join("");
+
+    drawer.innerHTML = `
+      <div class="transportation-details-backdrop" data-close-drawer="true"></div>
+      <aside class="transportation-details-panel" role="dialog" aria-modal="true">
+        <div class="transportation-details-header">
+          <div>
+            <p class="transportation-details-kicker">Transportation</p>
+            <h3>${escapeHtml(title)}</h3>
+            <div id="transportationDetailsMeta" class="transportation-details-meta">${escapeHtml(subtitle)}</div>
+          </div>
+          <button type="button" class="transportation-details-close" aria-label="Close drawer" data-close-drawer="true">&times;</button>
+        </div>
+        <div class="transportation-details-content">
+          <div style="padding: 16px 20px 0;">
+            <input type="text" class="ams-input" data-kpi-search="true" placeholder="${escapeHtml(searchPlaceholder)}" style="width: 100%;" aria-label="Search Transportation records" />
+          </div>
+          <div style="padding: 16px 20px 20px; overflow: auto; max-height: calc(100vh - 150px);">
+            <table class="ams-table" style="width: 100%;">
+              <thead>
+                <tr>${headerCells}</tr>
+              </thead>
+              <tbody id="transportationDetailsTable">
+                ${tableRows}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </aside>
+    `;
+
+    const searchInput = drawer.querySelector("[data-kpi-search='true']");
+    if (searchInput) {
+      searchInput.addEventListener("input", (event) => {
+        const term = event.target.value.toLowerCase().trim();
+        const rows = drawer.querySelectorAll(".kpi-table-row");
+
+        rows.forEach((row) => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(term) ? "" : "none";
+        });
+      });
+    }
+
+    drawer.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+
+  function bindTransportationKpiCardInteractions() {
+    const cards = document.querySelectorAll(".transportation-summary-item");
+
+    if (!cards.length) return;
+
+    const cardLabels = [
+      "Available Vehicles",
+      "Available Drivers",
+      "Scheduled This Week",
+      "Scheduled Today",
+    ];
+
+    cards.forEach((card, index) => {
+      card.style.cursor = "pointer";
+      card.addEventListener("click", () => {
+        const label = cardLabels[index] || "Transportation";
+
+        if (label === "Available Vehicles") {
+          fetchJSON("api/vehicles.php?status=Available")
+            .then((vehicles) => {
+              const records = Array.isArray(vehicles) ? vehicles : [];
+              renderTransportationKpiDrawer({
+                title: "Available Vehicles",
+                subtitle: `${records.length} available vehicle${records.length === 1 ? "" : "s"}`,
+                records,
+                columns: [
+                  { label: "Vehicle", value: (record) => record.vehicle_name || "-" },
+                  { label: "Plate Number", value: (record) => record.license_plate || "-" },
+                  { label: "Status", value: (record) => record.status || "-" },
+                ],
+                emptyText: "No available vehicles",
+                searchPlaceholder: "Search vehicles...",
+              });
+            })
+            .catch(() => {
+              renderTransportationKpiDrawer({
+                title: "Available Vehicles",
+                subtitle: "0 available vehicles",
+                records: [],
+                columns: [
+                  { label: "Vehicle", value: () => "-" },
+                  { label: "Plate Number", value: () => "-" },
+                  { label: "Status", value: () => "-" },
+                ],
+                emptyText: "No available vehicles",
+                searchPlaceholder: "Search vehicles...",
+              });
+            });
+          return;
+        }
+
+        if (label === "Available Drivers") {
+          fetchJSON("api/drivers.php?status=Available")
+            .then((drivers) => {
+              const records = Array.isArray(drivers) ? drivers : [];
+              renderTransportationKpiDrawer({
+                title: "Available Drivers",
+                subtitle: `${records.length} available driver${records.length === 1 ? "" : "s"}`,
+                records,
+                columns: [
+                  { label: "Driver Name", value: (record) => record.driver_name || "-" },
+                  { label: "Driver ID", value: (record) => record.id ?? "-" },
+                  { label: "Contact", value: (record) => record.phone || "-" },
+                  { label: "Status", value: (record) => record.status || "-" },
+                ],
+                emptyText: "No available drivers",
+                searchPlaceholder: "Search drivers...",
+              });
+            })
+            .catch(() => {
+              renderTransportationKpiDrawer({
+                title: "Available Drivers",
+                subtitle: "0 available drivers",
+                records: [],
+                columns: [
+                  { label: "Driver Name", value: () => "-" },
+                  { label: "Driver ID", value: () => "-" },
+                  { label: "Contact", value: () => "-" },
+                  { label: "Status", value: () => "-" },
+                ],
+                emptyText: "No available drivers",
+                searchPlaceholder: "Search drivers...",
+              });
+            });
+          return;
+        }
+
+        if (label === "Scheduled This Week") {
+          fetchJSON("api/company-car/index.php")
+            .then((response) => {
+              const records = Array.isArray(response) ? response : [];
+              const current = new Date();
+              const currentDay = current.getDay();
+              const daysUntilMonday = currentDay === 0 ? 6 : currentDay - 1;
+              const monday = new Date(current);
+              monday.setHours(0, 0, 0, 0);
+              monday.setDate(current.getDate() - daysUntilMonday);
+
+              const sunday = new Date(monday);
+              sunday.setDate(monday.getDate() + 6);
+
+              const weekRecords = records.filter((record) => {
+                if (!record.pickup_date) return false;
+                const recordDate = new Date(record.pickup_date + "T00:00:00");
+                return recordDate >= monday && recordDate <= sunday;
+              });
+
+              renderTransportationKpiDrawer({
+                title: "Transportation",
+                subtitle: `${weekRecords.length} scheduled trip${weekRecords.length === 1 ? "" : "s"}`,
+                records: weekRecords,
+                columns: [
+                  { label: "Date", value: (record) => record.pickup_date || "-" },
+                  { label: "Time", value: (record) => record.pickup_time || "-" },
+                  { label: "Employee / Passenger", value: (record) => record.english_name || record.chinese_name || "-" },
+                  { label: "Vehicle", value: (record) => record.vehicle_name || "-" },
+                  { label: "Driver", value: (record) => record.driver_name || "-" },
+                  { label: "Transportation Type", value: (record) => record.transportation_type || "-" },
+                  { label: "Status", value: (record) => record.status || "-" },
+                ],
+                emptyText: "No transportation schedules this week",
+                searchPlaceholder: "Search transportation...",
+              });
+            })
+            .catch(() => {
+              renderTransportationKpiDrawer({
+                title: "Transportation",
+                subtitle: "0 scheduled trips",
+                records: [],
+                columns: [
+                  { label: "Date", value: () => "-" },
+                  { label: "Time", value: () => "-" },
+                  { label: "Employee / Passenger", value: () => "-" },
+                  { label: "Vehicle", value: () => "-" },
+                  { label: "Driver", value: () => "-" },
+                  { label: "Transportation Type", value: () => "-" },
+                  { label: "Status", value: () => "-" },
+                ],
+                emptyText: "No transportation schedules this week",
+                searchPlaceholder: "Search transportation...",
+              });
+            });
+          return;
+        }
+
+        fetchJSON("api/company-car/index.php")
+          .then((response) => {
+            const records = Array.isArray(response) ? response : [];
+            const today = new Date();
+            const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+            const dailyRecords = records.filter((record) => record.pickup_date === todayString);
+            const dateFormatter = new Intl.DateTimeFormat("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
+
+            renderTransportationKpiDrawer({
+              title: dateFormatter.format(new Date(todayString + "T00:00:00")),
+              subtitle: `${dailyRecords.length} scheduled trip${dailyRecords.length === 1 ? "" : "s"}`,
+              records: dailyRecords,
+              columns: [
+                { label: "Time", value: (record) => record.pickup_time || "-" },
+                { label: "Employee / Passenger", value: (record) => record.english_name || record.chinese_name || "-" },
+                { label: "Vehicle", value: (record) => record.vehicle_name || "-" },
+                { label: "Driver", value: (record) => record.driver_name || "-" },
+                { label: "Transportation Type", value: (record) => record.transportation_type || "-" },
+                { label: "Status", value: (record) => record.status || "-" },
+              ],
+              emptyText: "No schedules for today",
+              searchPlaceholder: "Search transportation...",
+            });
+          })
+          .catch(() => {
+            const today = new Date();
+            const dateFormatter = new Intl.DateTimeFormat("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
+
+            renderTransportationKpiDrawer({
+              title: dateFormatter.format(today),
+              subtitle: "0 scheduled trips",
+              records: [],
+              columns: [
+                { label: "Time", value: () => "-" },
+                { label: "Employee / Passenger", value: () => "-" },
+                { label: "Vehicle", value: () => "-" },
+                { label: "Driver", value: () => "-" },
+                { label: "Transportation Type", value: () => "-" },
+                { label: "Status", value: () => "-" },
+              ],
+              emptyText: "No schedules for today",
+              searchPlaceholder: "Search transportation...",
+            });
+          });
+      });
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      const drawer = document.getElementById("transportationDetailsDrawer");
+      if (drawer && drawer.getAttribute("aria-hidden") === "false") {
+        closeTransportationDetails();
+      }
+    });
+  }
+
+  function formatTransportationDate(dateString, weekday) {
+    const date = new Date(dateString + "T00:00:00");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const year = String(date.getFullYear()).slice(-2);
+    return `${weekday} ${month}/${day}/${year}`;
+  }
+
+  // Store reference to transportation chart for cleanup
+  let transportationChartInstance = null;
+
+  function renderTransportationChart(weekData, today) {
+    const canvasWrap = document.querySelector(".transportation-chart-canvas-wrap");
+    if (!canvasWrap) {
+      console.error("Transportation chart canvas wrapper not found");
+      return;
+    }
+
+    // Destroy existing chart if it exists
+    if (transportationChartInstance) {
+      transportationChartInstance.destroy();
+      transportationChartInstance = null;
+    }
+
+    // Clear wrapper and create new canvas
+    canvasWrap.innerHTML =
+      '<canvas id="transportationDailyChart" width="900" height="280" role="img" aria-label="Daily transportation schedules for the current week"></canvas>';
+
+    const canvas = document.getElementById("transportationDailyChart");
+    if (!canvas) {
+      console.error("Failed to create transportation chart canvas");
+      return;
+    }
+
+    // Prepare chart data
+    const labels = weekData.map((d) =>
+      formatTransportationDate(d.date, d.weekday)
+    );
+    const counts = weekData.map((d) => d.count);
+    const todayIndex = weekData.findIndex((d) => d.isToday);
+
+    // Highlight today plugin
+    const highlightTodayPlugin = {
+      id: "highlightTodayTransportation",
+      afterDatasetsDraw(chart) {
+        const todayIdx = chart.data.todayIndex ?? -1;
+        if (todayIdx < 0) return;
+
+        const meta = chart.getDatasetMeta(0);
+        const bar = meta?.data[todayIdx];
+
+        if (!bar) return;
+
+        const left = bar.x - bar.width / 2 - 8;
+        const right = bar.x + bar.width / 2 + 8;
+        const top = chart.chartArea.top;
+        const bottom = chart.chartArea.bottom;
+
+        chart.ctx.save();
+        chart.ctx.fillStyle = "rgba(59, 130, 246, 0.06)";
+        chart.ctx.fillRect(left, top, right - left, bottom - top);
+        chart.ctx.strokeStyle = "rgba(37, 99, 235, 0.14)";
+        chart.ctx.lineWidth = 1;
+        chart.ctx.strokeRect(left, top, right - left, bottom - top);
+        chart.ctx.restore();
+      },
+    };
+
+    // Data labels plugin
+    const dataLabelsPlugin = {
+      id: "transportationDataLabels",
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        ctx.save();
+        ctx.font = "500 12px Inter";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillStyle = "#414750";
+
+        const meta = chart.getDatasetMeta(0);
+        meta.data.forEach((element, index) => {
+          const value = chart.data.datasets[0].data[index];
+          if (value > 0) {
+            ctx.fillText(String(value), element.x, element.y - 8);
+          }
+        });
+
+        ctx.restore();
+      },
+    };
+
+    // Create chart
+    transportationChartInstance = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: labels,
+        todayIndex: todayIndex,
+        datasets: [
+          {
+            label: "Scheduled Trips",
+            data: counts,
+            backgroundColor: "#0b5ed7",
+            borderRadius: 4,
+            borderSkipped: false,
+            barPercentage: 0.7,
+            categoryPercentage: 0.8,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            padding: 8,
+            titleFont: {
+              family: "'Sora', sans-serif",
+              size: 12,
+              weight: "600",
+            },
+            bodyFont: { family: "'Inter', sans-serif", size: 12 },
+            cornerRadius: 4,
+            titleMarginBottom: 6,
+            displayColors: false,
+            callbacks: {
+              title: (context) => {
+                const weekIndex = context[0].dataIndex;
+                const dateData = weekData[weekIndex];
+                if (!dateData) return "";
+
+                const date = new Date(dateData.date + "T00:00:00");
+                return date.toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                });
+              },
+              label: (context) => {
+                const value = context.parsed.y;
+                return `${value} scheduled trip${value !== 1 ? "s" : ""}`;
+              },
+            },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: Math.max(...counts, 5),
+            ticks: {
+              stepSize: 1,
+              callback: (value) => (Number.isInteger(value) ? value : ""),
+              font: { family: "'Inter', sans-serif", size: 12 },
+              color: "#9ca3af",
+            },
+            grid: {
+              drawBorder: false,
+              color: "rgba(0, 0, 0, 0.05)",
+            },
+          },
+          x: {
+            ticks: {
+              font: { family: "'Inter', sans-serif", size: 11 },
+              color: "#6b7280",
+            },
+            grid: {
+              display: false,
+            },
+          },
+        },
+      },
+      plugins: [highlightTodayPlugin, dataLabelsPlugin],
+    });
+
+    // Add click handler
+    canvas.addEventListener("click", (event) => {
+      const points = transportationChartInstance.getElementsAtEventForMode(
+        event,
+        "nearest",
+        { intersect: true },
+        true
+      );
+
+      if (points.length === 0) return;
+
+      const dataIndex = points[0].index;
+      const clickedDate = weekData[dataIndex]?.date;
+
+      if (clickedDate) {
+        openTransportationDetails(clickedDate);
+      }
+    });
+
+    console.log("✅ Rendered transportation chart:", weekData);
+  }
+
+  function openTransportationDetails(dateStr) {
+    // Fetch transportation schedules for the date
+    fetchJSON(
+      `api/company-car/index.php?pickup_date=${encodeURIComponent(dateStr)}`
+    )
+      .then((response) => {
+        // Handle both array and object responses
+        const records = Array.isArray(response)
+          ? response
+          : response?.data || [];
+
+        const date = new Date(dateStr + "T00:00:00");
+        const dateFormatter = new Intl.DateTimeFormat("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+
+        const formattedDate = dateFormatter.format(date);
+        const tripCount = records.length;
+
+        let drawer = document.getElementById("transportationDetailsDrawer");
+        if (!drawer) {
+          drawer = document.createElement("div");
+          drawer.id = "transportationDetailsDrawer";
+          drawer.className = "transportation-details-drawer";
+          drawer.setAttribute("aria-hidden", "false");
+
+          drawer.addEventListener("click", (e) => {
+            if (e.target.dataset.closeDrawer) {
+              closeTransportationDetails();
+            }
+          });
+
+          document.body.appendChild(drawer);
+        }
+
+        // Generate HTML for drawer
+        const tableHtml =
+          tripCount === 0
+            ? '<tr><td colspan="6" class="dashboard-loading-state">No schedules for this date.</td></tr>'
+            : records
+                .map(
+                  (rec) =>
+                    `
+                <tr>
+                  <td>${rec.pickup_time || "-"}</td>
+                  <td>${rec.english_name || "-"}</td>
+                  <td>${rec.vehicle_name || "-"}</td>
+                  <td>${rec.driver_name || "-"}</td>
+                  <td>${rec.transportation_type || "-"}</td>
+                  <td><span class="badge badge-info">${
+                    rec.status || "-"
+                  }</span></td>
+                </tr>
+              `
+                )
+                .join("");
+
+        drawer.innerHTML = `
+          <div class="transportation-details-backdrop" data-close-drawer="true"></div>
+          <aside class="transportation-details-panel" role="dialog" aria-modal="true">
+            <div class="transportation-details-header">
+              <div>
+                <p class="transportation-details-kicker">Transportation</p>
+                <h3 id="transportationDetailsTitle">${formattedDate}</h3>
+                <div id="transportationDetailsMeta" class="transportation-details-meta">
+                  ${tripCount} scheduled trip${tripCount !== 1 ? "s" : ""}
+                </div>
+              </div>
+              <button type="button" class="transportation-details-close" aria-label="Close drawer" data-close-drawer="true">&times;</button>
+            </div>
+            <div class="transportation-details-content">
+              <table class="ams-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Employee</th>
+                    <th>Vehicle</th>
+                    <th>Driver</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="transportationDetailsTable">
+                  ${tableHtml}
+                </tbody>
+              </table>
+            </div>
+          </aside>
+        `;
+
+        drawer.setAttribute("aria-hidden", "false");
+      })
+      .catch((error) => {
+        console.error("Error loading transportation details:", error);
+        const date = new Date(dateStr + "T00:00:00");
+        const dateFormatter = new Intl.DateTimeFormat("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+
+        let drawer = document.getElementById("transportationDetailsDrawer");
+        if (!drawer) {
+          drawer = document.createElement("div");
+          drawer.id = "transportationDetailsDrawer";
+          drawer.className = "transportation-details-drawer";
+          drawer.setAttribute("aria-hidden", "false");
+
+          drawer.addEventListener("click", (e) => {
+            if (e.target.dataset.closeDrawer) {
+              closeTransportationDetails();
+            }
+          });
+
+          document.body.appendChild(drawer);
+        }
+
+        drawer.innerHTML = `
+          <div class="transportation-details-backdrop" data-close-drawer="true"></div>
+          <aside class="transportation-details-panel" role="dialog" aria-modal="true">
+            <div class="transportation-details-header">
+              <div>
+                <p class="transportation-details-kicker">Transportation</p>
+                <h3>${dateFormatter.format(date)}</h3>
+              </div>
+              <button type="button" class="transportation-details-close" aria-label="Close drawer" data-close-drawer="true">&times;</button>
+            </div>
+            <div class="transportation-details-content" style="padding: 20px; text-align: center; color: #9ca3af;">
+              Error loading schedules. Please try again.
+            </div>
+          </aside>
+        `;
+
+        drawer.setAttribute("aria-hidden", "false");
+      });
+  }
+
+  function closeTransportationDetails() {
+    const drawer = document.getElementById("transportationDetailsDrawer");
+    if (!drawer) return;
+
+    drawer.setAttribute("aria-hidden", "true");
+    drawer.remove();
+    document.body.style.overflow = "";
+  }
+
+  //   END TRANSPORTATION OVERVIEW PANEL
 
   function navigateToEmployees(filters) {
     const params = new URLSearchParams();
@@ -1955,6 +2613,7 @@ function initDashboard() {
   // controls now instead of waiting for an event that has already fired.
   bindDepartmentDrawerControls();
   bindRoomStatusDrawerControls();
+  bindTransportationKpiCardInteractions();
 
   // END DEPARTMENT TREND CHART
 
@@ -2182,7 +2841,7 @@ function initDashboard() {
 
     const refreshPromise = Promise.allSettled([
       loadDashboardSummary(),
-      loadRecentEmployees(),
+      loadTransportationOverview(),
       loadCharts(),
       loadTrafficOverviewChart(),
       loadLunchboxChart(),
