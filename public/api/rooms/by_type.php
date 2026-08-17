@@ -21,7 +21,7 @@ try {
          FROM rooms r
          LEFT JOIN floors f ON r.floor_id = f.id
          LEFT JOIN buildings b ON f.building_id = b.id
-         LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status IN ('Active', 'Transferred')
+         LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status = 'Active'
          WHERE r.room_type = :room_type
          GROUP BY r.id, r.room_no, r.room_type, r.capacity, r.current_occupancy, r.status, b.building_name, f.floor_name
          ORDER BY r.room_no ASC"

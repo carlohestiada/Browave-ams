@@ -13,7 +13,7 @@ try {
         return;
     }
 
-    // Occupied - get employees in occupied rooms
+    // Occupied - get employees in occupied rooms (only Active assignments)
     if ($status === 'Occupied') {
         $stmt = $db->prepare(
             "SELECT DISTINCT
@@ -29,16 +29,11 @@ try {
                 f.floor_name
              FROM employees e
              LEFT JOIN departments d ON e.department_id = d.id
-             LEFT JOIN room_assignments ra ON e.id = ra.employee_id
+             LEFT JOIN room_assignments ra ON e.id = ra.employee_id AND ra.status = 'Active'
              LEFT JOIN rooms r ON ra.room_id = r.id
              LEFT JOIN floors f ON r.floor_id = f.id
              LEFT JOIN buildings b ON f.building_id = b.id
              WHERE ra.status = 'Active'
-                OR (ra.status = 'Transferred' 
-                    AND (
-                        (ra.actual_checkout_date > CURRENT_DATE AND ra.room_id = r.id)
-                        OR (ra.actual_checkout_date <= CURRENT_DATE AND ra.transferred_to_room_id = r.id)
-                    ))
              ORDER BY e.english_name ASC"
         );
         $stmt->execute();

@@ -26,7 +26,7 @@ class Room
              LEFT JOIN buildings b ON f.building_id = b.id
              LEFT JOIN accommodations a ON b.accommodation_id = a.id
              LEFT JOIN employees e ON r.reserved_by_employee_id = e.id
-             LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status IN ('Active', 'Transferred')
+             LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status = 'Active'
              LEFT JOIN employees emp ON emp.id = ra.employee_id
              GROUP BY r.id, f.floor_name, b.building_name, a.accommodation_name, e.english_name
              ORDER BY r.room_no ASC"
@@ -47,7 +47,7 @@ class Room
              LEFT JOIN buildings b ON f.building_id = b.id
              LEFT JOIN accommodations a ON b.accommodation_id = a.id
              LEFT JOIN employees e ON r.reserved_by_employee_id = e.id
-             LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status IN ('Active', 'Transferred')
+             LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status = 'Active'
              LEFT JOIN employees emp ON emp.id = ra.employee_id
              WHERE r.floor_id=?
              GROUP BY r.id, f.floor_name, b.building_name, a.accommodation_name, e.english_name
@@ -72,7 +72,7 @@ class Room
              LEFT JOIN buildings b ON f.building_id = b.id
              LEFT JOIN accommodations a ON b.accommodation_id = a.id
              LEFT JOIN employees e ON r.reserved_by_employee_id = e.id
-             LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status IN ('Active', 'Transferred')
+             LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status = 'Active'
              LEFT JOIN employees emp ON emp.id = ra.employee_id
              WHERE r.id=?
              GROUP BY r.id, f.floor_name, f.building_id, b.accommodation_id, b.building_name, a.accommodation_name, e.english_name"

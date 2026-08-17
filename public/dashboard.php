@@ -223,7 +223,7 @@
                 <div class="dashboard-card-title">
                     <span>Lunch Box</span>
                 </div>
-                <p class="lunchbox-chart-subtitle">Daily lunch box</p>
+                <p class="lunchbox-chart-subtitle">Daily Meal</p>
             </div>
             <a href="meals.php" class="dashboard-card-link">Meal Planner &rarr;</a>
         </div>
@@ -311,12 +311,12 @@
         <div class="dashboard-card-body traffic-chart-body">
             <div class="traffic-summary-grid">
                 <div class="traffic-summary-item">
-                    <div class="traffic-summary-label">This Week</div>
-                    <div class="traffic-summary-value" id="traffic-week-summary">Loading...</div>
-                </div>
-                <div class="traffic-summary-item">
                     <div class="traffic-summary-label">Today</div>
                     <div class="traffic-summary-value" id="traffic-today-summary">Loading...</div>
+                </div>
+                <div class="traffic-summary-item">
+                    <div class="traffic-summary-label">This Week</div>
+                    <div class="traffic-summary-value" id="traffic-week-summary">Loading...</div>
                 </div>
             </div>
             <div class="traffic-chart-legend">
@@ -379,13 +379,12 @@
         <div class="drawer-search">
             <div class="drawer-search-input-wrap">
                 <i class="bi bi-search"></i>
-                <input 
-                    type="text" 
-                    id="roomStatusDrawerSearch" 
-                    class="drawer-search-input" 
-                    placeholder="Search..." 
-                    aria-label="Search employees or rooms"
-                />
+                <input
+                    type="text"
+                    id="roomStatusDrawerSearch"
+                    class="drawer-search-input"
+                    placeholder="Search..."
+                    aria-label="Search employees or rooms" />
                 <button type="button" class="drawer-search-clear" id="roomStatusDrawerSearchClear" title="Clear search" style="display: none;">
                     <i class="bi bi-x-circle-fill"></i>
                 </button>

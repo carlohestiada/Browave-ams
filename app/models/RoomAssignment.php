@@ -112,20 +112,25 @@ class RoomAssignment
     {
         $this->ensureTransferredToColumn();
 
-        $stmt2 = $this->db->prepare("SELECT employee_id, room_id, transferred_to_room_id FROM room_assignments WHERE id=?");
+        // Fetch the original assignment with all details
+        $stmt2 = $this->db->prepare(
+            "SELECT id, employee_id, room_id, checkin_date, expected_checkout_date, transferred_to_room_id 
+             FROM room_assignments WHERE id=?"
+        );
         $stmt2->execute([$assignmentId]);
-        $row = $stmt2->fetch(PDO::FETCH_ASSOC);
-        if (!$row) {
+        $oldAssignment = $stmt2->fetch(PDO::FETCH_ASSOC);
+        if (!$oldAssignment) {
             return ['success' => false, 'error' => 'Original assignment not found.'];
         }
 
-        $currentRoomId = $row['room_id'];
+        $currentRoomId = $oldAssignment['room_id'];
+        $employeeId = $oldAssignment['employee_id'];
 
         if ($newRoomId == $currentRoomId) {
             return ['success' => false, 'error' => 'The selected room is the same as the current room. Please choose a different room.'];
         }
 
-        if ($this->roomIsReserved($newRoomId, $row['employee_id'])) {
+        if ($this->roomIsReserved($newRoomId, $employeeId)) {
             return ['success' => false, 'error' => 'The selected room is reserved by another employee. Please choose another room or remove the reservation first.'];
         }
 
@@ -133,23 +138,48 @@ class RoomAssignment
             return ['success' => false, 'error' => 'The selected room has reached its maximum capacity. Please choose another room.'];
         }
 
-        $stmt = $this->db->prepare(
-            "UPDATE room_assignments
-             SET status='Transferred', actual_checkout_date=?, transferred_to_room_id=?
-             WHERE id=?"
-        );
-        if (!$stmt->execute([$transferDate, $newRoomId, $assignmentId])) {
-            return ['success' => false, 'error' => 'Could not update the transfer.'];
+        // Start transaction
+        try {
+            $this->db->beginTransaction();
+
+            // Step 1: Close the old assignment
+            $updateOld = $this->db->prepare(
+                "UPDATE room_assignments
+                 SET status='Transferred', actual_checkout_date=?, transferred_to_room_id=?
+                 WHERE id=?"
+            );
+            if (!$updateOld->execute([$transferDate, $newRoomId, $assignmentId])) {
+                throw new Exception('Could not close the old assignment.');
+            }
+
+            // Step 2: Create a new Active assignment for the new room
+            $insertNew = $this->db->prepare(
+                "INSERT INTO room_assignments (employee_id, room_id, checkin_date, expected_checkout_date, status)
+                 VALUES (?, ?, ?, ?, 'Active')"
+            );
+            if (!$insertNew->execute([
+                $employeeId,
+                $newRoomId,
+                $transferDate,
+                $oldAssignment['expected_checkout_date']
+            ])) {
+                throw new Exception('Could not create new assignment for the new room.');
+            }
+
+            // Step 3: Sync room statuses for both old and new rooms
+            $this->syncRoomStatuses([$currentRoomId, $newRoomId]);
+
+            $this->db->commit();
+            return ['success' => true];
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            return ['success' => false, 'error' => $e->getMessage()];
         }
-
-        $this->syncRoomStatuses([$row['transferred_to_room_id'] ?? null]);
-
-        return ['success' => true];
     }
 
     public function delete($assignmentId)
     {
-        $stmt = $this->db->prepare("SELECT id, room_id, transferred_to_room_id FROM room_assignments WHERE id=?");
+        $stmt = $this->db->prepare("SELECT id, room_id FROM room_assignments WHERE id=?");
         $stmt->execute([$assignmentId]);
         $assignment = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -162,7 +192,8 @@ class RoomAssignment
             return ['success' => false, 'error' => 'Could not delete room assignment.'];
         }
 
-        $this->syncRoomStatuses([$assignment['room_id'], $assignment['transferred_to_room_id']]);
+        // Only sync the room that was assigned (transferred_to_room_id is no longer used)
+        $this->syncRoomStatuses([$assignment['room_id']]);
 
         return ['success' => true];
     }
@@ -193,16 +224,12 @@ class RoomAssignment
 
     private function countRoomOccupants($roomId, $excludeAssignmentId = null)
     {
-        $today = date('Y-m-d');
+        // Count only Active assignments for the room (after transfer, new active assignment is in new room)
         $sql = "SELECT COUNT(*) AS count
                 FROM room_assignments
-                WHERE status IN ('Active', 'Transferred')
-                  AND (
-                    (status = 'Active' AND room_id = ?)
-                    OR (status = 'Transferred' AND actual_checkout_date > ? AND room_id = ?)
-                    OR (status = 'Transferred' AND actual_checkout_date <= ? AND transferred_to_room_id = ?)
-                  )";
-        $params = [$roomId, $today, $roomId, $today, $roomId];
+                WHERE status = 'Active'
+                  AND room_id = ?";
+        $params = [$roomId];
 
         if ($excludeAssignmentId) {
             $sql .= " AND id != ?";
@@ -223,43 +250,32 @@ class RoomAssignment
 
     private function syncRoomStatuses($extraRoomIds = [])
     {
-        $today = date('Y-m-d');
+        // Get all active assignments - these determine room occupancy
         $stmt = $this->db->prepare(
-            "SELECT room_id, transferred_to_room_id, actual_checkout_date, status
+            "SELECT room_id
              FROM room_assignments
-             WHERE status IN ('Active', 'Transferred')"
+             WHERE status = 'Active'"
         );
         $stmt->execute();
-        $assignments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $activeAssignments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $touchedRooms = [];
-        $occupiedRooms = [];
 
-        foreach ($assignments as $assignment) {
+        // Mark rooms that have active assignments
+        foreach ($activeAssignments as $assignment) {
             if (!empty($assignment['room_id'])) {
                 $touchedRooms[(int)$assignment['room_id']] = true;
             }
-            if (!empty($assignment['transferred_to_room_id'])) {
-                $touchedRooms[(int)$assignment['transferred_to_room_id']] = true;
-            }
-
-            if ($assignment['status'] === 'Transferred'
-                && !empty($assignment['transferred_to_room_id'])
-                && !empty($assignment['actual_checkout_date'])
-                && $assignment['actual_checkout_date'] <= $today) {
-                $occupiedRooms[(int)$assignment['transferred_to_room_id']] = true;
-                continue;
-            }
-
-            $occupiedRooms[(int)$assignment['room_id']] = true;
         }
 
+        // Also include explicitly provided rooms to sync
         foreach ($extraRoomIds as $roomId) {
             if (!empty($roomId)) {
                 $touchedRooms[(int)$roomId] = true;
             }
         }
 
+        // Update status for all touched rooms
         foreach (array_keys($touchedRooms) as $roomId) {
             $occupancyCount = $this->countRoomOccupants($roomId);
             $isOccupied = $occupancyCount > 0;

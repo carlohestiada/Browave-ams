@@ -461,14 +461,17 @@ $(function () {
       success: function (r) {
         const res = typeof r === "string" ? JSON.parse(r) : r;
         if (res.success) {
-          swalSuccess("Transfer recorded");
+          swalSuccess("Transfer completed and room occupancy updated");
           const transferEl = document.getElementById("transferModal");
           const transferModal =
             bootstrap.Modal.getInstance(transferEl) ||
             new bootstrap.Modal(transferEl);
           transferModal.hide();
           resetTransferForm();
+          // Reload assignments and rooms to reflect updated occupancy
           loadAssignments();
+          loadRoomsForAssign("#transfer_room");
+          loadRoomsForAssign("#assign_room");
         } else {
           swalError(res.error || "Transfer failed");
         }
