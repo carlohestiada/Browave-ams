@@ -1,12 +1,14 @@
 <?php
 
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 header('Content-Type: application/json');
 
 if (empty($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'Admin') {
     http_response_code(403);
-    echo json_encode(['success' => false, 'error' => 'Forbidden: admin access required']);
+    echo json_encode(['success' => false, 'error' => 'Forbidden: Admin access required. HR users cannot access user management.']);
     exit;
 }
 

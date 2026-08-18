@@ -1,3 +1,14 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (($_SESSION['role'] ?? 'Viewer') !== 'Admin') {
+    http_response_code(403);
+    echo '<!DOCTYPE html><html><head><title>403 Forbidden</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"></head><body class="bg-light"><div class="container mt-5"><div class="alert alert-danger">Access denied: only Admin users can manage users.</div><a href="dashboard.php" class="btn btn-primary">Go to Dashboard</a></div></body></html>';
+    exit;
+}
+?>
 <?php include 'layouts/header.php'; ?>
 <?php include 'layouts/sidebar.php'; ?>
 

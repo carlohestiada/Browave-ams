@@ -185,7 +185,11 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
             <!-- SETTINGS SIDEBAR MODULE -->
             <?php
             $settingsPages = ['users.php', 'guide.php'];
-            $settingsAllowed = array_values(array_filter($settingsPages, function ($p) use ($allowedPages) {
+            $settingsAllowed = array_values(array_filter($settingsPages, function ($p) use ($allowedPages, $role) {
+                if ($p === 'users.php') {
+                    return $role === 'Admin' && in_array($p, $allowedPages, true);
+                }
+
                 return in_array($p, $allowedPages, true);
             }));
             $isSettingsActive = in_array($currentPage, $settingsPages, true);
@@ -202,7 +206,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
                         <ul class="nav flex-column nav-subgroup">
 
                             <!-- USERS -->
-                            <?php if (in_array('users.php', $settingsAllowed, true)): ?>
+                            <?php if ($role === 'Admin' && in_array('users.php', $settingsAllowed, true)): ?>
                                 <li class="nav-item mb-1">
                                     <a href="users.php" class="nav-link <?= $currentPage === 'users.php' ? 'active' : '' ?>" title="Users">
                                         <i class="bi bi-person-circle nav-icon"></i>

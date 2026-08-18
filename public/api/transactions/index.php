@@ -2,6 +2,10 @@
 
 header('Content-Type: application/json');
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once __DIR__ . '/../../../app/config/database.php';
 require_once __DIR__ . '/../../../app/controllers/TransactionController.php';
 
@@ -27,7 +31,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    session_start();
     $role = $_SESSION['role'] ?? '';
     if (!in_array($role, ['Admin', 'HR'], true)) {
         http_response_code(403);
@@ -47,7 +50,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
-    session_start();
     $role = $_SESSION['role'] ?? '';
     if (!in_array($role, ['Admin', 'HR'], true)) {
         http_response_code(403);
@@ -63,7 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
-    session_start();
     $role = $_SESSION['role'] ?? '';
     if (!in_array($role, ['Admin', 'HR'], true)) {
         http_response_code(403);

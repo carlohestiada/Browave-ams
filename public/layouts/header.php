@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 header('Content-Type: text/html; charset=UTF-8');
 
 function isLoggedIn()
@@ -33,9 +35,12 @@ function getAllowedPagesForRole($role)
             'dashboard.php',
             'employees.php',
             'departments.php',
-            'meals.php',
+            'rooms.php',
+            'accommodations.php',
             'company-car.php',
             'room-assignments.php',
+            'meals.php',
+            'guide.php',
             'arrivals.php',
             'departures.php'
         ],

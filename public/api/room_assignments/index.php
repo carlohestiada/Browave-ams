@@ -4,7 +4,9 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/../../../app/config/database.php';
 require_once __DIR__ . '/../../../app/controllers/RoomAssignmentController.php';
 
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 $db = (new Database())->connect();
 $controller = new RoomAssignmentController($db);
