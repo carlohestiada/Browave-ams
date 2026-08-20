@@ -74,6 +74,7 @@ if (!in_array($currentPage, $allowedPages, true)) {
 <head>
     <meta charset="UTF-8">
     <title>BROWAVE AMS</title>
+    <link rel="icon" type="image/png" href="assets/img/browave-logo.png">
 
     <link rel="stylesheet" href="assets/css/bootstrap.min.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/bootstrap.min.css') ?>">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">

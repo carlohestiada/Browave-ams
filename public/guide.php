@@ -394,7 +394,7 @@
                             <div>
                                 <h4 class="font-bold mb-2">Operational Integrity</h4>
                                 <p class="text-body-md mb-4">The AMS enforces strict data integrity. Deleting a 'Department' will fail if any employees are still associated with it. Transfer them first.</p>
-                                <button class="bg-on-error-container text-white px-4 py-2 rounded-lg text-label-md font-bold hover:opacity-90 transition-all">Download Safety Manual (PDF)</button>
+                                <a href="assets/files/browave_ams_manual.pdf" download="browave_ams_manual.pdf" class="bg-on-error-container text-white px-4 py-2 rounded-lg text-label-md font-bold hover:opacity-90 transition-all">Download Manual (PDF)</a>
                             </div>
                         </div>
                     </div>
