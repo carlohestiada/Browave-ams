@@ -148,7 +148,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
             <?php if (count($txAllowed) > 0): ?>
                 <li class="nav-item mb-1 nav-group">
                     <a class="nav-link nav-link-toggle d-flex justify-content-between <?= $isTxActive ? 'active' : '' ?>" data-bs-toggle="collapse" href="#transactionsMenu" role="button" aria-expanded="<?= $isTxActive ? 'true' : 'false' ?>" aria-controls="transactionsMenu">
-                        <i class="bi bi-repeat nav-icon"></i><span>Transactions</span>
+                        <i class="bi bi-repeat nav-icon"></i><span>Trips</span>
                         <i class="bi bi-chevron-down chev" data-target="transactionsMenu"></i>
                     </a>
 
