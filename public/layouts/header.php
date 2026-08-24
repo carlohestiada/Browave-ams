@@ -1,4 +1,6 @@
 <?php
+require_once dirname(__DIR__) . '/../app/config/csrf.php';
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -81,6 +83,15 @@ if (!in_array($currentPage, $allowedPages, true)) {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type || 'GET')) {
+                    xhr.setRequestHeader('X-CSRF-Token', <?= json_encode(csrfToken()) ?>);
+                }
+            }
+        });
+    </script>
     <script src="assets/js/bootstrap.bundle.min.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/bootstrap.bundle.min.js') ?>"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script src="assets/js/swal-utils.js?v=<?= filemtime(dirname(__DIR__) . '/assets/js/swal-utils.js') ?>"></script>
@@ -125,10 +136,13 @@ if (!in_array($currentPage, $allowedPages, true)) {
                         <span class="ams-user-menu-value"><?= htmlspecialchars($role) ?></span>
                     </div>
                     <div class="dropdown-divider"></div>
-                    <a href="logout.php" class="dropdown-item ams-user-logout">
-                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
-                        Sign out
-                    </a>
+                    <form id="logout-form" method="POST" action="logout.php" class="m-0">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8') ?>">
+                        <button type="submit" class="dropdown-item ams-user-logout">
+                            <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                            Sign out
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>

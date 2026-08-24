@@ -1,7 +1,10 @@
 <?php
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+require_once '../app/config/csrf.php';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !csrfRequestIsValid()) {
+    http_response_code(403);
+    exit('Invalid request.');
 }
 
 session_destroy();

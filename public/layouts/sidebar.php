@@ -234,7 +234,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
     </div>
     <!-- Sign Out -->
     <div class="sidebar-signout-wrap">
-        <button type="button" class="sidebar-signout-btn" onclick="document.getElementById('logout-form') ? document.getElementById('logout-form').submit() : window.location.href='logout.php'">
+        <button type="button" class="sidebar-signout-btn" onclick="document.getElementById('logout-form').submit()">
             <i class="bi bi-box-arrow-right nav-icon"></i>
             <span>Sign Out</span>
         </button>

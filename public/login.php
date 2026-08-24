@@ -1,4 +1,5 @@
 <?php
+require_once '../app/config/csrf.php';
 require_once '../app/controllers/AuthController.php';
 header('Content-Type: text/html; charset=UTF-8');
 
@@ -6,15 +7,20 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
-    $auth = new AuthController();
+    if (!csrfRequestIsValid()) {
+        $error = 'Invalid security token. Please try again.';
+    } else {
 
-    if ($auth->login($_POST['username'], $_POST['password'], $_POST['role'])) {
+        $auth = new AuthController();
 
-        header("Location: dashboard.php");
-        exit;
+        if ($auth->login($_POST['username'], $_POST['password'], $_POST['role'])) {
+
+            header("Location: dashboard.php");
+            exit;
+        }
+
+        $error = "Invalid username, password, or role.";
     }
-
-    $error = "Invalid username, password, or role.";
 }
 ?>
 
@@ -119,6 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <?php endif; ?>
 
                 <form method="POST" class="space-y-5" autocomplete="off">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8') ?>">
 
                     <!-- Role -->
                     <div>
