@@ -1,7 +1,5 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once '../app/config/session.php';
 
 if (($_SESSION['role'] ?? 'Viewer') !== 'Admin') {
     http_response_code(403);

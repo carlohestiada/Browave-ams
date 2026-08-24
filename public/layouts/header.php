@@ -1,9 +1,5 @@
 <?php
 require_once dirname(__DIR__) . '/../app/config/csrf.php';
-
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
 header('Content-Type: text/html; charset=UTF-8');
 
 function isLoggedIn()

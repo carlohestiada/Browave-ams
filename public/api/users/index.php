@@ -1,10 +1,6 @@
 <?php
 require_once __DIR__ . '/../../../app/config/api_auth.php';
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 header('Content-Type: application/json');
 
 if (empty($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'Admin') {
