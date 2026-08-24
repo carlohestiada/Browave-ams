@@ -1,0 +1,5 @@
+.env
+.env.*
+!.env.example
+app/config/database.production.php
+app/config/database.local.php
