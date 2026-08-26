@@ -104,8 +104,8 @@ class TransportationRequest
 
         $stmt = $this->db->prepare(
             "INSERT INTO transportation_requests
-             (employee_id, transportation_type, driver_id, vehicle_id, pickup_date, pickup_time, pickup_location, status, remarks)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+             (employee_id, transportation_type, driver_id, vehicle_id, pickup_date, pickup_time, pickup_location, status, remarks, trip_leg_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
 
         $success = $stmt->execute([
@@ -117,7 +117,8 @@ class TransportationRequest
             $data['pickup_time'],
             $data['pickup_location'],
             $data['status'],
-            $data['remarks']
+            $data['remarks'],
+            $data['trip_leg_id']
         ]);
 
         if (!$success) {
@@ -151,8 +152,8 @@ class TransportationRequest
 
                 $stmt = $this->db->prepare(
                     "INSERT INTO transportation_requests
-                     (employee_id, transportation_type, driver_id, vehicle_id, pickup_date, pickup_time, pickup_location, status, remarks)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                     (employee_id, transportation_type, driver_id, vehicle_id, pickup_date, pickup_time, pickup_location, status, remarks, trip_leg_id)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 );
 
                 $success = $stmt->execute([
@@ -164,7 +165,8 @@ class TransportationRequest
                     $rowData['pickup_time'],
                     $rowData['pickup_location'],
                     $rowData['status'],
-                    $rowData['remarks']
+                    $rowData['remarks'],
+                    $rowData['trip_leg_id']
                 ]);
 
                 if (!$success) {
@@ -201,7 +203,8 @@ class TransportationRequest
              pickup_time = ?,
              pickup_location = ?,
              status = ?,
-             remarks = ?
+             remarks = ?,
+             trip_leg_id = ?
              WHERE id = ?"
         );
 
@@ -215,6 +218,7 @@ class TransportationRequest
             $data['pickup_location'],
             $data['status'],
             $data['remarks'],
+            $data['trip_leg_id'],
             $id
         ]);
 
@@ -324,6 +328,14 @@ class TransportationRequest
             return ['success' => false, 'error' => 'Employee is not valid'];
         }
 
+        // Validate trip_leg_id if provided
+        if (!empty($data['trip_leg_id'])) {
+            $tripLegValidation = $this->validateTripLeg($data['trip_leg_id'], $data['employee_id']);
+            if (!$tripLegValidation['success']) {
+                return $tripLegValidation;
+            }
+        }
+
         if ($skipConflicts) {
             return ['success' => true];
         }
@@ -331,6 +343,29 @@ class TransportationRequest
         $conflict = $this->checkAssignmentConflicts($data, $excludeId);
         if ($conflict !== null) {
             return ['success' => false, 'error' => $conflict];
+        }
+
+        return ['success' => true];
+    }
+
+    private function validateTripLeg(int $tripLegId, int $employeeId): array
+    {
+        // Verify trip leg exists and belongs to the specified employee
+        $stmt = $this->db->prepare(
+            "SELECT tl.id, t.employee_id
+             FROM trip_legs tl
+             JOIN trips t ON tl.trip_id = t.id
+             WHERE tl.id = ?"
+        );
+        $stmt->execute([$tripLegId]);
+        $tripLeg = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$tripLeg) {
+            return ['success' => false, 'error' => 'Trip leg does not exist.'];
+        }
+
+        if ((int) $tripLeg['employee_id'] !== $employeeId) {
+            return ['success' => false, 'error' => 'Trip leg does not belong to the specified employee.'];
         }
 
         return ['success' => true];
@@ -348,6 +383,7 @@ class TransportationRequest
             'pickup_location' => trim($data['pickup_location'] ?? ''),
             'status' => trim($data['status'] ?? ''),
             'remarks' => trim($data['remarks'] ?? ''),
+            'trip_leg_id' => empty($data['trip_leg_id']) ? null : (int) $data['trip_leg_id'],
         ];
     }
 

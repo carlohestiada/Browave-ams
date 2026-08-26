@@ -1,3 +1,16 @@
+Change log (repo-scoped) — updated 2026-08-26
+
+- 2026-08-26: Phase 2 Backend — Trip Management System Implementation
+  - Created `app/models/Trip.php`: CRUD operations for trips with employee/department joins, duplicate trip prevention for active/planned trips.
+  - Created `app/models/TripLeg.php`: CRUD operations for trip legs with date validation (YYYY-MM-DD), leg type constraints (ARRIVAL/DEPARTURE).
+  - Created `app/controllers/TripController.php`: Orchestrates trip creation with atomic transactions; validates NORMAL_TRIP (ARRIVAL <= DEPARTURE) and ROUND_TRIP (DEPARTURE <= ARRIVAL); rolls back on any leg creation failure.
+  - Created `app/controllers/TripLegController.php`: Handles individual leg operations (create, update, delete); validates trip existence before operations.
+  - Created `public/api/trips/index.php`: REST endpoints for trips (GET /api/trips, GET /api/trips/{id}, POST, PUT, DELETE) with nested leg support (GET /api/trips/{trip_id}/legs, POST /api/trips/{trip_id}/legs).
+  - Created `public/api/trip-legs/index.php`: Direct REST endpoints for trip legs (GET, PUT, DELETE by leg ID).
+  - Updated `app/models/TransportationRequest.php`: Added `trip_leg_id` field support in create/update operations with validation that leg belongs to the specified employee; fully backward compatible with existing records (trip_leg_id = NULL).
+  - All endpoints include session authentication (`api_auth.php`) and CSRF validation for mutations.
+  - Comprehensive test cases documented in `AgentNotes/PHASE2_TEST_CASES.md`.
+
 Change log (repo-scoped) — updated 2026-08-24
 
 - 2026-08-24: Security — stop committing DB credentials to git
