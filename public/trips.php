@@ -66,8 +66,17 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Employee ID</th><th>Employee Name</th><th>Department</th><th>Arrival</th><th>Departure</th>
-                        <th>Arrival Airport</th><th>Departure Airport</th><th>Room No.</th><th>Trip Type</th><th>Status</th><th>Action</th>
+                        <th>Employee ID</th>
+                        <th>Employee Name</th>
+                        <th>Department</th>
+                        <th>Arrival</th>
+                        <th>Departure</th>
+                        <th>Arrival Airport</th>
+                        <th>Departure Airport</th>
+                        <th>Room No.</th>
+                        <th>Trip Type</th>
+                        <th>Status</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="tripsTableBody"><tr><td colspan="11" class="text-center text-muted py-4">Loading trips...</td></tr></tbody>
