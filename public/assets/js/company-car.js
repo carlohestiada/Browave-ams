@@ -481,6 +481,7 @@ function openModal(mode, id = null) {
     $('#companyCarForm')[0].reset();
     clearEmployeeDetails();
     $('#companyCar_id').val('');
+    $('#companyCar_trip_leg_id').val('');
     $('#companyCar_status').val('Pending');
     $('#companyCar_transportation_type').val('Company Car');
 
@@ -497,12 +498,21 @@ function openModal(mode, id = null) {
         $('#companyCar_status').val('Pending');
         $('#companyCar_pickup_date').val(new Date().toISOString().slice(0, 10));
         $('#companyCar_pickup_time').val('08:00');
+
+        const query = new URLSearchParams(window.location.search);
+        const tripLegId = query.get('trip_leg_id');
+        const employeeId = query.get('employee_id');
+        const pickupDate = query.get('pickup_date');
+        if (tripLegId) $('#companyCar_trip_leg_id').val(tripLegId);
+        if (pickupDate) $('#companyCar_pickup_date').val(pickupDate);
+        if (employeeId) fetchEmployeeDetails(employeeId);
     }
 
     if (id) {
         $.get(apiUrl(`api/company-car/index.php/${id}`), function(data) {
             const row = typeof data === 'string' ? JSON.parse(data) : data;
             $('#companyCar_id').val(row.id || '');
+            $('#companyCar_trip_leg_id').val(row.trip_leg_id || '');
             $('#companyCar_employee_id').val(row.employee_id || '');
             $('#companyCar_employee_search').val(formatEmployeeName(row));
             $('#companyCar_transportation_type').val(row.transportation_type || 'Company Car');
@@ -966,4 +976,8 @@ $(function() {
     $('#selectAllTransportation').on('change', function() {
         toggleAllTransportation(this.checked);
     });
+
+    if (new URLSearchParams(window.location.search).get('trip_leg_id')) {
+        openModal('create');
+    }
 });

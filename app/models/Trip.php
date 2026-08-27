@@ -34,6 +34,21 @@ class Trip
             $params[] = $filters['employee_id'];
         }
 
+        if (!empty($filters['department_id'])) {
+            $conditions[] = 'e.department_id = ?';
+            $params[] = $filters['department_id'];
+        }
+
+        if (!empty($filters['date_from'])) {
+            $conditions[] = 'EXISTS (SELECT 1 FROM trip_legs date_from_leg WHERE date_from_leg.trip_id = t.id AND date_from_leg.leg_date >= ?)';
+            $params[] = $filters['date_from'];
+        }
+
+        if (!empty($filters['date_to'])) {
+            $conditions[] = 'EXISTS (SELECT 1 FROM trip_legs date_to_leg WHERE date_to_leg.trip_id = t.id AND date_to_leg.leg_date <= ?)';
+            $params[] = $filters['date_to'];
+        }
+
         if (!empty($filters['trip_type']) && in_array($filters['trip_type'], ['NORMAL_TRIP', 'ROUND_TRIP'])) {
             $conditions[] = 't.trip_type = ?';
             $params[] = $filters['trip_type'];

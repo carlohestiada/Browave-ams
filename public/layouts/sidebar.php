@@ -137,7 +137,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
             <?php endif; ?>
 
             <?php
-            $txPages = ['arrivals.php', 'departures.php'];
+            $txPages = ['trips.php', 'arrivals.php', 'departures.php'];
             $txAllowed = array_values(array_filter($txPages, function ($p) use ($allowedPages) {
                 return in_array($p, $allowedPages, true);
             }));
@@ -154,6 +154,15 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
 
                     <div class="collapse <?= $isTxActive ? 'show' : '' ?>" id="transactionsMenu">
                         <ul class="nav flex-column nav-subgroup">
+
+                            <?php if (in_array('trips.php', $allowedPages, true)): ?>
+                                <li class="nav-item mb-1">
+                                    <a href="trips.php" class="nav-link <?= $currentPage === 'trips.php' ? 'active' : '' ?>" title="Trips">
+                                        <i class="bi bi-airplane nav-icon"></i>
+                                        <span> Trips</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
 
                             <!-- ARRIVALS MODULE -->
                             <?php if (in_array('arrivals.php', $allowedPages, true)): ?>

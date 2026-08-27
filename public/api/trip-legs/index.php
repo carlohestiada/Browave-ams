@@ -13,6 +13,13 @@ $path = isset($_SERVER['PATH_INFO']) ? trim($_SERVER['PATH_INFO'], '/') : '';
 $id = $path !== '' ? explode('/', $path)[0] : null;
 $method = $_SERVER['REQUEST_METHOD'];
 
+$role = $_SESSION['role'] ?? 'Viewer';
+if (in_array($method, ['POST', 'PUT', 'DELETE'], true) && !in_array($role, ['Admin', 'HR'], true)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'Forbidden: insufficient permissions']);
+    exit;
+}
+
 switch ($method) {
     case 'GET':
         if ($id) {

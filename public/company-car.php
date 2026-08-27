@@ -181,6 +181,7 @@
                 <form id="companyCarForm">
                     <input type="hidden" id="companyCar_id" name="id">
                     <input type="hidden" id="companyCar_employee_id" name="employee_id">
+                    <input type="hidden" id="companyCar_trip_leg_id" name="trip_leg_id">
 
                     <div class="row g-3">
                         <div class="col-md-6">

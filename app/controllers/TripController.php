@@ -20,12 +20,19 @@ class TripController
     {
         $filters = [
             'employee_id' => $_GET['employee_id'] ?? null,
+            'department_id' => $_GET['department_id'] ?? null,
             'trip_type' => $_GET['trip_type'] ?? null,
             'status' => $_GET['status'] ?? null,
+            'date_from' => $_GET['date_from'] ?? null,
+            'date_to' => $_GET['date_to'] ?? null,
             'search' => $_GET['search'] ?? null,
         ];
 
         $result = $this->trip->getAll($filters);
+        foreach ($result as &$trip) {
+            $trip['legs'] = $this->tripLeg->getByTripId($trip['id']);
+        }
+        unset($trip);
         echo json_encode($result);
     }
 

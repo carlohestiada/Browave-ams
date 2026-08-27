@@ -19,6 +19,13 @@ $legId = $segments[2] ?? null;
 
 $method = $_SERVER['REQUEST_METHOD'];
 
+$role = $_SESSION['role'] ?? 'Viewer';
+if (in_array($method, ['POST', 'PUT', 'DELETE'], true) && !in_array($role, ['Admin', 'HR'], true)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'Forbidden: insufficient permissions']);
+    exit;
+}
+
 // Handle nested legs operations: /trips/{trip_id}/legs
 if ($action === 'legs') {
     if ($method === 'GET') {
