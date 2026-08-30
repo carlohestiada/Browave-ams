@@ -327,6 +327,7 @@ function loadTransportationSchedule() {
     const vehicleId = $('#filterVehicle').val();
     const driverId = $('#filterDriver').val();
     const status = $('#filterStatus').val();
+    const legType = $('#filterLegType').val();
 
     if (employeeId) params.push(`employee_id=${encodeURIComponent(employeeId)}`);
     if (pickupDate) params.push(`pickup_date=${encodeURIComponent(pickupDate)}`);
@@ -334,6 +335,7 @@ function loadTransportationSchedule() {
     if (vehicleId) params.push(`vehicle_id=${encodeURIComponent(vehicleId)}`);
     if (driverId) params.push(`driver_id=${encodeURIComponent(driverId)}`);
     if (status) params.push(`status=${encodeURIComponent(status)}`);
+    if (legType) params.push(`leg_type=${encodeURIComponent(legType)}`);
 
     const url = apiUrl('api/company-car/index.php' + (params.length ? '?' + params.join('&') : ''));
 
@@ -398,6 +400,11 @@ function renderTable() {
     rows.forEach(row => {
         const overdue = isRowOverdue(row) ? 'overdue-row' : '';
         const checked = selectedTransportationIds.has(String(row.id)) ? 'checked' : '';
+        // Phase 4: Show trip context if available, otherwise show "Legacy"
+        const tripContext = row.trip_id ? 
+            `Trip #${row.trip_id} - ${row.leg_type || ''}` : 
+            '<span class="text-muted">Legacy / Unlinked</span>';
+        
         html += `
             <tr class="${overdue}">
                 <td style="text-align:center;">
@@ -411,6 +418,7 @@ function renderTable() {
                 </td>
                 <td>${formatEmployeeName(row)}</td>
                 <td>${row.department_name || ''}</td>
+                <td>${tripContext}</td>
                 <td>${row.pickup_date || ''}</td>
                 <td>${row.pickup_time || ''}</td>
                 <td>${row.transportation_type || ''}</td>
@@ -428,7 +436,7 @@ function renderTable() {
         `;
     });
 
-    body.html(html || '<tr><td colspan="11" class="text-center text-muted">No transportation requests found.</td></tr>');
+    body.html(html || '<tr><td colspan="12" class="text-center text-muted">No transportation requests found.</td></tr>');
     renderPagination();
     $('#tableSummary').text(`Showing ${rows.length} of ${transportationRows.length} records`);
     bindRowActions();
@@ -503,7 +511,26 @@ function openModal(mode, id = null) {
         const tripLegId = query.get('trip_leg_id');
         const employeeId = query.get('employee_id');
         const pickupDate = query.get('pickup_date');
-        if (tripLegId) $('#companyCar_trip_leg_id').val(tripLegId);
+        
+        if (tripLegId) {
+            $('#companyCar_trip_leg_id').val(tripLegId);
+            // Phase 4: Fetch and display trip leg context
+            $.get(apiUrl(`api/trip-legs/index.php/${tripLegId}`), function(data) {
+                const tripLeg = typeof data === 'string' ? JSON.parse(data) : data;
+                if (tripLeg) {
+                    const route = `${tripLeg.origin || '—'} → ${tripLeg.destination || '—'}`;
+                    $('#tripContextTripId').text(`#${tripLeg.trip_id || '—'}`);
+                    $('#tripContextEmployee').text(employeeId ? `${employeeId}` : '—');
+                    $('#tripContextLegType').text(tripLeg.leg_type || '—');
+                    $('#tripContextDate').text(tripLeg.leg_date || '—');
+                    $('#tripContextRoute').text(route);
+                    $('#tripContextSection').removeClass('d-none');
+                }
+            });
+        } else {
+            $('#tripContextSection').addClass('d-none');
+        }
+        
         if (pickupDate) $('#companyCar_pickup_date').val(pickupDate);
         if (employeeId) fetchEmployeeDetails(employeeId);
     }
@@ -524,6 +551,19 @@ function openModal(mode, id = null) {
             $('#companyCar_status').val(row.status || 'Pending');
             $('#companyCar_remarks').val(row.remarks || '');
             fetchEmployeeDetails(row.employee_id);
+
+            // Phase 4: Show trip context if linked to trip leg
+            if (row.trip_leg_id) {
+                const route = `${row.origin || '—'} → ${row.destination || '—'}`;
+                $('#tripContextTripId').text(`#${row.trip_id || '—'}`);
+                $('#tripContextEmployee').text(`${row.employee_code} - ${row.english_name}`);
+                $('#tripContextLegType').text(row.leg_type || '—');
+                $('#tripContextDate').text(row.leg_date || '—');
+                $('#tripContextRoute').text(route);
+                $('#tripContextSection').removeClass('d-none');
+            } else {
+                $('#tripContextSection').addClass('d-none');
+            }
 
             if (mode === 'assign') {
                 $('#companyCar_status').val('Scheduled');

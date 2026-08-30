@@ -95,4 +95,21 @@ class TransportationController
     {
         echo json_encode($this->transportation->getEmployeeDetails($employeeId));
     }
+
+    /**
+     * Phase 4: Get transportation for a specific trip leg
+     * Used when displaying trip details to show transportation for each leg
+     */
+    public function getByTripLegId($tripLegId)
+    {
+        $transportation = $this->transportation->getByTripLegId($tripLegId);
+        
+        if (!$transportation) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => 'No transportation found for this trip leg']);
+            return;
+        }
+
+        echo json_encode(['success' => true, 'data' => $transportation]);
+    }
 }

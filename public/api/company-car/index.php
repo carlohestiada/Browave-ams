@@ -13,6 +13,15 @@ $path = isset($_SERVER['PATH_INFO']) ? trim($_SERVER['PATH_INFO'], '/') : '';
 $segments = $path === '' ? [] : explode('/', $path);
 $method = $_SERVER['REQUEST_METHOD'];
 
+// Phase 4: Handle trip_leg transportation endpoint
+// GET /api/company-car/trip-leg/{trip_leg_id} -> get transportation for specific trip leg
+if (count($segments) > 0 && $segments[0] === 'trip-leg' && isset($segments[1])) {
+    if ($method === 'GET') {
+        $controller->getByTripLegId($segments[1]);
+        return;
+    }
+}
+
 if (count($segments) > 0 && $segments[0] === 'employee' && isset($segments[1])) {
     if ($method === 'GET') {
         $controller->getEmployeeDetails($segments[1]);

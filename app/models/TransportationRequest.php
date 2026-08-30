@@ -11,12 +11,21 @@ class TransportationRequest
 
     public function getAll(array $filters = [])
     {
-        $sql = "SELECT tr.*, e.employee_code, e.english_name, e.chinese_name, e.gender, d.department_name, dr.driver_name, v.vehicle_name, v.license_plate
+        // Include trip and trip_leg context for Phase 4 integration
+        $sql = "SELECT tr.*, 
+                    e.employee_code, e.english_name, e.chinese_name, e.gender, 
+                    d.department_name, 
+                    dr.driver_name, 
+                    v.vehicle_name, v.license_plate,
+                    t.id AS trip_id, t.trip_type, t.status AS trip_status,
+                    tl.id AS trip_leg_id_val, tl.leg_type, tl.leg_date, tl.origin, tl.destination
                 FROM transportation_requests tr
                 JOIN employees e ON tr.employee_id = e.id
                 LEFT JOIN departments d ON e.department_id = d.id
                 LEFT JOIN drivers dr ON tr.driver_id = dr.id
-                LEFT JOIN vehicles v ON tr.vehicle_id = v.id";
+                LEFT JOIN vehicles v ON tr.vehicle_id = v.id
+                LEFT JOIN trip_legs tl ON tr.trip_leg_id = tl.id
+                LEFT JOIN trips t ON tl.trip_id = t.id";
 
         $conditions = [];
         $params = [];
@@ -24,6 +33,16 @@ class TransportationRequest
         if (!empty($filters['employee_id'])) {
             $conditions[] = 'tr.employee_id = ?';
             $params[] = $filters['employee_id'];
+        }
+
+        if (!empty($filters['trip_id'])) {
+            $conditions[] = 't.id = ?';
+            $params[] = $filters['trip_id'];
+        }
+
+        if (!empty($filters['trip_leg_id'])) {
+            $conditions[] = 'tr.trip_leg_id = ?';
+            $params[] = $filters['trip_leg_id'];
         }
 
         if (!empty($filters['pickup_date'])) {
@@ -49,6 +68,11 @@ class TransportationRequest
         if (!empty($filters['status'])) {
             $conditions[] = 'tr.status = ?';
             $params[] = $filters['status'];
+        }
+
+        if (!empty($filters['leg_type'])) {
+            $conditions[] = 'tl.leg_type = ?';
+            $params[] = $filters['leg_type'];
         }
 
         if (!empty($filters['search'])) {
@@ -77,15 +101,51 @@ class TransportationRequest
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getById($id)
+    /**
+     * Get transportation for a specific trip leg
+     * Phase 4: Used to display transportation in trip details
+     */
+    public function getByTripLegId($tripLegId)
     {
         $stmt = $this->db->prepare(
-            "SELECT tr.*, e.employee_code, e.english_name, e.chinese_name, e.gender, d.department_name, dr.driver_name, v.vehicle_name, v.license_plate
+            "SELECT tr.*, 
+                e.employee_code, e.english_name, e.chinese_name, e.gender, 
+                d.department_name, 
+                dr.driver_name, 
+                v.vehicle_name, v.license_plate,
+                t.id AS trip_id, t.trip_type, t.status AS trip_status,
+                tl.id AS trip_leg_id_val, tl.leg_type, tl.leg_date, tl.origin, tl.destination
              FROM transportation_requests tr
              JOIN employees e ON tr.employee_id = e.id
              LEFT JOIN departments d ON e.department_id = d.id
              LEFT JOIN drivers dr ON tr.driver_id = dr.id
              LEFT JOIN vehicles v ON tr.vehicle_id = v.id
+             LEFT JOIN trip_legs tl ON tr.trip_leg_id = tl.id
+             LEFT JOIN trips t ON tl.trip_id = t.id
+             WHERE tr.trip_leg_id = ?"
+        );
+        $stmt->execute([$tripLegId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getById($id)
+    {
+        // Include trip and trip_leg context for Phase 4 integration
+        $stmt = $this->db->prepare(
+            "SELECT tr.*, 
+                e.employee_code, e.english_name, e.chinese_name, e.gender, 
+                d.department_name, 
+                dr.driver_name, 
+                v.vehicle_name, v.license_plate,
+                t.id AS trip_id, t.trip_type, t.status AS trip_status,
+                tl.id AS trip_leg_id_val, tl.leg_type, tl.leg_date, tl.origin, tl.destination
+             FROM transportation_requests tr
+             JOIN employees e ON tr.employee_id = e.id
+             LEFT JOIN departments d ON e.department_id = d.id
+             LEFT JOIN drivers dr ON tr.driver_id = dr.id
+             LEFT JOIN vehicles v ON tr.vehicle_id = v.id
+             LEFT JOIN trip_legs tl ON tr.trip_leg_id = tl.id
+             LEFT JOIN trips t ON tl.trip_id = t.id
              WHERE tr.id = ?"
         );
 
@@ -334,6 +394,12 @@ class TransportationRequest
             if (!$tripLegValidation['success']) {
                 return $tripLegValidation;
             }
+
+            // Check for duplicate transportation requests for the same trip_leg (MVP requirement)
+            $existingTransportation = $this->getTransportationForTripLeg($data['trip_leg_id'], $excludeId);
+            if ($existingTransportation) {
+                return ['success' => false, 'error' => 'Transportation has already been assigned to this trip leg.'];
+            }
         }
 
         if ($skipConflicts) {
@@ -369,6 +435,25 @@ class TransportationRequest
         }
 
         return ['success' => true];
+    }
+
+    /**
+     * Check if transportation already exists for a given trip_leg
+     * Phase 4: MVP requirement - One transportation request per trip leg
+     */
+    private function getTransportationForTripLeg(int $tripLegId, ?int $excludeId = null): ?array
+    {
+        $sql = "SELECT id FROM transportation_requests WHERE trip_leg_id = ?";
+        $params = [$tripLegId];
+
+        if ($excludeId !== null) {
+            $sql .= ' AND id != ?';
+            $params[] = $excludeId;
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     private function normalizeInput(array $data): array

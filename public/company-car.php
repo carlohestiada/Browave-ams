@@ -85,6 +85,14 @@
                 <select id="filterDriver" class="ams-input"></select>
             </div>
             <div class="col-lg-2">
+                <label class="ams-label" for="filterLegType">Leg Type</label>
+                <select id="filterLegType" class="ams-input">
+                    <option value="">All leg types</option>
+                    <option value="ARRIVAL">Arrival</option>
+                    <option value="DEPARTURE">Departure</option>
+                </select>
+            </div>
+            <div class="col-lg-2">
                 <label class="ams-label" for="filterStatus">Status</label>
                 <select id="filterStatus" class="ams-input">
                     <option value="">All statuses</option>
@@ -135,6 +143,7 @@
                                </th>
                                <th>Employee</th>
                                <th>Department</th>
+                               <th>Trip / Leg</th>
                                <th>Departure Date</th>
                                <th>Pickup Time</th>
                                <th>Transportation</th>
@@ -146,7 +155,7 @@
                            </tr>
                        </thead>
                        <tbody id="companyCarTableBody">
-                           <tr><td colspan="11" class="text-center text-muted">Loading requests...</td></tr>
+                           <tr><td colspan="12" class="text-center text-muted">Loading requests...</td></tr>
                        </tbody>
                    </table>
                </div>
@@ -182,6 +191,28 @@
                     <input type="hidden" id="companyCar_id" name="id">
                     <input type="hidden" id="companyCar_employee_id" name="employee_id">
                     <input type="hidden" id="companyCar_trip_leg_id" name="trip_leg_id">
+
+                    <!-- Phase 4: Trip Context Section (read-only) -->
+                    <div id="tripContextSection" class="alert alert-info d-none mb-3">
+                        <strong>Trip Context</strong>
+                        <div class="row g-2 mt-2 text-sm">
+                            <div class="col-md-6">
+                                <small><strong>Trip:</strong> <span id="tripContextTripId">—</span></small>
+                            </div>
+                            <div class="col-md-6">
+                                <small><strong>Employee:</strong> <span id="tripContextEmployee">—</span></small>
+                            </div>
+                            <div class="col-md-6">
+                                <small><strong>Leg Type:</strong> <span id="tripContextLegType">—</span></small>
+                            </div>
+                            <div class="col-md-6">
+                                <small><strong>Travel Date:</strong> <span id="tripContextDate">—</span></small>
+                            </div>
+                            <div class="col-md-12">
+                                <small><strong>Route:</strong> <span id="tripContextRoute">—</span></small>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="row g-3">
                         <div class="col-md-6">
