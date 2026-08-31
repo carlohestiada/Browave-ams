@@ -47,7 +47,13 @@ function roomForEmployee(employeeId) {
       String(room.employee_id) === String(employeeId) &&
       ["Active", "Transferred"].includes(room.status),
   );
-  return assignment ? assignment.room_no || "—" : "—";
+  if (!assignment) {
+    return { accommodation: "—", room: "—" };
+  }
+  return {
+    accommodation: assignment.accommodation_name || "—",
+    room: assignment.room_no || "—"
+  };
 }
 
 function renderEmployeeOptions(selector, includeAll = false) {
@@ -100,6 +106,7 @@ function renderTrips(rows) {
         const legs = trip.legs || [];
         const arrival = legs.find((leg) => leg.leg_type === "ARRIVAL");
         const departure = legs.find((leg) => leg.leg_type === "DEPARTURE");
+        const roomData = roomForEmployee(trip.employee_id);
         return `<tr>
             <td>${escapeTripHtml(trip.employee_code || trip.employee_id)}</td>
             <td>${escapeTripHtml(trip.employee_name || "—")}</td>
@@ -108,7 +115,7 @@ function renderTrips(rows) {
             <td>${formatTripDate(departure?.leg_date)}</td>
             <td>${escapeTripHtml(arrival?.arrival_airport || "—")}</td>
             <td>${escapeTripHtml(departure?.departure_airport || "—")}</td>
-            <td>${escapeTripHtml(roomForEmployee(trip.employee_id))}</td>
+            <td><div style="white-space: normal; line-height: 1.4;">${escapeTripHtml(roomData.accommodation)}<br>${escapeTripHtml(roomData.room)}</div></td>
             <td>${escapeTripHtml(trip.trip_type || "—")}</td>
             <td>${statusBadge(trip.status)}</td>
             <td><button type="button" class="btn btn-sm btn-outline-primary view-trip" data-id="${escapeTripHtml(trip.id)}">View</button></td>
@@ -169,11 +176,12 @@ function populateEmployeeInfo() {
     $("#employeePreview").addClass("d-none").empty();
     return;
   }
+  const roomData = roomForEmployee(employee.id);
   $("#employeePreview").removeClass("d-none").html(`<div class="row g-2 small">
         <div class="col-md-3"><strong>Employee</strong><br>${escapeTripHtml(employee.english_name || employee.full_name || employee.chinese_name || "—")}</div>
         <div class="col-md-3"><strong>Employee ID</strong><br>${escapeTripHtml(employee.employee_code || "—")}</div>
         <div class="col-md-3"><strong>Department</strong><br>${escapeTripHtml(employee.department_name || "—")}</div>
-        <div class="col-md-3"><strong>Accommodation</strong><br>${escapeTripHtml(roomForEmployee(employee.id))}</div>
+        <div class="col-md-3"><strong>Accommodation</strong><br>${escapeTripHtml(roomData.accommodation)}<br><small>${escapeTripHtml(roomData.room)}</small></div>
     </div>`);
 }
 
