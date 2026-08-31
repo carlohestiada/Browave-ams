@@ -137,7 +137,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
             <?php endif; ?>
 
             <?php
-            $txPages = ['trips.php', 'arrivals.php', 'departures.php'];
+            $txPages = ['trips.php'];
             $txAllowed = array_values(array_filter($txPages, function ($p) use ($allowedPages) {
                 return in_array($p, $allowedPages, true);
             }));
@@ -154,35 +154,11 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
 
                     <div class="collapse <?= $isTxActive ? 'show' : '' ?>" id="transactionsMenu">
                         <ul class="nav flex-column nav-subgroup">
-
                             <?php if (in_array('trips.php', $allowedPages, true)): ?>
                                 <li class="nav-item mb-1">
                                     <a href="trips.php" class="nav-link <?= $currentPage === 'trips.php' ? 'active' : '' ?>" title="Trips">
                                         <i class="bi bi-airplane nav-icon"></i>
                                         <span> Trips</span>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-
-                            <!-- ARRIVALS MODULE -->
-                            <?php if (in_array('arrivals.php', $allowedPages, true)): ?>
-                                <li class="nav-item mb-1">
-                                    <a href="arrivals.php" class="nav-link <?= $currentPage === 'arrivals.php' ? 'active' : '' ?>" title="Arrivals">
-                                        <i class="bi bi-box-arrow-in-right nav-icon"></i>
-                                        <span> Arrivals</span>
-                                        <span class="badge bg-secondary" id="badge-arrivals">0</span>
-                                    </a>
-                                </li>
-
-                            <?php endif; ?>
-
-                            <!-- DEPARTURES MODULE -->
-                            <?php if (in_array('departures.php', $allowedPages, true)): ?>
-                                <li class="nav-item mb-1">
-                                    <a href="departures.php" class="nav-link <?= $currentPage === 'departures.php' ? 'active' : '' ?>" title="Departures">
-                                        <i class="bi bi-box-arrow-right nav-icon"></i>
-                                        <span> Departures</span>
-                                        <span class="badge bg-secondary" id="badge-departures">0</span>
                                     </a>
                                 </li>
                             <?php endif; ?>

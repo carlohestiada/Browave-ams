@@ -306,17 +306,16 @@
 
     </div>
 
-    <!-- Arrival & Departure Overview -->
+    <!-- Trip Activity Overview -->
     <div class="ams-card dashboard-card-panel dashboard-section-spacing traffic-chart-card">
         <div class="dashboard-card-header traffic-chart-header">
             <div>
                 <div class="dashboard-card-title">
-                    <span>Arrival &amp; Departure Activity</span>
+                    <span>Trip Activity Overview</span>
                 </div>
             </div>
             <div class="traffic-chart-links">
-                <a href="arrivals.php" class="dashboard-card-link">Arrivals &rarr;</a>
-                <a href="departures.php" class="dashboard-card-link traffic-link-departure">Departures &rarr;</a>
+                <a href="trips.php" class="dashboard-card-link">Trips &rarr;</a>
             </div>
         </div>
         <div class="dashboard-card-body traffic-chart-body">

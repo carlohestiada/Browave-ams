@@ -363,29 +363,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Update badges for arrivals/departures
+    // Trips page is the active source of travel information.
     function updateTxBadges() {
-        // arrivals
-        fetch('api/transactions/index.php/type/arrival')
-            .then(r => r.json())
-            .then(data => {
-                const count = Array.isArray(data) ? data.length : 0;
-                const el = document.getElementById('badge-arrivals');
-                if (el) el.textContent = count;
-            }).catch(()=>{});
-
-        // departures
-        fetch('api/transactions/index.php/type/departure')
-            .then(r => r.json())
-            .then(data => {
-                const count = Array.isArray(data) ? data.length : 0;
-                const el = document.getElementById('badge-departures');
-                if (el) el.textContent = count;
-            }).catch(()=>{});
+        return;
     }
 
     window.updateTxBadges = updateTxBadges;
     updateTxBadges();
-    // refresh every 30 seconds
-    setInterval(updateTxBadges, 30000);
 });

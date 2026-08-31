@@ -11,9 +11,9 @@ class MealCalculationService
 
     /**
      * Calculate active employee count for a specific date.
-     * Employees are active if:
-     * 1. Their latest transaction on or before the date is an "arrival", OR
-     * 2. They have no transactions and status is "Active"
+     * The trip/leg flow is the source of truth for arrival/departure movement.
+     * Employees are active if their latest leg on or before the date is an ARRIVAL.
+     * If they have no recorded trip legs, fall back to the employee's Active status.
      */
     public function calculateActiveCount($date)
     {
@@ -92,18 +92,10 @@ class MealCalculationService
 
         $eligible = [];
         foreach ($employees as $employee) {
-            $latestStmt = $this->db->prepare(
-                "SELECT transaction_type, DATE(transaction_date) AS transaction_date
-                 FROM transactions
-                 WHERE employee_id = ? AND DATE(transaction_date) <= ?
-                 ORDER BY DATE(transaction_date) DESC, id DESC
-                 LIMIT 1"
-            );
-            $latestStmt->execute([$employee['id'], $normalizedDate]);
-            $latestTransaction = $latestStmt->fetch(PDO::FETCH_ASSOC);
+            $latestTripLeg = $this->getLatestTripLegForEmployee($employee['id'], $normalizedDate);
 
-            if ($latestTransaction) {
-                if ($latestTransaction['transaction_type'] === 'arrival') {
+            if ($latestTripLeg) {
+                if (strtoupper((string) $latestTripLeg['leg_type']) === 'ARRIVAL') {
                     $eligible[] = $employee;
                 }
                 continue;
@@ -121,15 +113,16 @@ class MealCalculationService
     {
         $stmt = $this->db->prepare(
             "SELECT
-                t.id,
-                DATE(t.transaction_date) AS transaction_date,
-                t.transaction_type,
+                tl.id,
+                DATE(tl.leg_date) AS transaction_date,
+                LOWER(tl.leg_type) AS transaction_type,
                 e.employee_code,
                 e.english_name
-             FROM transactions t
-             LEFT JOIN employees e ON t.employee_id = e.id
-             WHERE DATE(t.transaction_date) BETWEEN ? AND ?
-             ORDER BY DATE(t.transaction_date) ASC, e.english_name ASC"
+             FROM trip_legs tl
+             JOIN trips t ON t.id = tl.trip_id
+             JOIN employees e ON e.id = t.employee_id
+             WHERE DATE(tl.leg_date) BETWEEN ? AND ?
+             ORDER BY DATE(tl.leg_date) ASC, e.english_name ASC, tl.id ASC"
         );
 
         $stmt->execute([$startDate, $endDate]);
@@ -219,6 +212,21 @@ class MealCalculationService
         );
         $stmt->execute([$date]);
 
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function getLatestTripLegForEmployee($employeeId, $date)
+    {
+        $stmt = $this->db->prepare(
+            "SELECT tl.leg_type, DATE(tl.leg_date) AS leg_date
+             FROM trip_legs tl
+             JOIN trips t ON t.id = tl.trip_id
+             WHERE t.employee_id = ? AND DATE(tl.leg_date) <= ?
+             ORDER BY DATE(tl.leg_date) DESC, tl.id DESC
+             LIMIT 1"
+        );
+
+        $stmt->execute([$employeeId, $date]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 

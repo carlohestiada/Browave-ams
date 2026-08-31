@@ -26,8 +26,6 @@ function getAllowedPagesForRole($role)
             'meals.php',
             'users.php',
             'guide.php',
-            'arrivals.php',
-            'departures.php',
             'trips.php'
         ],
         'HR' => [
@@ -40,8 +38,6 @@ function getAllowedPagesForRole($role)
             'room-assignments.php',
             'meals.php',
             'guide.php',
-            'arrivals.php',
-            'departures.php',
             'trips.php'
         ],
         'Viewer' => [
