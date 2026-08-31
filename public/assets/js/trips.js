@@ -338,100 +338,102 @@ function saveTrip() {
 
 function renderTripDetails(trip) {
   const room = roomForEmployee(trip.employee_id);
-  const legs = trip.legs || [];
-  
-  // Fetch transportation for each leg
-  const transportationPromises = legs.map(leg =>
+  const legs = Array.isArray(trip.legs) ? trip.legs : [];
+  const tripDetailBody = $("#tripDetailsBody");
+  tripDetailBody.data("trip-id", trip.id);
+
+  const transportationPromises = legs.map((leg) =>
     $.get(tripApiUrl(`api/company-car/trip-leg/${leg.id}`))
-      .done(data => {
+      .done((data) => {
         leg.transportation = tripResponse(data)?.data || null;
       })
       .fail(() => {
         leg.transportation = null;
       })
+      .always(() => leg),
   );
-  
-  $.when.apply($, transportationPromises).done(() => {
-    // Phase 4: Calculate transportation summary
-    const transportationAssigned = legs.filter(leg => leg.transportation).length;
-    const transportationPending = legs.length - transportationAssigned;
-    
-    const legsHtml = legs.map((leg) => `
-      <tr>
-        <td>${escapeTripHtml(leg.leg_type)}</td>
-        <td>${formatTripDate(leg.leg_date)}</td>
-        <td>${escapeTripHtml(leg.origin)}</td>
-        <td>${escapeTripHtml(leg.destination)}</td>
-        <td>${escapeTripHtml(leg.arrival_airport || leg.departure_airport || "—")}</td>
-        <td>
-          ${leg.transportation ? `
-            <div class="text-sm">
-              <strong>${escapeTripHtml(leg.transportation.transportation_type)}</strong><br>
-              ${leg.transportation.driver_name ? `<span class="text-muted">Driver: ${escapeTripHtml(leg.transportation.driver_name)}</span><br>` : ''}
-              ${leg.transportation.vehicle_name ? `<span class="text-muted">Vehicle: ${escapeTripHtml(leg.transportation.vehicle_name)}</span><br>` : ''}
-              <span class="badge bg-${getStatusColor(leg.transportation.status)}">${escapeTripHtml(leg.transportation.status)}</span>
-              <div class="mt-2">
-                <a class="btn btn-sm btn-outline-primary" href="company-car.php?edit=${leg.transportation.id}">Edit</a>
-                <button type="button" class="btn btn-sm btn-outline-danger delete-transportation" data-id="${leg.transportation.id}">Delete</button>
+
+  $.when.apply($, transportationPromises)
+    .always(() => {
+      const transportationAssigned = legs.filter((leg) => leg.transportation).length;
+      const transportationPending = legs.length - transportationAssigned;
+
+      const legsHtml = legs.map((leg) => `
+        <tr>
+          <td>${escapeTripHtml(leg.leg_type)}</td>
+          <td>${formatTripDate(leg.leg_date)}</td>
+          <td>${escapeTripHtml(leg.origin)}</td>
+          <td>${escapeTripHtml(leg.destination)}</td>
+          <td>${escapeTripHtml(leg.arrival_airport || leg.departure_airport || "—")}</td>
+          <td>
+            ${leg.transportation ? `
+              <div class="text-sm">
+                <strong>${escapeTripHtml(leg.transportation.transportation_type)}</strong><br>
+                ${leg.transportation.driver_name ? `<span class="text-muted">Driver: ${escapeTripHtml(leg.transportation.driver_name)}</span><br>` : ''}
+                ${leg.transportation.vehicle_name ? `<span class="text-muted">Vehicle: ${escapeTripHtml(leg.transportation.vehicle_name)}</span><br>` : ''}
+                <span class="badge bg-${getStatusColor(leg.transportation.status)}">${escapeTripHtml(leg.transportation.status)}</span>
+                <div class="mt-2">
+                  <a class="btn btn-sm btn-outline-primary" href="company-car.php?edit=${leg.transportation.id}">Edit</a>
+                  <button type="button" class="btn btn-sm btn-outline-danger delete-transportation" data-id="${leg.transportation.id}">Delete</button>
+                </div>
               </div>
-            </div>
-          ` : `
-            <div class="text-muted">
-              <em>No transportation assigned</em><br>
-              <a class="btn btn-sm btn-outline-primary mt-2" href="company-car.php?trip_leg_id=${encodeURIComponent(leg.id)}&employee_id=${encodeURIComponent(trip.employee_id)}&pickup_date=${encodeURIComponent(leg.leg_date)}">
-                + Add Transportation
-              </a>
-            </div>
-          `}
-        </td>
-      </tr>
-    `).join("");
-    
-    $("#tripDetailsBody").html(
-      `<div class="row g-3 mb-4">
-        <div class="col-md-3"><strong>Employee</strong><br>${escapeTripHtml(trip.employee_name || "—")}</div>
-        <div class="col-md-3"><strong>Employee ID</strong><br>${escapeTripHtml(trip.employee_code || trip.employee_id)}</div>
-        <div class="col-md-3"><strong>Department</strong><br>${escapeTripHtml(trip.department_name || "—")}</div>
-        <div class="col-md-3"><strong>Accommodation Room</strong><br>${escapeTripHtml(room)}</div>
-        <div class="col-md-3"><strong>Trip Type</strong><br>${escapeTripHtml(trip.trip_type)}</div>
-        <div class="col-md-3"><strong>Status</strong><br>${statusBadge(trip.status)}</div>
-        <div class="col-12"><strong>Remarks</strong><br>${escapeTripHtml(trip.remarks || "—")}</div>
-      </div>
-      
-      <div class="alert alert-info" style="margin-bottom:1rem;">
-        <strong>Transportation Summary</strong>
-        <div class="mt-2">
-          <small>
-            <strong>Total Trip Legs:</strong> ${legs.length}<br>
-            <strong>Transportation Assigned:</strong> <span style="color:green;">${transportationAssigned}</span><br>
-            <strong>Transportation Pending:</strong> <span style="color:orange;">${transportationPending}</span>
-          </small>
+            ` : `
+              <div class="text-muted">
+                <em>No transportation assigned</em><br>
+                <a class="btn btn-sm btn-outline-primary mt-2" href="company-car.php?trip_leg_id=${encodeURIComponent(leg.id)}&employee_id=${encodeURIComponent(trip.employee_id)}&pickup_date=${encodeURIComponent(leg.leg_date)}">
+                  + Add Transportation
+                </a>
+              </div>
+            `}
+          </td>
+        </tr>
+      `).join("");
+
+      tripDetailBody.html(
+        `<div class="row g-3 mb-4">
+          <div class="col-md-3"><strong>Employee</strong><br>${escapeTripHtml(trip.employee_name || "—")}</div>
+          <div class="col-md-3"><strong>Employee ID</strong><br>${escapeTripHtml(trip.employee_code || trip.employee_id)}</div>
+          <div class="col-md-3"><strong>Department</strong><br>${escapeTripHtml(trip.department_name || "—")}</div>
+          <div class="col-md-3"><strong>Accommodation Room</strong><br>${escapeTripHtml(room.accommodation || "—")}<br>${escapeTripHtml(room.room || "—")}</div>
+          <div class="col-md-3"><strong>Trip Type</strong><br>${escapeTripHtml(trip.trip_type || "—")}</div>
+          <div class="col-md-3"><strong>Status</strong><br>${statusBadge(trip.status)}</div>
+          <div class="col-12"><strong>Remarks</strong><br>${escapeTripHtml(trip.remarks || "—")}</div>
         </div>
-      </div>
-      
-      <h6>Trip Legs & Transportation</h6>
-      <div class="table-responsive">
-        <table class="table table-sm align-middle">
-          <thead><tr><th>Type</th><th>Date</th><th>Origin</th><th>Destination</th><th>Airport</th><th>Transportation</th></tr></thead>
-          <tbody>${legsHtml}</tbody>
-        </table>
-      </div>`,
-    );
-    
-    $("#tripDetailsFooter")
-      .html(
-        `<button type="button" class="btn btn-outline-primary" id="editTripButton">Edit Trip</button><button type="button" class="btn btn-outline-danger" id="deleteTripButton">Delete Trip</button><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>`,
-      )
-      .off("click")
-      .on("click", "#editTripButton", () => {
-        detailsModal.hide();
-        showTripForm(trip);
-      })
-      .on("click", "#deleteTripButton", () => deleteTrip(trip.id))
-      .on("click", ".delete-transportation", function() {
-        deleteTransportation($(this).data("id"));
-      });
-  });
+        
+        <div class="alert alert-info" style="margin-bottom:1rem;">
+          <strong>Transportation Summary</strong>
+          <div class="mt-2">
+            <small>
+              <strong>Total Trip Legs:</strong> ${legs.length}<br>
+              <strong>Transportation Assigned:</strong> <span style="color:green;">${transportationAssigned}</span><br>
+              <strong>Transportation Pending:</strong> <span style="color:orange;">${transportationPending}</span>
+            </small>
+          </div>
+        </div>
+        
+        <h6>Trip Legs & Transportation</h6>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead><tr><th>Type</th><th>Date</th><th>Origin</th><th>Destination</th><th>Airport</th><th>Transportation</th></tr></thead>
+            <tbody>${legsHtml}</tbody>
+          </table>
+        </div>`,
+      );
+
+      $("#tripDetailsFooter")
+        .html(
+          `<button type="button" class="btn btn-outline-primary" id="editTripButton">Edit Trip</button><button type="button" class="btn btn-outline-danger" id="deleteTripButton">Delete Trip</button><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>`,
+        )
+        .off("click")
+        .on("click", "#editTripButton", () => {
+          detailsModal.hide();
+          showTripForm(trip);
+        })
+        .on("click", "#deleteTripButton", () => deleteTrip(trip.id))
+        .on("click", ".delete-transportation", function() {
+          deleteTransportation($(this).data("id"));
+        });
+    });
 }
 
 function getStatusColor(status) {
@@ -463,18 +465,20 @@ function deleteTransportation(id) {
 }
 
 function openTripDetails(id) {
-  $("#tripDetailsBody").html(
+  const detailBody = $("#tripDetailsBody");
+  detailBody.data("trip-id", id);
+  detailBody.html(
     '<div class="text-center text-muted py-4">Loading trip details...</div>',
   );
   $("#tripDetailsFooter").empty();
   detailsModal.show();
   $.get(tripApiUrl(`api/trips/index.php/${id}`))
     .done((data) => renderTripDetails(tripResponse(data)))
-    .fail(() =>
-      $("#tripDetailsBody").html(
-        '<div class="alert alert-danger">Unable to load trip details.</div>',
-      ),
-    );
+    .fail(() => {
+      detailBody.html(
+        '<div class="alert alert-danger">Unable to load trip details.<br><button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="openTripDetails(' + id + ')">Retry</button></div>',
+      );
+    });
 }
 
 function deleteTrip(id) {
