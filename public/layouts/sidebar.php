@@ -136,34 +136,12 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
                 </li>
             <?php endif; ?>
 
-            <?php
-            $txPages = ['trips.php'];
-            $txAllowed = array_values(array_filter($txPages, function ($p) use ($allowedPages) {
-                return in_array($p, $allowedPages, true);
-            }));
-            $isTxActive = in_array($currentPage, $txPages, true);
-            ?>
-
-            <!-- TRANSACTIONS SIDEBAR MODULE -->
-            <?php if (count($txAllowed) > 0): ?>
-                <li class="nav-item mb-1 nav-group">
-                    <a class="nav-link nav-link-toggle d-flex justify-content-between <?= $isTxActive ? 'active' : '' ?>" data-bs-toggle="collapse" href="#transactionsMenu" role="button" aria-expanded="<?= $isTxActive ? 'true' : 'false' ?>" aria-controls="transactionsMenu">
-                        <i class="bi bi-repeat nav-icon"></i><span>Trips</span>
-                        <i class="bi bi-chevron-down chev" data-target="transactionsMenu"></i>
+            <?php if (in_array('trips.php', $allowedPages, true)): ?>
+                <li class="nav-item mb-1">
+                    <a href="trips.php" class="nav-link <?= $currentPage === 'trips.php' ? 'active' : '' ?>" title="Trips">
+                        <i class="bi bi-airplane nav-icon"></i>
+                        <span>Trips</span>
                     </a>
-
-                    <div class="collapse <?= $isTxActive ? 'show' : '' ?>" id="transactionsMenu">
-                        <ul class="nav flex-column nav-subgroup">
-                            <?php if (in_array('trips.php', $allowedPages, true)): ?>
-                                <li class="nav-item mb-1">
-                                    <a href="trips.php" class="nav-link <?= $currentPage === 'trips.php' ? 'active' : '' ?>" title="Trips">
-                                        <i class="bi bi-airplane nav-icon"></i>
-                                        <span> Trips</span>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                        </ul>
-                    </div>
                 </li>
             <?php endif; ?>
 
