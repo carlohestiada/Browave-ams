@@ -41,11 +41,51 @@ class RoomAssignmentController
 
         if ($data['expected_checkout_date'] < $data['checkin_date']) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Departure date cannot be before arrival date.']);
+            echo json_encode(['success' => false, 'error' => 'Check-out date cannot be earlier than Check-in date.']);
             return;
         }
 
         $result = $this->assignment->create($data);
+
+        if (is_array($result) && !$result['success']) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => $result['error']]);
+            return;
+        }
+
+        echo json_encode(['success' => true]);
+    }
+
+    public function update($id)
+    {
+        parse_str(file_get_contents('php://input'), $data);
+
+        if (!empty($data['new_room_id']) || !empty($data['room_id'])) {
+            $result = $this->assignment->updateAssignment($id, $data);
+
+            if (is_array($result) && !$result['success']) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => $result['error']]);
+                return;
+            }
+
+            echo json_encode(['success' => true]);
+            return;
+        }
+
+        if (empty($data['checkin_date']) || empty($data['expected_checkout_date'])) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Missing required fields']);
+            return;
+        }
+
+        if ($data['expected_checkout_date'] < $data['checkin_date']) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Check-out date cannot be earlier than Check-in date.']);
+            return;
+        }
+
+        $result = $this->assignment->updateAssignment($id, $data);
 
         if (is_array($result) && !$result['success']) {
             http_response_code(400);

@@ -336,6 +336,250 @@ function saveTrip() {
     .always(() => button.prop("disabled", false).html("Save Trip"));
 }
 
+function calculateTripAssignmentCheckoutDate(checkinDate) {
+  if (!checkinDate) return "";
+  const [year, month, day] = checkinDate.split("-").map(Number);
+  if (![year, month, day].every((value) => Number.isFinite(value))) {
+    return "";
+  }
+
+  const checkout = new Date(year, month - 1, day);
+  checkout.setDate(checkout.getDate() + 49);
+  const yyyy = checkout.getFullYear();
+  const mm = String(checkout.getMonth() + 1).padStart(2, "0");
+  const dd = String(checkout.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function buildAccommodationEditor(trip, assignment = null) {
+  const today = new Date().toISOString().slice(0, 10);
+  const checkinValue = assignment?.checkin_date || today;
+  const checkoutValue = assignment?.expected_checkout_date || calculateTripAssignmentCheckoutDate(checkinValue) || today;
+
+  return `
+    <div class="border rounded p-3 mt-3 trip-accommodation-editor">
+      <div class="fw-semibold mb-3">Accommodation Details</div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="tripAccommodationSelect">Accommodation</label>
+          <select id="tripAccommodationSelect" class="form-select"></select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="tripAccommodationRoomSelect">Room No.</label>
+          <select id="tripAccommodationRoomSelect" class="form-select"></select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="tripAccommodationCheckin">Check-in</label>
+          <input id="tripAccommodationCheckin" type="date" class="form-control" value="${escapeTripHtml(checkinValue)}" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="tripAccommodationCheckout">Check-out</label>
+          <input id="tripAccommodationCheckout" type="date" class="form-control" value="${escapeTripHtml(checkoutValue)}" required>
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="tripAccommodationRemarks">Remarks</label>
+          <textarea id="tripAccommodationRemarks" class="form-control" rows="2" placeholder="Optional remarks"></textarea>
+        </div>
+      </div>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button type="button" class="btn btn-outline-secondary trip-accommodation-cancel">Cancel</button>
+        <button type="button" class="btn btn-primary trip-accommodation-save" data-trip-id="${escapeTripHtml(trip.id)}">Save</button>
+      </div>
+    </div>
+  `;
+}
+
+function getTripAccommodationAssignment(employeeId) {
+  return (tripRooms || []).find(
+    (room) =>
+      String(room.employee_id) === String(employeeId) &&
+      ["Active", "Transferred"].includes(room.status),
+  );
+}
+
+function tripAccommodationRoomOptions(rooms, accommodationName, selectedRoomId = "") {
+  const chosenAccommodation = String(accommodationName || "");
+  const roomMatches = (rooms || []).filter((room) => {
+    const matchesAccommodation = String(room.accommodation_name || "") === chosenAccommodation;
+    const isSelected = String(room.id) === String(selectedRoomId);
+    if (!matchesAccommodation) {
+      return false;
+    }
+    if (isSelected) {
+      return true;
+    }
+    return !["Reserved", "Maintenance"].includes(room.status);
+  });
+
+  const options = roomMatches.map((room) => {
+    const isSelected = String(room.id) === String(selectedRoomId);
+    const label = `${room.room_no || "Room"}${room.status === "Occupied" ? " - Occupied" : ""}`;
+    return `<option value="${escapeTripHtml(room.id)}" ${isSelected ? "selected" : ""}>${escapeTripHtml(label)}</option>`;
+  });
+
+  return options.length
+    ? options.join("")
+    : '<option value="">No rooms available for this accommodation</option>';
+}
+
+function openTripAccommodationEditor(trip) {
+  const currentAssignment = getTripAccommodationAssignment(trip.employee_id);
+  const tripDetailBody = $("#tripDetailsBody");
+
+  $.when(
+    $.get(tripApiUrl("api/accommodations/index.php")),
+    $.get(tripApiUrl("api/rooms.php")),
+  )
+    .done((accommodationResponse, roomsResponse) => {
+      const accommodations = tripResponse(accommodationResponse[0]) || [];
+      const rooms = tripResponse(roomsResponse[0]) || [];
+      const selectedAccommodation = currentAssignment?.accommodation_name || accommodations[0]?.accommodation_name || "";
+      const selectedRoomId = currentAssignment?.room_id ? String(currentAssignment.room_id) : "";
+
+      tripDetailBody.find(".trip-accommodation-editor").remove();
+      tripDetailBody.append(buildAccommodationEditor(trip, currentAssignment));
+
+      const accommodationSelect = $("#tripAccommodationSelect");
+      accommodationSelect.html(
+        '<option value="">Select accommodation</option>' +
+          accommodations
+            .map(
+              (item) =>
+                `<option value="${escapeTripHtml(item.accommodation_name || "")}" ${String(item.accommodation_name || "") === String(selectedAccommodation) ? "selected" : ""}>${escapeTripHtml(item.accommodation_name || "Unnamed accommodation")}</option>`,
+            )
+            .join(""),
+      );
+
+      const roomSelect = $("#tripAccommodationRoomSelect");
+      roomSelect.html(
+        tripAccommodationRoomOptions(rooms, selectedAccommodation, selectedRoomId),
+      );
+
+      const initialCheckin = currentAssignment?.checkin_date || (trip.legs?.find((leg) => leg.leg_type === "ARRIVAL")?.leg_date || new Date().toISOString().slice(0, 10));
+      const initialCheckout = currentAssignment?.expected_checkout_date || calculateTripAssignmentCheckoutDate(initialCheckin) || initialCheckin;
+      $("#tripAccommodationCheckin").val(initialCheckin);
+      $("#tripAccommodationCheckout").val(initialCheckout);
+
+      accommodationSelect.on("change", function () {
+        const accommodationName = $(this).val();
+        roomSelect.html(tripAccommodationRoomOptions(rooms, accommodationName, ""));
+      });
+
+      $("#tripAccommodationCheckin").on("change", function () {
+        const nextCheckin = $(this).val();
+        if (!nextCheckin) {
+          $("#tripAccommodationCheckout").val("");
+          return;
+        }
+        const calculated = calculateTripAssignmentCheckoutDate(nextCheckin);
+        $("#tripAccommodationCheckout").val(calculated || nextCheckin);
+      });
+
+      $(".trip-accommodation-cancel").on("click", () => {
+        tripDetailBody.find(".trip-accommodation-editor").remove();
+      });
+
+      $(".trip-accommodation-save").on("click", function () {
+        const accommodationName = accommodationSelect.val();
+        const roomId = roomSelect.val();
+        const checkin = $("#tripAccommodationCheckin").val();
+        const checkout = $("#tripAccommodationCheckout").val();
+
+        if (!accommodationName) {
+          swalError("Please select an accommodation.");
+          return;
+        }
+        if (!roomId) {
+          swalError("Please select a room.");
+          return;
+        }
+        if (!checkin) {
+          swalError("Please select a check-in date.");
+          return;
+        }
+        if (!checkout) {
+          swalError("Please select a check-out date.");
+          return;
+        }
+        if (checkout < checkin) {
+          swalError("Check-out date cannot be earlier than Check-in date.");
+          return;
+        }
+
+        const roomRecord = rooms.find((room) => String(room.id) === String(roomId));
+        const isCurrentRoom = currentAssignment && String(roomRecord?.id || "") === String(currentAssignment.room_id || "");
+        if (!roomRecord || String(roomRecord.accommodation_name || "") !== String(accommodationName)) {
+          swalError("The selected room does not belong to the selected accommodation.");
+          return;
+        }
+        if (!isCurrentRoom && ["Reserved", "Maintenance"].includes(roomRecord.status)) {
+          swalError("This room is unavailable. Please select another room.");
+          return;
+        }
+
+        const overlappingAssignment = (tripRooms || []).find((assignmentRow) => {
+          const sameRoom = String(assignmentRow.room_id) === String(roomId);
+          const sameEmployee = String(assignmentRow.employee_id) === String(trip.employee_id);
+          if (!sameRoom || sameEmployee) {
+            return false;
+          }
+          if (!assignmentRow.checkin_date || !assignmentRow.expected_checkout_date) {
+            return false;
+          }
+          return (
+            checkin <= assignmentRow.expected_checkout_date &&
+            assignmentRow.checkin_date <= (checkout || checkin)
+          );
+        });
+
+        if (overlappingAssignment) {
+          swalError("This room is already assigned during the selected dates. Please select another room.");
+          return;
+        }
+
+        const payload = {
+          employee_id: trip.employee_id,
+          room_id: roomId,
+          checkin_date: checkin,
+          expected_checkout_date: checkout || checkin,
+          remarks: $("#tripAccommodationRemarks").val().trim(),
+        };
+
+        const request = currentAssignment
+          ? $.ajax({
+              url: tripApiUrl(`api/room_assignments/index.php/${currentAssignment.id}`),
+              type: "PUT",
+              data: {
+                ...payload,
+                room_id: roomId,
+                new_room_id: roomId,
+              },
+            })
+          : $.post(tripApiUrl("api/room_assignments/index.php"), payload);
+
+        request
+          .done((response) => {
+            const result = tripResponse(response);
+            if (!result || result.success === false) {
+              swalError(result?.error || "Unable to save accommodation.");
+              return;
+            }
+            tripDetailBody.find(".trip-accommodation-editor").remove();
+            $.when(loadTripRooms(), loadTrips()).done(() => {
+              openTripDetails(trip.id);
+            });
+            swalSuccess("Accommodation updated successfully.");
+          })
+          .fail((xhr) => {
+            swalError(xhr.responseJSON?.error || xhr.responseText || "Unable to save accommodation.");
+          });
+      });
+    })
+    .fail(() => {
+      swalError("Unable to load accommodation options.");
+    });
+}
+
 function renderTripDetails(trip) {
   const room = roomForEmployee(trip.employee_id);
   const legs = Array.isArray(trip.legs) ? trip.legs : [];
@@ -357,6 +601,7 @@ function renderTripDetails(trip) {
     .always(() => {
       const transportationAssigned = legs.filter((leg) => leg.transportation).length;
       const transportationPending = legs.length - transportationAssigned;
+      const hasAccommodation = room.accommodation !== "—" && room.room !== "—";
 
       const legsHtml = legs.map((leg) => `
         <tr>
@@ -394,7 +639,19 @@ function renderTripDetails(trip) {
           <div class="col-md-3"><strong>Employee</strong><br>${escapeTripHtml(trip.employee_name || "—")}</div>
           <div class="col-md-3"><strong>Employee ID</strong><br>${escapeTripHtml(trip.employee_code || trip.employee_id)}</div>
           <div class="col-md-3"><strong>Department</strong><br>${escapeTripHtml(trip.department_name || "—")}</div>
-          <div class="col-md-3"><strong>Accommodation Room</strong><br>${escapeTripHtml(room.accommodation || "—")}<br>${escapeTripHtml(room.room || "—")}</div>
+          <div class="col-md-3">
+            <div class="d-flex justify-content-between align-items-center gap-2">
+              <strong>Accommodation Room</strong>
+              ${hasAccommodation ? '<button type="button" class="btn btn-link btn-sm p-0 trip-accommodation-edit">Edit</button>' : ''}
+            </div>
+            ${hasAccommodation ? `${escapeTripHtml(room.accommodation || "—")}<br>${escapeTripHtml(room.room || "—")}` : '<div class="text-muted mt-2">No accommodation assigned</div><div class="mt-2"><button type="button" class="btn btn-sm btn-outline-primary trip-accommodation-add">+ Add Accommodation</button></div>'}
+            ${hasAccommodation && tripRooms.find((row) => String(row.employee_id) === String(trip.employee_id) && ["Active", "Transferred"].includes(row.status)) ? `
+              <div class="mt-3 small">
+                <div><strong>Check-in:</strong> ${escapeTripHtml((tripRooms.find((row) => String(row.employee_id) === String(trip.employee_id) && ["Active", "Transferred"].includes(row.status))?.checkin_date) || "—")}</div>
+                <div><strong>Check-out:</strong> ${escapeTripHtml((tripRooms.find((row) => String(row.employee_id) === String(trip.employee_id) && ["Active", "Transferred"].includes(row.status))?.expected_checkout_date) || "—")}</div>
+              </div>
+            ` : ""}
+          </div>
           <div class="col-md-3"><strong>Trip Type</strong><br>${escapeTripHtml(trip.trip_type || "—")}</div>
           <div class="col-md-3"><strong>Status</strong><br>${statusBadge(trip.status)}</div>
           <div class="col-12"><strong>Remarks</strong><br>${escapeTripHtml(trip.remarks || "—")}</div>
@@ -419,6 +676,11 @@ function renderTripDetails(trip) {
           </table>
         </div>`,
       );
+
+      tripDetailBody
+        .off("click", ".trip-accommodation-edit, .trip-accommodation-add")
+        .on("click", ".trip-accommodation-edit", () => openTripAccommodationEditor(trip))
+        .on("click", ".trip-accommodation-add", () => openTripAccommodationEditor(trip));
 
       $("#tripDetailsFooter")
         .html(

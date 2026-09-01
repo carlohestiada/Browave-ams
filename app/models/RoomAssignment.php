@@ -189,6 +189,61 @@ class RoomAssignment
         return $row && $row['count'] > 0;
     }
 
+    public function updateAssignment($assignmentId, $data)
+    {
+        $stmt = $this->db->prepare(
+            "SELECT id, employee_id, room_id, checkin_date, expected_checkout_date, status
+             FROM room_assignments WHERE id=?"
+        );
+        $stmt->execute([$assignmentId]);
+        $assignment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$assignment) {
+            return ['success' => false, 'error' => 'Room assignment not found.'];
+        }
+
+        if (($assignment['status'] ?? '') !== 'Active') {
+            return ['success' => false, 'error' => 'Only active room assignments can be updated here.'];
+        }
+
+        $employeeId = (int) ($assignment['employee_id'] ?? 0);
+        $newRoomId = isset($data['new_room_id']) ? (int) $data['new_room_id'] : (isset($data['room_id']) ? (int) $data['room_id'] : (int) $assignment['room_id']);
+        $checkinDate = trim((string) ($data['checkin_date'] ?? $assignment['checkin_date']));
+        $checkoutDate = trim((string) ($data['expected_checkout_date'] ?? $assignment['expected_checkout_date']));
+
+        if (!$newRoomId || !$checkinDate || !$checkoutDate) {
+            return ['success' => false, 'error' => 'Missing required fields'];
+        }
+
+        if ($checkoutDate < $checkinDate) {
+            return ['success' => false, 'error' => 'Check-out date cannot be before check-in date.'];
+        }
+
+        if ((int) $assignment['room_id'] !== (int) $newRoomId) {
+            $result = $this->transfer($assignmentId, $newRoomId, $checkinDate);
+            if (is_array($result) && !$result['success']) {
+                return $result;
+            }
+            return ['success' => true];
+        }
+
+        if ($this->roomConflict($newRoomId, $employeeId, $checkinDate, $checkoutDate, $assignmentId)) {
+            return ['success' => false, 'error' => 'This room is already assigned during the selected dates. Please select another room.'];
+        }
+
+        $update = $this->db->prepare(
+            "UPDATE room_assignments
+             SET checkin_date=?, expected_checkout_date=?
+             WHERE id=?"
+        );
+        if (!$update->execute([$checkinDate, $checkoutDate, $assignmentId])) {
+            return ['success' => false, 'error' => 'Could not update room assignment.'];
+        }
+
+        $this->syncRoomStatuses([$newRoomId]);
+        return ['success' => true];
+    }
+
     public function transfer($assignmentId, $newRoomId, $transferDate)
     {
         $this->ensureTransferredToColumn();
@@ -230,6 +285,10 @@ class RoomAssignment
 
         if (!$this->roomHasCapacity($newRoomId, $assignmentId)) {
             return ['success' => false, 'error' => 'The selected room has reached its maximum capacity. Please choose another room.'];
+        }
+
+        if ($this->roomConflict($newRoomId, $employeeId, $transferDate, $oldAssignment['expected_checkout_date'] ?? $transferDate, $assignmentId)) {
+            return ['success' => false, 'error' => 'This room is already assigned during the selected dates. Please select another room.'];
         }
 
         // Start transaction
@@ -299,6 +358,38 @@ class RoomAssignment
     private function roomOccupiedToday($roomId, $excludeAssignmentId = null)
     {
         return $this->countRoomOccupants($roomId, $excludeAssignmentId) > 0;
+    }
+
+    private function roomConflict($roomId, $employeeId, $checkinDate, $checkoutDate, $excludeAssignmentId = null)
+    {
+        $checkinDate = trim((string) $checkinDate);
+        $checkoutDate = trim((string) $checkoutDate);
+
+        if ($checkinDate === '' || $checkoutDate === '') {
+            return false;
+        }
+
+        $sql = "SELECT COUNT(*) AS count
+                FROM room_assignments
+                WHERE room_id = ?
+                  AND status = 'Active'
+                  AND employee_id != ?";
+        $params = [$roomId, $employeeId];
+
+        if ($excludeAssignmentId) {
+            $sql .= " AND id != ?";
+            $params[] = $excludeAssignmentId;
+        }
+
+        $sql .= " AND checkin_date <= ? AND expected_checkout_date >= ?";
+        $params[] = $checkoutDate;
+        $params[] = $checkinDate;
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return ($row['count'] ?? 0) > 0;
     }
 
     private function roomHasCapacity($roomId, $excludeAssignmentId = null)
