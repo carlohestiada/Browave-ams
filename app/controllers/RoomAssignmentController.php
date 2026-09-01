@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 require_once __DIR__ . '/../models/RoomAssignment.php';
 
@@ -14,6 +14,19 @@ class RoomAssignmentController
     public function index()
     {
         echo json_encode($this->assignment->getAll());
+    }
+
+    public function show($id)
+    {
+        $details = $this->assignment->getAssignmentDetails($id);
+
+        if (!$details) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => 'Room assignment not found']);
+            return;
+        }
+
+        echo json_encode(['success' => true, 'data' => $details]);
     }
 
     public function store()

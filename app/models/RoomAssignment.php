@@ -28,10 +28,91 @@ class RoomAssignment
              LEFT JOIN buildings tb ON tf.building_id = tb.id
              LEFT JOIN accommodations ta ON tb.accommodation_id = ta.id
              LEFT JOIN departments d ON e.department_id = d.id
+             WHERE ra.status = 'Active'
+               AND ra.id = (
+                   SELECT ra2.id
+                   FROM room_assignments ra2
+                   WHERE ra2.employee_id = ra.employee_id
+                     AND ra2.status = 'Active'
+                   ORDER BY ra2.checkin_date DESC, ra2.id DESC
+                   LIMIT 1
+               )
              ORDER BY ra.checkin_date DESC"
         );
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getById($assignmentId)
+    {
+        $stmt = $this->db->prepare(
+            "SELECT ra.*, r.room_no, e.employee_code, e.english_name, e.gender, d.department_name,
+                    f.floor_name AS floor_name, bf.building_name AS building_name, af.accommodation_name AS accommodation_name,
+                    tr.room_no AS transferred_room_no, tf.floor_name AS transferred_floor_name,
+                    tb.building_name AS transferred_building_name, ta.accommodation_name AS transferred_accommodation_name
+             FROM room_assignments ra
+             JOIN employees e ON ra.employee_id = e.id
+             JOIN rooms r ON ra.room_id = r.id
+             LEFT JOIN floors f ON r.floor_id = f.id
+             LEFT JOIN buildings bf ON f.building_id = bf.id
+             LEFT JOIN accommodations af ON bf.accommodation_id = af.id
+             LEFT JOIN rooms tr ON ra.transferred_to_room_id = tr.id
+             LEFT JOIN floors tf ON tr.floor_id = tf.id
+             LEFT JOIN buildings tb ON tf.building_id = tb.id
+             LEFT JOIN accommodations ta ON tb.accommodation_id = ta.id
+             LEFT JOIN departments d ON e.department_id = d.id
+             WHERE ra.id = ?"
+        );
+        $stmt->execute([$assignmentId]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getEmployeeHistory($employeeId)
+    {
+        $stmt = $this->db->prepare(
+            "SELECT ra.*, r.room_no, e.employee_code, e.english_name, e.gender, d.department_name,
+                    f.floor_name AS floor_name, bf.building_name AS building_name, af.accommodation_name AS accommodation_name,
+                    tr.room_no AS transferred_room_no, tf.floor_name AS transferred_floor_name,
+                    tb.building_name AS transferred_building_name, ta.accommodation_name AS transferred_accommodation_name
+             FROM room_assignments ra
+             JOIN employees e ON ra.employee_id = e.id
+             JOIN rooms r ON ra.room_id = r.id
+             LEFT JOIN floors f ON r.floor_id = f.id
+             LEFT JOIN buildings bf ON f.building_id = bf.id
+             LEFT JOIN accommodations af ON bf.accommodation_id = af.id
+             LEFT JOIN rooms tr ON ra.transferred_to_room_id = tr.id
+             LEFT JOIN floors tf ON tr.floor_id = tf.id
+             LEFT JOIN buildings tb ON tf.building_id = tb.id
+             LEFT JOIN accommodations ta ON tb.accommodation_id = ta.id
+             LEFT JOIN departments d ON e.department_id = d.id
+             WHERE ra.employee_id = ?
+             ORDER BY ra.checkin_date DESC, ra.id DESC"
+        );
+        $stmt->execute([$employeeId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getAssignmentDetails($assignmentId)
+    {
+        $assignment = $this->getById($assignmentId);
+        if (!$assignment) {
+            return null;
+        }
+
+        $history = $this->getEmployeeHistory($assignment['employee_id']);
+        return [
+            'assignment' => $assignment,
+            'history' => $history,
+            'employee' => [
+                'id' => $assignment['employee_id'],
+                'employee_code' => $assignment['employee_code'],
+                'english_name' => $assignment['english_name'],
+                'gender' => $assignment['gender'],
+                'department_name' => $assignment['department_name'],
+            ],
+        ];
     }
 
     public function hasActiveAssignment($employeeId, $excludeAssignmentId = null)
@@ -114,7 +195,7 @@ class RoomAssignment
 
         // Fetch the original assignment with all details
         $stmt2 = $this->db->prepare(
-            "SELECT id, employee_id, room_id, checkin_date, expected_checkout_date, transferred_to_room_id 
+            "SELECT id, employee_id, room_id, checkin_date, expected_checkout_date, transferred_to_room_id, status 
              FROM room_assignments WHERE id=?"
         );
         $stmt2->execute([$assignmentId]);
@@ -123,8 +204,21 @@ class RoomAssignment
             return ['success' => false, 'error' => 'Original assignment not found.'];
         }
 
+        if (($oldAssignment['status'] ?? '') !== 'Active') {
+            return ['success' => false, 'error' => 'Only active room assignments can be transferred.'];
+        }
+
         $currentRoomId = $oldAssignment['room_id'];
         $employeeId = $oldAssignment['employee_id'];
+
+        $duplicateCheck = $this->db->prepare(
+            "SELECT COUNT(*) AS count FROM room_assignments WHERE employee_id = ? AND status = 'Active' AND id != ?"
+        );
+        $duplicateCheck->execute([$employeeId, $assignmentId]);
+        $duplicateActive = $duplicateCheck->fetch(PDO::FETCH_ASSOC);
+        if (($duplicateActive['count'] ?? 0) > 0) {
+            return ['success' => false, 'error' => 'This employee already has an active room assignment. Please resolve the current assignment before transferring again.'];
+        }
 
         if ($newRoomId == $currentRoomId) {
             return ['success' => false, 'error' => 'The selected room is the same as the current room. Please choose a different room.'];
@@ -179,12 +273,16 @@ class RoomAssignment
 
     public function delete($assignmentId)
     {
-        $stmt = $this->db->prepare("SELECT id, room_id FROM room_assignments WHERE id=?");
+        $stmt = $this->db->prepare("SELECT id, room_id, status FROM room_assignments WHERE id=?");
         $stmt->execute([$assignmentId]);
         $assignment = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$assignment) {
             return ['success' => false, 'error' => 'Room assignment not found.'];
+        }
+
+        if (($assignment['status'] ?? '') !== 'Active') {
+            return ['success' => false, 'error' => 'Only the active assignment can be deleted from this screen.'];
         }
 
         $delete = $this->db->prepare("DELETE FROM room_assignments WHERE id=?");

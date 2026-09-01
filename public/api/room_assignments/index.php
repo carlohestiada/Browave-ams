@@ -23,7 +23,11 @@ if (in_array($method, ['POST', 'PUT', 'DELETE'], true) && !in_array($role, ['Adm
 
 switch ($method) {
     case 'GET':
-        $controller->index();
+        if ($id) {
+            $controller->show($id);
+        } else {
+            $controller->index();
+        }
         break;
 
     case 'POST':

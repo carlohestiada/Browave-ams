@@ -154,17 +154,14 @@ function initializeAssignmentDateBounds() {
 }
 
 function renderAssignmentRow(r, lookup) {
-  const trClass = r.status === "Transferred" ? "table-light" : "";
   const assignmentId = String(r.id);
   const checked = selectedAssignmentIds.has(assignmentId) ? "checked" : "";
-  let transferredTo = "";
-
-  if (r.transferred_to_room_id && r.transferred_room_no) {
-    transferredTo = `${displayValue(r.transferred_accommodation_name)} - ${displayValue(r.transferred_room_no)} on ${displayValue(r.actual_checkout_date)}`;
-  }
+  const transferredTo = r.transferred_to_room_id && r.transferred_room_no
+    ? `${displayValue(r.transferred_accommodation_name)} - ${displayValue(r.transferred_room_no)} on ${displayValue(r.actual_checkout_date)}`
+    : "";
 
   return `
-        <tr class="${trClass}">
+        <tr>
             <td style="text-align:center;">
                 <input
                     type="checkbox"
@@ -173,7 +170,7 @@ function renderAssignmentRow(r, lookup) {
                     aria-label="Select assignment"
                     onchange="toggleAssignmentSelection(${assignmentId}, this.checked)"
                     ${checked}>
-            </td>          
+            </td>
             <td>${displayValue(r.employee_code)} - ${displayValue(r.english_name)}</td>
             <td>${displayValue(r.department_name)}</td>
             <td>${displayValue(r.gender)}</td>
@@ -183,8 +180,7 @@ function renderAssignmentRow(r, lookup) {
             <td>${displayValue(r.room_no)}</td>
             <td>${displayValue(transferredTo)}</td>
             <td style="text-align:right; white-space:nowrap;">
-                <button type="button" class="btn btn-warning btn-sm me-1" onclick="editAssignment(${r.id})">Transfer</button>
-                <button type="button" class="btn btn-danger btn-sm" onclick="deleteAssignment(${r.id})">Delete</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="viewAssignmentDetails(${r.id})">View Details</button>
             </td>
         </tr>
     `;
@@ -242,14 +238,12 @@ function renderAssignments() {
 function loadAssignments() {
   $.get(raApi, function (data) {
     const rows = typeof data === "string" ? JSON.parse(data) : data;
-    assignmentRows = rows;
+    assignmentRows = (Array.isArray(rows) ? rows : []).filter((r) => r.status === "Active");
     selectedAssignmentIds.clear();
 
     activeAssignedEmployees = new Set();
-    rows.forEach((r) => {
-      if (r.status === "Active" || r.status === "Transferred") {
-        activeAssignedEmployees.add(String(r.employee_id));
-      }
+    assignmentRows.forEach((r) => {
+      activeAssignedEmployees.add(String(r.employee_id));
     });
 
     renderAssignEmployeeDropdown();
@@ -313,13 +307,10 @@ function renderTransferAssignmentDropdown(selectedId = "") {
 
   let opts = '<option value="">Select assignment</option>';
   assignmentRows
-    .filter((r) => r.status === "Active" || r.status === "Transferred")
+    .filter((r) => r.status === "Active")
     .forEach((r) => {
       const selected = String(r.id) === String(selectedId) ? " selected" : "";
-      const roomLabel = r.transferred_room_no
-        ? ` -> ${r.transferred_room_no}`
-        : "";
-      opts += `<option value="${r.id}"${selected}>${displayValue(r.employee_code)} - ${displayValue(r.english_name)} (${displayValue(r.room_no)}${roomLabel})</option>`;
+      opts += `<option value="${r.id}"${selected}>${displayValue(r.employee_code)} - ${displayValue(r.english_name)} (${displayValue(r.room_no)})</option>`;
     });
   transferSelect.html(opts);
 }
@@ -375,6 +366,27 @@ $(function () {
   loadRoomsForAssign("#assign_room");
   loadRoomsForAssign("#transfer_room");
   initializeAssignmentDateBounds();
+
+  $(document).on("click", "#assignmentDetailsTransferBtn", function () {
+    const id = $(this).data("assignmentId");
+    const modal = bootstrap.Modal.getInstance(document.getElementById("assignmentDetailsModal"));
+    if (modal) modal.hide();
+    openTransfer(id, true);
+  });
+
+  $(document).on("click", "#assignmentDetailsEditBtn", function () {
+    const id = $(this).data("assignmentId");
+    const modal = bootstrap.Modal.getInstance(document.getElementById("assignmentDetailsModal"));
+    if (modal) modal.hide();
+    openTransfer(id, true);
+  });
+
+  $(document).on("click", "#assignmentDetailsDeleteBtn", function () {
+    const id = $(this).data("assignmentId");
+    if (id) {
+      deleteAssignment(id);
+    }
+  });
 
   $("#assignModal").on("hidden.bs.modal", resetAssignForm);
   $("#assignModal").on("shown.bs.modal", function () {
@@ -505,6 +517,97 @@ function updateTransferPreview() {
   const text = $("#transfer_room").find("option:selected").text();
   const date = $("#transfer_date").val();
   $("#transfer_preview").text(text ? `${text} on ${date}` : "--");
+}
+
+function viewAssignmentDetails(id) {
+  const detailsBody = document.getElementById("assignmentDetailsBody");
+  if (!detailsBody) return;
+
+  detailsBody.innerHTML = '<div class="text-center text-muted py-4">Loading...</div>';
+  const detailsModal = new bootstrap.Modal(document.getElementById("assignmentDetailsModal"));
+  detailsModal.show();
+
+  $.get(`${raApi}/${id}`, function (response) {
+    const res = typeof response === "string" ? JSON.parse(response) : response;
+    const data = res && res.data ? res.data : null;
+    const assignment = data && data.assignment ? data.assignment : null;
+    const employee = data && data.employee ? data.employee : null;
+    const history = Array.isArray(data && data.history) ? data.history : [];
+
+    if (!assignment || !employee) {
+      detailsBody.innerHTML = '<div class="alert alert-danger mb-0">Assignment could not be loaded.</div>';
+      return;
+    }
+
+    const currentRoomName = assignment.accommodation_name || '-';
+    const currentBuilding = assignment.building_name || '-';
+    const currentFloor = assignment.floor_name || '-';
+    const currentStatus = assignment.status || 'Active';
+    const transferRows = history
+      .filter((row) => row.status === 'Transferred' && row.transferred_to_room_id)
+      .map((row) => `
+        <tr>
+          <td>${displayValue(row.room_no || '-')}</td>
+          <td>${displayValue(row.transferred_room_no || '-')}</td>
+          <td>${displayValue(row.actual_checkout_date || row.transfer_date || '-')}</td>
+        </tr>
+      `)
+      .join('');
+
+    document.getElementById("assignmentDetailsTransferBtn").dataset.assignmentId = String(id);
+    document.getElementById("assignmentDetailsEditBtn").dataset.assignmentId = String(id);
+    document.getElementById("assignmentDetailsDeleteBtn").dataset.assignmentId = String(id);
+
+    detailsBody.innerHTML = `
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="border rounded p-3 h-100">
+            <h6 class="text-uppercase small text-muted mb-3">Employee Information</h6>
+            <div class="row g-2">
+              <div class="col-6"><strong>Employee ID</strong></div><div class="col-6">${displayValue(employee.id)}</div>
+              <div class="col-6"><strong>Name</strong></div><div class="col-6">${displayValue(employee.english_name)}</div>
+              <div class="col-6"><strong>Department</strong></div><div class="col-6">${displayValue(assignment.department_name || employee.department_name)}</div>
+              <div class="col-6"><strong>Gender</strong></div><div class="col-6">${displayValue(employee.gender || assignment.gender)}</div>
+              <div class="col-6"><strong>Check-in Date</strong></div><div class="col-6">${displayValue(assignment.checkin_date)}</div>
+              <div class="col-6"><strong>Check-out Date</strong></div><div class="col-6">${displayValue(assignment.expected_checkout_date || assignment.actual_checkout_date)}</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="border rounded p-3 h-100">
+            <h6 class="text-uppercase small text-muted mb-3">Current Room Assignment</h6>
+            <div class="row g-2">
+              <div class="col-6"><strong>Accommodation</strong></div><div class="col-6">${displayValue(currentRoomName)}</div>
+              <div class="col-6"><strong>Building</strong></div><div class="col-6">${displayValue(currentBuilding)}</div>
+              <div class="col-6"><strong>Floor</strong></div><div class="col-6">${displayValue(currentFloor)}</div>
+              <div class="col-6"><strong>Room Number</strong></div><div class="col-6">${displayValue(assignment.room_no)}</div>
+              <div class="col-6"><strong>Assignment Date</strong></div><div class="col-6">${displayValue(assignment.checkin_date)}</div>
+              <div class="col-6"><strong>Current Status</strong></div><div class="col-6">${displayValue(currentStatus)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4 border-top pt-3">
+        <h6 class="mb-3">Room Transfer History</h6>
+        <div class="table-responsive">
+          <table class="table table-sm table-striped mb-0">
+            <thead>
+              <tr>
+                <th>From Room</th>
+                <th>To Room</th>
+                <th>Transfer Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${transferRows || '<tr><td colspan="3" class="text-center text-muted">No previous room transfers found.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }).fail(function () {
+    detailsBody.innerHTML = '<div class="alert alert-danger mb-0">Unable to load assignment details.</div>';
+  });
 }
 
 function openTransfer(id = null, lockAssignment = false) {
