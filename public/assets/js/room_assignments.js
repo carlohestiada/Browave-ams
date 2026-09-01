@@ -5,6 +5,8 @@ let assignmentRows = [];
 let selectedAssignmentIds = new Set();
 let assignmentSearchTimer = null;
 let assignmentCheckoutManuallyEdited = false;
+let transferRoomCardsData = [];
+let currentTransferRoomId = null;
 
 const assignmentSortColumns = [
   {
@@ -506,10 +508,13 @@ $(function () {
       return;
     }
 
+    currentTransferRoomId = assignment.room_id;
     $("#transfer_date").val(assignment.actual_checkout_date || getTodayDate());
     const selectedRoom = assignment.transferred_to_room_id || "";
     $("#transfer_room").data("selected-room", selectedRoom);
+    $("#roomSearchInput").val("");
     loadRoomsForAssign("#transfer_room");
+    loadRoomCardsForTransfer();
   });
 });
 
@@ -616,12 +621,19 @@ function openTransfer(id = null, lockAssignment = false) {
   $("#transfer_assignment").prop("disabled", Boolean(lockAssignment));
 
   const assignment = assignmentRows.find((r) => String(r.id) === String(id));
+  currentTransferRoomId = assignment?.room_id || null;
   $("#transfer_date").val(assignment?.actual_checkout_date || getTodayDate());
   $("#transfer_room").data(
     "selected-room",
     assignment?.transferred_to_room_id || "",
   );
+  
+  // Reset room search input
+  $("#roomSearchInput").val("");
+  
+  // Load rooms for both dropdown and cards
   loadRoomsForAssign("#transfer_room");
+  loadRoomCardsForTransfer();
   updateTransferPreview();
 
   const transferEl = document.getElementById("transferModal");
@@ -632,6 +644,7 @@ function openTransfer(id = null, lockAssignment = false) {
   $("#transfer_room")
     .off("change.preview")
     .on("change.preview", function () {
+      displayRoomCards();
       updateTransferPreview();
     });
 
@@ -733,3 +746,126 @@ function deleteSelectedAssignments() {
     },
   );
 }
+
+// Room Card Selection Functions
+function loadRoomCardsForTransfer() {
+  $.get("api/rooms.php", function (data) {
+    const rooms = typeof data === "string" ? JSON.parse(data) : data;
+    transferRoomCardsData = rooms || [];
+    displayRoomCards();
+  });
+}
+
+function displayRoomCards() {
+  const container = $("#roomCardsContainer");
+  if (!container.length) return;
+
+  const selectedRoomId = String($("#transfer_room").val() || "");
+  const accommodationSelect = $("#transfer_assignment");
+  
+  // Get the accommodation and current room from the selected assignment
+  const assignmentId = $("#transfer_assignment_id").val();
+  const assignment = assignmentRows.find((r) => String(r.id) === String(assignmentId));
+  
+  if (!assignment) {
+    container.html('<div class="alert alert-info">Please select an assignment first.</div>');
+    return;
+  }
+
+  const currentAccommodationId = assignment.accommodation_id;
+  const currentRoomId = assignment.room_id;
+  
+  // Filter rooms by accommodation
+  const accommodationRooms = transferRoomCardsData.filter((r) => {
+    return String(r.accommodation_id || "") === String(currentAccommodationId || "");
+  });
+
+  if (accommodationRooms.length === 0) {
+    container.html('<div class="alert alert-info">No rooms available for this accommodation.</div>');
+    return;
+  }
+
+  // Apply search filter
+  const searchTerm = ($("#roomSearchInput").val() || "").trim().toLowerCase();
+  const filteredRooms = accommodationRooms.filter((r) => {
+    return (r.room_no || "").toLowerCase().includes(searchTerm);
+  });
+
+  let html = '';
+  filteredRooms.forEach((room) => {
+    const roomId = String(room.id);
+    const isCurrentRoom = String(currentRoomId) === roomId;
+    const capacityReached = Number(room.capacity) > 0 && 
+                            Number(room.current_occupancy || 0) >= Number(room.capacity);
+    const isSelected = selectedRoomId === roomId;
+    
+    let statusClass = '';
+    let statusText = '';
+    
+    if (isCurrentRoom) {
+      statusClass = 'room-current';
+      statusText = 'Current Room';
+    } else if (capacityReached || room.status === 'Reserved' || room.status === 'Maintenance') {
+      statusClass = 'room-occupied';
+      statusText = 'Occupied';
+    } else {
+      statusClass = 'room-available';
+      statusText = 'Available';
+    }
+
+    if (isSelected) {
+      statusClass += ' room-selected';
+      statusText = 'Selected';
+    }
+
+    const isDisabled = isCurrentRoom || capacityReached || room.status === 'Reserved' || room.status === 'Maintenance';
+    const clickHandler = isDisabled ? '' : `onclick="selectRoomCard('${roomId}')"`;
+
+    html += `
+      <div class="room-card ${statusClass}" ${clickHandler} ${isDisabled ? 'style="pointer-events:none;"' : ''}>
+        <div class="room-card-number">${displayValue(room.room_no)}</div>
+        <div class="room-card-status">${statusText}</div>
+      </div>
+    `;
+  });
+
+  container.html(html);
+}
+
+function selectRoomCard(roomId) {
+  if (!roomId) return;
+
+  // Check if the room is selectable (not current room and not occupied)
+  const room = transferRoomCardsData.find((r) => String(r.id) === String(roomId));
+  if (!room) return;
+
+  const assignmentId = $("#transfer_assignment_id").val();
+  const assignment = assignmentRows.find((r) => String(r.id) === String(assignmentId));
+  
+  if (!assignment) return;
+
+  const isCurrentRoom = String(assignment.room_id) === String(roomId);
+  const capacityReached = Number(room.capacity) > 0 && 
+                          Number(room.current_occupancy || 0) >= Number(room.capacity);
+
+  if (isCurrentRoom || capacityReached || room.status === 'Reserved' || room.status === 'Maintenance') {
+    return; // Cannot select
+  }
+
+  // Update the dropdown
+  $("#transfer_room").val(roomId).trigger('change');
+  
+  // Refresh the room cards display
+  displayRoomCards();
+}
+
+// Re-render room cards when search input changes
+$(document).on("input", "#roomSearchInput", function () {
+  displayRoomCards();
+});
+
+// Initialize room cards when the Rooms tab is shown
+$(document).on("shown.bs.tab", "#roomsTab", function () {
+  loadRoomCardsForTransfer();
+});
+

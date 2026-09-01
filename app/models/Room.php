@@ -19,7 +19,7 @@ class Room
         $this->assignment->refreshRoomStatuses();
 
         $stmt = $this->db->query(
-            "SELECT r.*, f.floor_name, b.building_name, a.accommodation_name, e.english_name AS reserved_by_employee_name,
+            "SELECT r.*, f.floor_name, b.building_name, b.accommodation_id, a.accommodation_name, e.english_name AS reserved_by_employee_name,
                 STRING_AGG(DISTINCT emp.english_name, E'\n' ORDER BY emp.english_name) AS assigned_employee_names
              FROM rooms r
              LEFT JOIN floors f ON r.floor_id = f.id
@@ -28,7 +28,7 @@ class Room
              LEFT JOIN employees e ON r.reserved_by_employee_id = e.id
              LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status = 'Active'
              LEFT JOIN employees emp ON emp.id = ra.employee_id
-             GROUP BY r.id, f.floor_name, b.building_name, a.accommodation_name, e.english_name
+             GROUP BY r.id, f.floor_name, b.building_name, b.accommodation_id, a.accommodation_name, e.english_name
              ORDER BY r.room_no ASC"
         );
 
@@ -40,7 +40,7 @@ class Room
         $this->assignment->refreshRoomStatuses();
 
         $stmt = $this->db->prepare(
-            "SELECT r.*, f.floor_name, b.building_name, a.accommodation_name, e.english_name AS reserved_by_employee_name,
+            "SELECT r.*, f.floor_name, b.building_name, b.accommodation_id, a.accommodation_name, e.english_name AS reserved_by_employee_name,
                 STRING_AGG(DISTINCT emp.english_name, E'\n' ORDER BY emp.english_name) AS assigned_employee_names
              FROM rooms r
              LEFT JOIN floors f ON r.floor_id = f.id
@@ -50,7 +50,7 @@ class Room
              LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status = 'Active'
              LEFT JOIN employees emp ON emp.id = ra.employee_id
              WHERE r.floor_id=?
-             GROUP BY r.id, f.floor_name, b.building_name, a.accommodation_name, e.english_name
+             GROUP BY r.id, f.floor_name, b.building_name, b.accommodation_id, a.accommodation_name, e.english_name
              ORDER BY r.room_no ASC"
         );
 

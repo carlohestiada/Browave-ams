@@ -124,7 +124,29 @@
           </div>
           <div class="mb-3">
             <label>New Room</label>
-            <select id="transfer_room" name="new_room_id" class="form-control"></select>
+            <ul class="nav nav-tabs mb-3" id="roomSelectionTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="selectRoomTab" data-bs-toggle="tab" data-bs-target="#selectRoomPane" type="button" role="tab" aria-controls="selectRoomPane" aria-selected="true">
+                  Select Room
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="roomsTab" data-bs-toggle="tab" data-bs-target="#roomsPane" type="button" role="tab" aria-controls="roomsPane" aria-selected="false">
+                  Rooms
+                </button>
+              </li>
+            </ul>
+            <div class="tab-content" id="roomSelectionContent">
+              <div class="tab-pane fade show active" id="selectRoomPane" role="tabpanel" aria-labelledby="selectRoomTab">
+                <select id="transfer_room" name="new_room_id" class="form-control"></select>
+              </div>
+              <div class="tab-pane fade" id="roomsPane" role="tabpanel" aria-labelledby="roomsTab">
+                <div class="mb-3">
+                  <input type="text" id="roomSearchInput" class="form-control form-control-sm" placeholder="Search room...">
+                </div>
+                <div id="roomCardsContainer" class="room-cards-grid"></div>
+              </div>
+            </div>
           </div>
           <div class="mb-3">
             <label>Transfer Date</label>
@@ -160,6 +182,106 @@
     </div>
   </div>
 </div>
+
+<style>
+.room-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.room-card {
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+}
+
+.room-card:hover {
+  border-color: #d1d5db;
+  background-color: #f9fafb;
+}
+
+.room-card.room-available {
+  border-color: #d1fae5;
+  background-color: #f0fdf4;
+}
+
+.room-card.room-available:hover {
+  border-color: #6ee7b7;
+  background-color: #dcfce7;
+}
+
+.room-card.room-occupied {
+  border-color: #fee2e2;
+  background-color: #fef2f2;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.room-card.room-current {
+  border-color: #fef3c7;
+  background-color: #fefce8;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.room-card.room-selected {
+  border-color: #003686;
+  background-color: #dbeafe;
+  border-width: 2px;
+  box-shadow: 0 0 0 3px rgba(0, 54, 134, 0.1);
+}
+
+.room-card-number {
+  font-size: 16px;
+  font-weight: 700;
+  color: #003686;
+  margin-bottom: 6px;
+}
+
+.room-card.room-occupied .room-card-number,
+.room-card.room-current .room-card-number {
+  color: #6b7280;
+}
+
+.room-card-status {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.room-card.room-available .room-card-status {
+  color: #059669;
+}
+
+.room-card.room-occupied .room-card-status {
+  color: #dc2626;
+}
+
+.room-card.room-current .room-card-status {
+  color: #f59e0b;
+}
+
+.room-card.room-selected .room-card-status {
+  color: #0284c7;
+  font-weight: 700;
+}
+
+.room-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+</style>
 
 <script src="assets/js/room_assignments.js?v=<?= filemtime(__DIR__ . '/assets/js/room_assignments.js') ?>"></script>
 <?php include 'layouts/footer.php'; ?>
