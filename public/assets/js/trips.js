@@ -642,7 +642,7 @@ function renderTripDetails(trip) {
           <div class="col-md-3">
             <div class="d-flex justify-content-between align-items-center gap-2">
               <strong>Accommodation Room</strong>
-              ${hasAccommodation ? '<button type="button" class="btn btn-link btn-sm p-0 trip-accommodation-edit">Edit</button>' : ''}
+              ${hasAccommodation ? '<button type="button" class="btn btn-outline-secondary btn-sm trip-accommodation-edit"><i class="bi bi-pencil-square me-1" aria-hidden="true"></i>Edit</button>' : ''}
             </div>
             ${hasAccommodation ? `${escapeTripHtml(room.accommodation || "—")}<br>${escapeTripHtml(room.room || "—")}` : '<div class="text-muted mt-2">No accommodation assigned</div><div class="mt-2"><button type="button" class="btn btn-sm btn-outline-primary trip-accommodation-add">+ Add Accommodation</button></div>'}
             ${hasAccommodation && tripRooms.find((row) => String(row.employee_id) === String(trip.employee_id) && ["Active", "Transferred"].includes(row.status)) ? `
