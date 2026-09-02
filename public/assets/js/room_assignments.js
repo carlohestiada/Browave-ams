@@ -768,7 +768,11 @@ function displayRoomCards() {
   const assignment = assignmentRows.find((r) => String(r.id) === String(assignmentId));
   
   if (!assignment) {
-    container.html('<div class="alert alert-info">Please select an assignment first.</div>');
+    container.html(`
+      <div class="room-empty-state" aria-live="polite">
+        Please select an assignment first to view available rooms.
+      </div>
+    `);
     return;
   }
 

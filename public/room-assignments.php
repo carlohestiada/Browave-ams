@@ -191,6 +191,25 @@
   padding: 12px 0;
 }
 
+.room-empty-state {
+  grid-column: 1 / -1;
+  min-height: 170px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px 28px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f3f4f6 100%);
+  color: #374151;
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 500;
+  pointer-events: none;
+  user-select: none;
+}
+
 .room-card {
   padding: 12px;
   border: 2px solid #e5e7eb;
