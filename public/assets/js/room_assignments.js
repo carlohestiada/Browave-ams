@@ -26,12 +26,6 @@ const assignmentSortColumns = [
   },
   { index: 6, key: "accommodation_name" },
   { index: 7, key: "room_no" },
-  {
-    index: 8,
-    key: function (row) {
-      return `${row.transferred_room_no || ""} ${row.transferred_accommodation_name || ""}`;
-    },
-  },
 ];
 
 function getTodayDate() {
@@ -158,9 +152,6 @@ function initializeAssignmentDateBounds() {
 function renderAssignmentRow(r, lookup) {
   const assignmentId = String(r.id);
   const checked = selectedAssignmentIds.has(assignmentId) ? "checked" : "";
-  const transferredTo = r.transferred_to_room_id && r.transferred_room_no
-    ? `${displayValue(r.transferred_accommodation_name)} - ${displayValue(r.transferred_room_no)} on ${displayValue(r.actual_checkout_date)}`
-    : "";
 
   return `
         <tr>
@@ -180,7 +171,6 @@ function renderAssignmentRow(r, lookup) {
             <td>${displayValue(r.expected_checkout_date || r.actual_checkout_date)}</td>
             <td>${displayValue(r.accommodation_name)}</td>
             <td>${displayValue(r.room_no)}</td>
-            <td>${displayValue(transferredTo)}</td>
             <td style="text-align:right; white-space:nowrap;">
                 <button type="button" class="btn btn-primary btn-sm" onclick="viewAssignmentDetails(${r.id})">View Details</button>
             </td>
@@ -196,7 +186,6 @@ function filterAssignmentRows(rows) {
   }
 
   return rows.filter((r) => {
-    const transferredTo = `${r.transferred_room_no || ""} ${r.transferred_accommodation_name || ""} ${r.actual_checkout_date || ""}`;
     return [
       r.employee_code,
       r.english_name,
@@ -206,7 +195,6 @@ function filterAssignmentRows(rows) {
       r.expected_checkout_date,
       r.accommodation_name,
       r.room_no,
-      transferredTo,
       r.status,
     ].some((value) =>
       String(value ?? "")

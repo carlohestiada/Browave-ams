@@ -49,7 +49,7 @@
       </button>
     </div>
     <div style="overflow-x:auto;">
-      <table class="table table-striped" data-export-title="Room Assignment Data">
+      <table class="table" data-export-title="Room Assignment Data">
         <thead>
           <tr>
             <th style="width:44px; text-align:center;">
@@ -62,7 +62,6 @@
             <th>Check Out</th>
             <th>Accommodation</th>
             <th>Room No.</th>
-            <th>Transferred To</th>
             <th style="width:180px; text-align:right;">Actions</th>
           </tr>
         </thead>
