@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/../app/config/csrf.php';
+require_once dirname(__DIR__) . '/../app/config/database.php';
 header('Content-Type: text/html; charset=UTF-8');
 
 function isLoggedIn()
@@ -67,6 +68,7 @@ if (!in_array($currentPage, $allowedPages, true)) {
 ?>
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <title>BROWAVE AMS</title>
@@ -79,7 +81,7 @@ if (!in_array($currentPage, $allowedPages, true)) {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $.ajaxSetup({
-            beforeSend: function (xhr, settings) {
+            beforeSend: function(xhr, settings) {
                 if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type || 'GET')) {
                     xhr.setRequestHeader('X-CSRF-Token', <?= json_encode(csrfToken()) ?>);
                 }
@@ -93,99 +95,135 @@ if (!in_array($currentPage, $allowedPages, true)) {
 
     <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(dirname(__DIR__) . '/assets/css/style.css') ?>">
 </head>
+
 <body>
 
-<nav class="ams-topbar">
-    <div class="container-fluid">
+    <nav class="ams-topbar">
+        <div class="container-fluid">
             <div class="ams-topbar-left">
-            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
-                <i class="bi bi-list"></i>
-            </button>
-        </div>
-
-        <?php
-        $role = currentUserRole();
-        $username = $_SESSION['username'] ?? '';
-        $displayUsername = $username !== '' ? $username : 'User';
-        ?>
-
-        <div class="ams-topbar-right">
-            <div class="dropdown ams-user-dropdown">
-                <button class="ams-user-trigger" type="button" id="userProfileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <span class="ams-user-avatar" aria-hidden="true"><i class="bi bi-person-fill"></i></span>
-                    <span class="ams-user-summary">
-                        <span class="ams-user-name"><?= htmlspecialchars($displayUsername) ?></span>
-                        <span class="ams-user-role"><?= htmlspecialchars($role) ?></span>
-                    </span>
-                    <i class="bi bi-chevron-down ams-user-chevron" aria-hidden="true"></i>
+                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+                    <i class="bi bi-list"></i>
                 </button>
+            </div>
 
-                <div class="dropdown-menu dropdown-menu-end ams-user-menu" aria-labelledby="userProfileDropdown">
-                    <div class="ams-user-menu-details">
-                        <span class="ams-user-menu-label">Username</span>
-                        <span class="ams-user-menu-value"><?= htmlspecialchars($displayUsername) ?></span>
+            <?php
+            $role = currentUserRole();
+            $username = $_SESSION['username'] ?? '';
+            $displayUsername = $username !== '' ? $username : 'User';
+            ?>
+
+            <div class="ams-topbar-right">
+                <time class="ams-topbar-datetime" id="amsDateTime" datetime="<?= date('c') ?>" aria-label="Current date and time">
+                    <i class="bi bi-calendar3 ams-topbar-datetime-icon" aria-hidden="true"></i>
+                    <span class="ams-topbar-datetime-content">
+                        <span class="ams-topbar-date"><?= date('l, F j, Y') ?> </span>
+                        <span class="ams-topbar-time"><?= date('g:i:s A') ?></span>
+                    </span>
+                </time>
+                <div class="dropdown ams-user-dropdown">
+                    <button class="ams-user-trigger" type="button" id="userProfileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="ams-user-avatar" aria-hidden="true"><i class="bi bi-person-fill"></i></span>
+                        <span class="ams-user-summary">
+                            <span class="ams-user-name"><?= htmlspecialchars($displayUsername) ?></span>
+                            <span class="ams-user-role"><?= htmlspecialchars($role) ?></span>
+                        </span>
+                        <i class="bi bi-chevron-down ams-user-chevron" aria-hidden="true"></i>
+                    </button>
+
+                    <div class="dropdown-menu dropdown-menu-end ams-user-menu" aria-labelledby="userProfileDropdown">
+                        <div class="ams-user-menu-details">
+                            <span class="ams-user-menu-label">Username</span>
+                            <span class="ams-user-menu-value"><?= htmlspecialchars($displayUsername) ?></span>
+                        </div>
+                        <div class="ams-user-menu-details">
+                            <span class="ams-user-menu-label">Role</span>
+                            <span class="ams-user-menu-value"><?= htmlspecialchars($role) ?></span>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <form id="logout-form" method="POST" action="logout.php" class="m-0">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8') ?>">
+                            <button type="submit" class="dropdown-item ams-user-logout">
+                                <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                                Sign out
+                            </button>
+                        </form>
                     </div>
-                    <div class="ams-user-menu-details">
-                        <span class="ams-user-menu-label">Role</span>
-                        <span class="ams-user-menu-value"><?= htmlspecialchars($role) ?></span>
-                    </div>
-                    <div class="dropdown-divider"></div>
-                    <form id="logout-form" method="POST" action="logout.php" class="m-0">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8') ?>">
-                        <button type="submit" class="dropdown-item ams-user-logout">
-                            <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
-                            Sign out
-                        </button>
-                    </form>
                 </div>
             </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebar = document.querySelector('.sidebar');
-        const root = document.documentElement;
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateTimeElement = document.getElementById('amsDateTime');
+            const applicationTimeZone = <?= json_encode(date_default_timezone_get()) ?>;
 
-        // Capture original computed widths so we can animate back and forth
-        const defaultSidebarWidth = '250px';
-        const defaultCollapsedWidth = '0px';
-        const computedStyles = getComputedStyle(root);
-        const originalSidebarWidth = (computedStyles.getPropertyValue('--sidebar-width') || defaultSidebarWidth).trim() || defaultSidebarWidth;
-        const collapsedSidebarWidth = (computedStyles.getPropertyValue('--sidebar-width-collapsed') || defaultCollapsedWidth).trim() || defaultCollapsedWidth;
+            function updateDateTime() {
+                const currentDate = new Date();
+                const dateParts = new Intl.DateTimeFormat('en-US', {
+                    timeZone: applicationTimeZone,
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                }).formatToParts(currentDate).reduce(function(parts, part) {
+                    parts[part.type] = part.value;
+                    return parts;
+                }, {});
 
-        // Ensure the root CSS variables are set and valid
-        root.style.setProperty('--sidebar-width', originalSidebarWidth);
-        root.style.setProperty('--sidebar-width-collapsed', collapsedSidebarWidth);
+                dateTimeElement.querySelector('.ams-topbar-date').textContent = `${dateParts.weekday}, ${dateParts.month} ${dateParts.day}, ${dateParts.year}`;
+                dateTimeElement.querySelector('.ams-topbar-time').textContent = `${dateParts.hour}:${dateParts.minute}:${dateParts.second} ${dateParts.dayPeriod}`;
+                dateTimeElement.dateTime = currentDate.toISOString();
+            }
 
-        // Check localStorage for saved state
-        const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            updateDateTime();
+            window.setInterval(updateDateTime, 1000);
 
-        const topbar = document.querySelector('.ams-topbar');
-        const contentWrapper = document.querySelector('.content-wrapper');
-        const footer = document.querySelector('.ams-footer');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.querySelector('.sidebar');
+            const root = document.documentElement;
 
-        function updateSidebarWidth(collapsed) {
-            const widthValue = collapsed ? collapsedSidebarWidth : originalSidebarWidth;
-            root.style.setProperty('--sidebar-width', widthValue);
-            sidebar.classList.toggle('collapsed', collapsed);
-            if (topbar) topbar.classList.toggle('collapsed', collapsed);
-            if (contentWrapper) contentWrapper.classList.toggle('collapsed', collapsed);
-            if (footer) footer.classList.toggle('collapsed', collapsed);
-        }
+            // Capture original computed widths so we can animate back and forth
+            const defaultSidebarWidth = '250px';
+            const defaultCollapsedWidth = '0px';
+            const computedStyles = getComputedStyle(root);
+            const originalSidebarWidth = (computedStyles.getPropertyValue('--sidebar-width') || defaultSidebarWidth).trim() || defaultSidebarWidth;
+            const collapsedSidebarWidth = (computedStyles.getPropertyValue('--sidebar-width-collapsed') || defaultCollapsedWidth).trim() || defaultCollapsedWidth;
 
-        // Apply saved state
-        updateSidebarWidth(isCollapsed);
+            // Ensure the root CSS variables are set and valid
+            root.style.setProperty('--sidebar-width', originalSidebarWidth);
+            root.style.setProperty('--sidebar-width-collapsed', collapsedSidebarWidth);
 
-        // Toggle sidebar on button click
-        sidebarToggle.addEventListener('click', function() {
-            const collapsed = sidebar.classList.contains('collapsed');
-            updateSidebarWidth(!collapsed);
+            // Check localStorage for saved state
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
 
-            // Save state to localStorage
-            localStorage.setItem('sidebarCollapsed', !collapsed);
+            const topbar = document.querySelector('.ams-topbar');
+            const contentWrapper = document.querySelector('.content-wrapper');
+            const footer = document.querySelector('.ams-footer');
+
+            function updateSidebarWidth(collapsed) {
+                const widthValue = collapsed ? collapsedSidebarWidth : originalSidebarWidth;
+                root.style.setProperty('--sidebar-width', widthValue);
+                sidebar.classList.toggle('collapsed', collapsed);
+                if (topbar) topbar.classList.toggle('collapsed', collapsed);
+                if (contentWrapper) contentWrapper.classList.toggle('collapsed', collapsed);
+                if (footer) footer.classList.toggle('collapsed', collapsed);
+            }
+
+            // Apply saved state
+            updateSidebarWidth(isCollapsed);
+
+            // Toggle sidebar on button click
+            sidebarToggle.addEventListener('click', function() {
+                const collapsed = sidebar.classList.contains('collapsed');
+                updateSidebarWidth(!collapsed);
+
+                // Save state to localStorage
+                localStorage.setItem('sidebarCollapsed', !collapsed);
+            });
         });
-    });
-</script>
+    </script>

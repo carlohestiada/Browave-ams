@@ -51,7 +51,7 @@
         </a>
     </div>
 
-    <div class="ams-card p-4 mb-4">
+    <div class="dashboard-grid-charts ams-card p-4 mb-4">
         <div class="row g-3 align-items-end">
             <div class="col-lg-4">
                 <label class="ams-label" for="filterEmployeeSearch">Employee</label>
@@ -108,73 +108,72 @@
                 <button type="button" id="resetFilters" class="btn btn-outline-secondary">Reset</button>
             </div>
         </div>
-    </div>
-
-    <div class="dashboard-grid-charts">
-        <div class="ams-card dashboard-card-panel">
-            <div class="dashboard-card-header">
-                <div class="dashboard-card-title"><i class="bi bi-table"></i> Transportation Schedule</div>
-                <div id="scheduleCount" class="text-muted small">0 trips found</div>
-            </div>
-            <div class="dashboard-card-body dashboard-card-table-body">
-               <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                   <ul class="nav nav-tabs" id="scheduleViewTabs">
-                       <li class="nav-item">
-                           <button class="nav-link schedule-view-tab active" type="button" data-view="active">Active</button>
-                       </li>
-                       <li class="nav-item">
-                           <button class="nav-link schedule-view-tab" type="button" data-view="archive">Archive</button>
-                       </li>
-                   </ul>
-                   <div id="scheduleViewSummary" class="text-muted small">Showing active requests</div>
-               </div>
-               <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 0 12px;">
-                   <div id="selectedTransportationText" class="text-muted small">0 selected</div>
-                   <button type="button" class="btn btn-danger btn-sm" id="bulkDeleteTransportationBtn" onclick="deleteSelectedTransportation()" disabled>
-                       Delete Selected
-                   </button>
-               </div>
-               <div class="table-responsive">
-                   <table class="table table-hover align-middle">
-                       <thead class="table-light">
-                           <tr>
-                               <th style="width:44px; text-align:center;">
-                                   <input type="checkbox" id="selectAllTransportation" aria-label="Select all transportation requests">
-                               </th>
-                               <th>Employee</th>
-                               <th>Department</th>
-                               <th>Trip / Leg</th>
-                               <th>Departure Date</th>
-                               <th>Pickup Time</th>
-                               <th>Transportation</th>
-                               <th>Driver</th>
-                               <th>Vehicle</th>
-                               <th>Pickup Location</th>
-                               <th>Status</th>
-                               <th>Action</th>
-                           </tr>
-                       </thead>
-                       <tbody id="companyCarTableBody">
-                           <tr><td colspan="12" class="text-center text-muted">Loading requests...</td></tr>
-                       </tbody>
-                   </table>
-               </div>
-            </div>
-            <div class="d-flex justify-content-between align-items-center p-3 border-top">
-                <div id="tableSummary" class="text-muted small">Showing 0 of 0 records</div>
-                <nav aria-label="Schedule pagination">
-                    <ul class="pagination mb-0" id="schedulePagination"></ul>
-                </nav>
-            </div>
-        </div>
-
-        <div class="ams-card dashboard-card-panel">
+        <div class="ams-card dashboard      -card-panel">
             <div class="dashboard-card-header">
                 <div class="dashboard-card-title"><i class="bi bi-clock-history"></i> Today's Pickup Timeline</div>
             </div>
             <div class="dashboard-card-body">
                 <div id="pickupTimeline"></div>
             </div>
+        </div>
+    </div>
+
+    <div class="ams-card dashboard-card-panel">
+        <div class="dashboard-card-header">
+            <div class="dashboard-card-title"><i class="bi bi-table"></i> Transportation Schedule</div>
+            <div id="scheduleCount" class="text-muted small">0 trips found</div>
+        </div>
+        <div class="dashboard-card-body dashboard-card-table-body">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <ul class="nav nav-tabs" id="scheduleViewTabs">
+                    <li class="nav-item">
+                        <button class="nav-link schedule-view-tab active" type="button" data-view="active">Active</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link schedule-view-tab" type="button" data-view="archive">Archive</button>
+                    </li>
+                </ul>
+                <div id="scheduleViewSummary" class="text-muted small">Showing active requests</div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 0 12px;">
+                <div id="selectedTransportationText" class="text-muted small">0 selected</div>
+                <button type="button" class="btn btn-danger btn-sm" id="bulkDeleteTransportationBtn" onclick="deleteSelectedTransportation()" disabled>
+                    Delete Selected
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:44px; text-align:center;">
+                                <input type="checkbox" id="selectAllTransportation" aria-label="Select all transportation requests">
+                            </th>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th>Trip / Leg</th>
+                            <th>Departure Date</th>
+                            <th>Pickup Time</th>
+                            <th>Transportation</th>
+                            <th>Driver</th>
+                            <th>Vehicle</th>
+                            <th>Pickup Location</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="companyCarTableBody">
+                        <tr>
+                            <td colspan="12" class="text-center text-muted">Loading requests...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center p-3 border-top">
+            <div id="tableSummary" class="text-muted small">Showing 0 of 0 records</div>
+            <nav aria-label="Schedule pagination">
+                <ul class="pagination mb-0" id="schedulePagination"></ul>
+            </nav>
         </div>
     </div>
 </div>

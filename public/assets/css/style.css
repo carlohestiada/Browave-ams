@@ -2064,6 +2064,53 @@ body {
   align-items: center;
 }
 
+.ams-topbar-datetime {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: #434653;
+  font-size: 11px;
+  line-height: 1.25;
+  transition: background-color 0.2s ease;
+}
+
+.ams-topbar-datetime:hover {
+  background-color: #f5f7fb;
+}
+
+.ams-topbar-datetime-icon {
+  flex: 0 0 auto;
+  color: #003686;
+  font-size: 15px;
+}
+
+.ams-topbar-datetime-content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ams-topbar-date,
+.ams-topbar-time {
+  white-space: nowrap;
+}
+
+.ams-topbar-date {
+  color: #737784;
+  font-weight: 500;
+}
+
+.ams-topbar-time {
+  color: #121c28;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
 .ams-topbar-right {
   display: flex;
   align-items: center;
@@ -2212,6 +2259,20 @@ body {
   .ams-user-trigger {
     gap: 7px;
     padding: 5px;
+  }
+
+  .ams-topbar-datetime {
+    gap: 5px;
+    padding: 5px 6px;
+  }
+
+  .ams-topbar-datetime-icon,
+  .ams-topbar-date {
+    display: none;
+  }
+
+  .ams-topbar-time {
+    font-size: 11px;
   }
 
   .ams-user-name {
