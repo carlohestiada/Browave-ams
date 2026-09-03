@@ -93,7 +93,15 @@ class TransportationController
 
     public function getEmployeeDetails($employeeId)
     {
-        echo json_encode($this->transportation->getEmployeeDetails($employeeId));
+        $employee = $this->transportation->getEmployeeDetails($employeeId);
+
+        if (!$employee) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => 'Employee not found']);
+            return;
+        }
+
+        echo json_encode($employee);
     }
 
     /**

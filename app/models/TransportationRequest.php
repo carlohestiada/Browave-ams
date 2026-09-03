@@ -347,18 +347,39 @@ class TransportationRequest
     public function getEmployeeDetails($employeeId)
     {
         $stmt = $this->db->prepare(
-            "SELECT e.id, e.employee_code, e.english_name, e.chinese_name, e.gender, d.department_name,
-                (SELECT transaction_date FROM transactions t2 WHERE t2.employee_id = e.id AND t2.transaction_type = 'arrival' ORDER BY transaction_date DESC LIMIT 1) AS last_arrival_date,
-                (SELECT transaction_date FROM transactions t3 WHERE t3.employee_id = e.id AND t3.transaction_type = 'departure' ORDER BY transaction_date DESC LIMIT 1) AS last_departure_date,
+            "SELECT e.id, e.employee_code, e.english_name, e.chinese_name, e.gender,
+                d.department_name,
+                arrival.last_arrival_date,
+                departure.last_departure_date,
                 r.room_no AS room_number,
                 a.accommodation_name AS accommodation_name
              FROM employees e
              LEFT JOIN departments d ON e.department_id = d.id
-             LEFT JOIN room_assignments ra ON ra.employee_id = e.id AND ra.status = 'Active'
+             LEFT JOIN LATERAL (
+                 SELECT ra.room_id
+                 FROM room_assignments ra
+                 WHERE ra.employee_id = e.id AND ra.status = 'Active'
+                 ORDER BY ra.id DESC
+                 LIMIT 1
+             ) ra ON TRUE
              LEFT JOIN rooms r ON ra.room_id = r.id
              LEFT JOIN floors f ON r.floor_id = f.id
              LEFT JOIN buildings b ON f.building_id = b.id
              LEFT JOIN accommodations a ON b.accommodation_id = a.id
+             LEFT JOIN LATERAL (
+                 SELECT t.transaction_date AS last_arrival_date
+                 FROM transactions t
+                 WHERE t.employee_id = e.id AND LOWER(t.transaction_type) = 'arrival'
+                 ORDER BY t.transaction_date DESC
+                 LIMIT 1
+             ) arrival ON TRUE
+             LEFT JOIN LATERAL (
+                 SELECT t.transaction_date AS last_departure_date
+                 FROM transactions t
+                 WHERE t.employee_id = e.id AND LOWER(t.transaction_type) = 'departure'
+                 ORDER BY t.transaction_date DESC
+                 LIMIT 1
+             ) departure ON TRUE
              WHERE e.id = ?"
         );
         $stmt->execute([$employeeId]);

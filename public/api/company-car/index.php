@@ -9,7 +9,17 @@ require_once __DIR__ . '/../../../app/controllers/TransportationController.php';
 $db = (new Database())->connect();
 $controller = new TransportationController($db);
 
+// Apache may omit PATH_INFO for index.php/{route}; recover the route from REQUEST_URI.
 $path = isset($_SERVER['PATH_INFO']) ? trim($_SERVER['PATH_INFO'], '/') : '';
+if ($path === '' && isset($_SERVER['REQUEST_URI'])) {
+    $requestPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '';
+    $scriptPath = parse_url($_SERVER['SCRIPT_NAME'] ?? '', PHP_URL_PATH) ?: '';
+    $scriptPosition = $scriptPath !== '' ? strpos($requestPath, $scriptPath) : false;
+
+    if ($scriptPosition !== false) {
+        $path = trim(substr($requestPath, $scriptPosition + strlen($scriptPath)), '/');
+    }
+}
 $segments = $path === '' ? [] : explode('/', $path);
 $method = $_SERVER['REQUEST_METHOD'];
 

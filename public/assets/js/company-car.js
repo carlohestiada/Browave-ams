@@ -242,7 +242,7 @@ function loadEmployees(search = '', targetList = '#filterEmployeeList', inputId 
 
         list.html(html).addClass('show');
         $(`${targetList} .dropdown-item`).on('click', function() {
-            const id = $(this).data('id');
+            const id = $(this).attr('data-id');
             const label = $(this).data('label');
 
             $(inputId).val(label);
@@ -259,24 +259,39 @@ function loadEmployees(search = '', targetList = '#filterEmployeeList', inputId 
 }
 
 function fetchEmployeeDetails(employeeId) {
-    if (!employeeId) {
+    const normalizedEmployeeId = String(employeeId || '').trim();
+    console.log('Selected Employee ID:', normalizedEmployeeId);
+
+    if (!normalizedEmployeeId) {
         clearEmployeeDetails();
         return;
     }
 
-    $.get(apiUrl(`api/company-car/index.php/employee/${employeeId}`), function(data) {
+    $.get(apiUrl(`api/company-car/index.php/employee/${encodeURIComponent(normalizedEmployeeId)}`), function(data) {
         const employee = typeof data === 'string' ? JSON.parse(data) : data;
 
+        if (!employee || !employee.id) {
+            console.error('Employee details API returned an invalid employee:', employee);
+            return;
+        }
+
         $('#companyCar_employee_id').val(employee.id || '');
-            $('#companyCar_employee_search').val(`${employee.employee_code || ''} - ${employee.english_name || ''}`);
+        $('#companyCar_employee_search').val(`${employee.employee_code || ''} - ${employee.english_name || ''}`);
         $('#companyCar_department').val(employee.department_name || '');
         $('#companyCar_chinese_name').val(employee.chinese_name || '');
         $('#companyCar_gender').val(employee.gender || '');
         $('#companyCar_arrival_date').val(employee.last_arrival_date ? employee.last_arrival_date.split(' ')[0] : '');
         $('#companyCar_departure_date').val(employee.last_departure_date ? employee.last_departure_date.split(' ')[0] : '');
         $('#companyCar_accommodation_room').val([employee.accommodation_name, employee.room_number].filter(Boolean).join(' / '));
-    }).fail(function() {
-        clearEmployeeDetails();
+    }).fail(function(xhr) {
+        console.error('Employee details API failed:', {
+            status: xhr.status,
+            response: xhr.responseText
+        });
+
+        if (xhr.status === 404) {
+            clearEmployeeDetails();
+        }
     });
 }
 
