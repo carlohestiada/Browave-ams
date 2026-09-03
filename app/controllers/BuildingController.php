@@ -63,6 +63,15 @@ class BuildingController
     {
         $result = $this->building->delete($id);
 
-        echo json_encode(['success' => $result]);
+        if (is_array($result) && !$result['success']) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => $result['message'] ?? 'Unable to delete building right now. Please try again later.'
+            ]);
+            return;
+        }
+
+        echo json_encode(['success' => true]);
     }
 }

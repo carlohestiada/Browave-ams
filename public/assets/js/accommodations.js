@@ -313,7 +313,7 @@ function viewBuildings(accommodationId, accommodationName = null)
                             <div>
                                 <button class="btn btn-sm btn-secondary me-1 btn-view-floors" data-building-id="${bld.id}" data-building-name="${escapeHtml(displayValue(bld.building_name))}">Floors</button>
                                 <button class="btn btn-sm btn-warning me-1 btn-edit-building" data-building-id="${bld.id}" data-building-name="${escapeHtml(displayValue(bld.building_name))}">Edit</button>
-                                <button class="btn btn-sm btn-danger btn-delete-building" data-building-id="${bld.id}">Delete</button>
+                                <button class="btn btn-sm btn-danger btn-delete-building" data-building-id="${bld.id}" data-building-name="${escapeHtml(displayValue(bld.building_name))}">Delete</button>
                             </div>
                         </div>
                     </div>
@@ -362,23 +362,41 @@ function saveBuildingModal(event)
     });
 }
 
-function deleteBuilding(buildingId)
+function deleteBuilding(buildingId, buildingName = '')
 {
-    if (!confirm('Delete building?')) {
-        return;
-    }
+    const safeBuildingName = buildingName || 'this building';
 
-    $.ajax({
-        url: `${buildingApiUrl}/${buildingId}`,
-        type: 'DELETE',
-        success: function() {
-            viewBuildings(currentAccommodationId, $('#accomName').text());
-            swalSuccess('Building deleted successfully');
+    swalConfirm(
+        `Are you sure you want to delete "${safeBuildingName}"?`,
+        function() {
+            $.ajax({
+                url: `${buildingApiUrl}/${buildingId}`,
+                type: 'DELETE',
+                success: function(response) {
+                    const result = parseJsonResponse(response);
+
+                    if (result && result.success) {
+                        viewBuildings(currentAccommodationId, $('#accomName').text());
+                        swalSuccess(`"${safeBuildingName}" has been deleted successfully.`, 'Building Deleted');
+                        return;
+                    }
+
+                    const message = result?.message || 'Unable to delete building right now. Please try again later.';
+                    swalError(message, 'Cannot Delete Building');
+                },
+                error: function(xhr) {
+                    const result = xhr.responseJSON || {};
+                    const message = result.message || result.error || "We couldn't delete this building right now. Please try again later.";
+                    const title = /cannot|currently|linked|being used|remove|transfer/i.test(message)
+                        ? 'Cannot Delete Building'
+                        : 'Unable to Delete Building';
+
+                    swalError(message, title);
+                }
+            });
         },
-        error: function(xhr) {
-            swalError('Error: ' + (xhr.responseJSON?.error || xhr.responseText || 'Unknown error'));
-        }
-    });
+        'Delete Building?'
+    );
 }
 
 function viewFloors(buildingId, buildingName)
@@ -550,7 +568,8 @@ $(function() {
 
     $(document).on('click', '.btn-delete-building', function() {
         const buildingId = $(this).data('building-id');
-        deleteBuilding(buildingId);
+        const buildingName = $(this).data('building-name') || 'this building';
+        deleteBuilding(buildingId, buildingName);
     });
 
     $(document).on('click', '.btn-add-floor', function() {
