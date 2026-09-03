@@ -16,13 +16,13 @@
 
     <div class="ams-card p-4 mb-4">
         <form id="tripFilterForm" class="row g-3 align-items-end">
-            <div class="col-lg-3 col-md-6">
-                <label class="ams-label" for="tripFilterEmployee">Employee</label>
-                <select id="tripFilterEmployee" class="ams-input"><option value="">All employees</option></select>
-            </div>
             <div class="col-lg-2 col-md-6">
                 <label class="ams-label" for="tripFilterDepartment">Department</label>
                 <select id="tripFilterDepartment" class="ams-input"><option value="">All departments</option></select>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label class="ams-label" for="tripFilterEmployee">Employee</label>
+                <select id="tripFilterEmployee" class="ams-input"><option value="">All employees</option></select>
             </div>
             <div class="col-lg-2 col-md-6">
                 <label class="ams-label" for="tripFilterType">Trip Type</label>
