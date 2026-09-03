@@ -30,6 +30,42 @@ try {
     $weekEnd = $weekDates['end'];
     $todayObj = $weekDates['todayObj'];
 
+    if (isset($_GET['trip_activity'])) {
+        $dateFrom = $_GET['date_from'] ?? $weekStart;
+        $dateTo = $_GET['date_to'] ?? $weekEnd;
+        $params = [$dateFrom, $dateTo];
+        $legType = strtoupper(trim((string) ($_GET['leg_type'] ?? '')));
+
+        $activitySql = "SELECT
+                            tl.id AS trip_leg_id,
+                            tl.trip_id,
+                            tl.leg_type,
+                            tl.leg_date,
+                            t.employee_id,
+                            e.employee_code,
+                            e.english_name,
+                            e.chinese_name,
+                            e.gender,
+                            d.department_name
+                        FROM trip_legs tl
+                        JOIN trips t ON tl.trip_id = t.id
+                        JOIN employees e ON t.employee_id = e.id
+                        LEFT JOIN departments d ON e.department_id = d.id
+                        WHERE tl.leg_date BETWEEN ? AND ?";
+
+        if (in_array($legType, ['ARRIVAL', 'DEPARTURE'], true)) {
+            $activitySql .= ' AND UPPER(tl.leg_type) = ?';
+            $params[] = $legType;
+        }
+
+        $activitySql .= ' ORDER BY tl.leg_date ASC, tl.id ASC';
+        $activityStmt = $db->prepare($activitySql);
+        $activityStmt->execute($params);
+
+        echo json_encode($activityStmt->fetchAll(PDO::FETCH_ASSOC));
+        exit;
+    }
+
     // Get available vehicles (status = 'Available')
     $vehicleStmt = $db->prepare("SELECT COUNT(*) as count FROM vehicles WHERE status = 'Available'");
     $vehicleStmt->execute();

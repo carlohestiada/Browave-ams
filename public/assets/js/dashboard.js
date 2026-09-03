@@ -2065,7 +2065,7 @@ function initDashboard() {
       `<div class="department-employee-loading">Loading ${movementType} employees...</div>`;
 
     fetchJSON(
-      `api/transactions/index.php/type/${encodeURIComponent(movementType)}?date_from=${encodeURIComponent(queryDate)}&date_to=${encodeURIComponent(queryDate)}`,
+      `api/dashboard-transportation.php?trip_activity=1&date_from=${encodeURIComponent(queryDate)}&date_to=${encodeURIComponent(queryDate)}&leg_type=${encodeURIComponent(movementType.toUpperCase())}`,
     )
       .then((data) => {
         if (!Array.isArray(data)) {
@@ -2084,8 +2084,8 @@ function initDashboard() {
             department_name: entry.department_name || "-",
           }))
           .filter((entry) => {
-            const transactionDate = entry.transaction_date || entry.date || entry.transactionDate;
-            return transactionDate === queryDate;
+            const activityDate = entry.leg_date || entry.activity_date || entry.date;
+            return activityDate === queryDate;
           });
 
         trafficEmployeeCache = rows;
@@ -2802,12 +2802,7 @@ function initDashboard() {
 
   const loadTransactionCards = (type, elementId, badgeClass, emptyText) => {
     fetchJSON(
-      "api/transactions/index.php/type/" +
-        type +
-        "?date_from=" +
-        today +
-        "&date_to=" +
-        today,
+      `api/dashboard-transportation.php?trip_activity=1&date_from=${encodeURIComponent(today)}&date_to=${encodeURIComponent(today)}&leg_type=${encodeURIComponent(type.toUpperCase())}`,
     ).then((data) => {
       const el = document.getElementById(elementId);
       if (!el) return;
@@ -2912,28 +2907,21 @@ function initDashboard() {
     return `${arrivals} Arrivals · ${departures} Departures`;
   }
 
-  function buildWeekTrafficData(arrivalRecords, departureRecords, weekDates) {
+  function buildWeekTrafficData(activityRecords, weekDates) {
     const byDate = new Map();
 
     weekDates.forEach((entry) => {
       byDate.set(entry.date, { ...entry, arrivals: 0, departures: 0 });
     });
 
-    (Array.isArray(arrivalRecords) ? arrivalRecords : []).forEach((record) => {
-      const key =
-        record.transaction_date || record.transactionDate || record.date;
+    (Array.isArray(activityRecords) ? activityRecords : []).forEach((record) => {
+      const key = record.leg_date || record.activity_date || record.date;
+      const legType = String(record.leg_type || '').toUpperCase();
       if (!key || !byDate.has(key)) return;
-      byDate.get(key).arrivals += 1;
-    });
 
-    (Array.isArray(departureRecords) ? departureRecords : []).forEach(
-      (record) => {
-        const key =
-          record.transaction_date || record.transactionDate || record.date;
-        if (!key || !byDate.has(key)) return;
-        byDate.get(key).departures += 1;
-      },
-    );
+      if (legType === 'ARRIVAL') byDate.get(key).arrivals += 1;
+      if (legType === 'DEPARTURE') byDate.get(key).departures += 1;
+    });
 
     return weekDates.map(
       (entry) =>
@@ -3027,8 +3015,7 @@ function initDashboard() {
 
     const weekStart = weekDates[0].date;
     const weekEnd = weekDates[6].date;
-    const arrivalWeekUrl = `api/transactions/index.php/type/arrival?date_from=${weekStart}&date_to=${weekEnd}`;
-    const departureWeekUrl = `api/transactions/index.php/type/departure?date_from=${weekStart}&date_to=${weekEnd}`;
+    const tripActivityUrl = `api/dashboard-transportation.php?trip_activity=1&date_from=${weekStart}&date_to=${weekEnd}`;
 
     console.group("Traffic Chart - Weekly Daily Data");
     console.log(
@@ -3036,23 +3023,17 @@ function initDashboard() {
       "color: #0284c7; font-weight: bold",
     );
     console.log("📅 Today: %c" + today, "color: #0284c7; font-weight: bold");
-    console.log("Arrival URL:", arrivalWeekUrl);
-    console.log("Departure URL:", departureWeekUrl);
+    console.log("Trip activity URL:", tripActivityUrl);
     console.groupEnd();
 
-    Promise.all([fetchJSON(arrivalWeekUrl), fetchJSON(departureWeekUrl)]).then(
-      ([arrivalWeek, departureWeek]) => {
-        if (arrivalWeek === null || departureWeek === null) {
+    fetchJSON(tripActivityUrl).then((tripActivity) => {
+        if (tripActivity === null) {
           console.error("Traffic chart API request failed");
           showTrafficChartError("Unable to load arrival & departure data.");
           return;
         }
 
-        const dailyData = buildWeekTrafficData(
-          arrivalWeek,
-          departureWeek,
-          weekDates,
-        );
+        const dailyData = buildWeekTrafficData(tripActivity, weekDates);
         const totalArrivals = dailyData.reduce(
           (sum, entry) => sum + entry.arrivals,
           0,
@@ -3077,8 +3058,7 @@ function initDashboard() {
 
         console.log("✅ Rendering daily traffic chart:", dailyData);
         renderTrafficChart(dailyData);
-      },
-    );
+      });
   }
 
   // ARRIVAL & DEPARTURE TRAFFIC CHART
