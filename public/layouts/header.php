@@ -116,7 +116,8 @@ if (!in_array($currentPage, $allowedPages, true)) {
                 <time class="ams-topbar-datetime" id="amsDateTime" datetime="<?= date('c') ?>" aria-label="Current date and time">
                     <i class="bi bi-calendar3 ams-topbar-datetime-icon" aria-hidden="true"></i>
                     <span class="ams-topbar-datetime-content">
-                        <span class="ams-topbar-date"><?= date('l, F j, Y') ?> </span>
+                        <span class="ams-topbar-date"><?= date('l, F j, Y') ?></span>
+                        <span class="ams-topbar-datetime-separator">at</span>
                         <span class="ams-topbar-time"><?= date('g:i:s A') ?></span>
                     </span>
                 </time>
