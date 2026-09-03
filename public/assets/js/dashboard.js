@@ -3304,6 +3304,52 @@ function initDashboard() {
 
   // MEAL CHART
   let lunchboxChartInstance = null;
+  let lunchboxWeekCache = null;
+  let selectedLunchboxWeek = "this";
+
+  function updateLunchboxWeekSelection(week) {
+    selectedLunchboxWeek = ["last", "next"].includes(week) ? week : "this";
+
+    document.querySelectorAll(".lunchbox-week-selector").forEach((button) => {
+      const selected = button.dataset.week === selectedLunchboxWeek;
+      button.classList.toggle("is-selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+
+    const label = document.getElementById("lunchbox-selected-week-label");
+    if (label) {
+      label.textContent = selectedLunchboxWeek === "last"
+        ? "Last Week"
+        : selectedLunchboxWeek === "next" ? "Next Week" : "This Week";
+    }
+
+    if (!lunchboxWeekCache || !lunchboxChartInstance) return;
+
+    const dates = selectedLunchboxWeek === "last"
+      ? lunchboxWeekCache.lastWeekDates
+      : selectedLunchboxWeek === "next"
+        ? lunchboxWeekCache.nextWeekDates
+        : lunchboxWeekCache.thisWeekDates;
+    const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const labels = dates.map((dateStr, index) => {
+      const [year, month, day] = dateStr.split("-");
+      return `${dayNames[index]} ${month}/${day}/${year.slice(-2)}`;
+    });
+    const values = dates.map((date) => Number(lunchboxWeekCache.counts[date] || 0));
+    const todayDate = getLocalDateString(new Date());
+
+    lunchboxChartPoints = dates.map((date, index) => ({
+      label: labels[index],
+      date,
+      count: values[index],
+    }));
+    lunchboxChartInstance.data.labels = labels;
+    lunchboxChartInstance.data.datasets[0].data = values;
+    lunchboxChartInstance.data.datasets[0].backgroundColor = dates.map((date) =>
+      date === todayDate ? "#0f766e" : "#003686",
+    );
+    lunchboxChartInstance.update();
+  }
 
   function loadLunchboxChart() {
     const statusEl = document.getElementById("lunchboxChartStatus");
@@ -3324,6 +3370,14 @@ function initDashboard() {
       return getLocalDateString(d);
     });
 
+    const previousMonday = new Date(monday);
+    previousMonday.setDate(monday.getDate() - 7);
+    const lastWeekDates = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(previousMonday);
+      d.setDate(previousMonday.getDate() + i);
+      return getLocalDateString(d);
+    });
+
     const nextMonday = new Date(monday);
     nextMonday.setDate(monday.getDate() + 7);
     const nextWeekDates = Array.from({ length: 7 }, (_, i) => {
@@ -3332,33 +3386,43 @@ function initDashboard() {
       return getLocalDateString(d);
     });
 
-    const startDate = thisWeekDates[0];
+    const startDate = lastWeekDates[0];
     const endDate = nextWeekDates[6];
+
+    $(".lunchbox-week-selector").off("click").on("click", function() {
+      updateLunchboxWeekSelection($(this).data("week"));
+    });
 
     fetchJSON(
       `api/meals/lunchbox_summary.php?date_from=${startDate}&date_to=${endDate}`,
     ).then((data) => {
       if (!data || !data.daily_counts) {
         if (statusEl) {
-          statusEl.textContent = "Unable to load lunch box data.";
+          statusEl.textContent = "Unable to load meal data for this week. Please try again.";
           statusEl.style.display = "flex";
         }
         return;
       }
 
       const counts = data.daily_counts;
+      lunchboxWeekCache = { counts, lastWeekDates, thisWeekDates, nextWeekDates };
 
       const thisWeekValues = thisWeekDates.map((d) => Number(counts[d] || 0));
       const weekTotal = thisWeekValues.reduce((sum, v) => sum + v, 0);
+      const lastWeekTotal = lastWeekDates.reduce(
+        (sum, d) => sum + Number(counts[d] || 0),
+        0,
+      );
       const nextWeekTotal = nextWeekDates.reduce(
         (sum, d) => sum + Number(counts[d] || 0),
         0,
       );
 
       setKpiValue("lunchbox-week-total", weekTotal, 0);
+      setKpiValue("lunchbox-lastweek-total", lastWeekTotal, 0);
       setKpiValue("lunchbox-nextweek-total", nextWeekTotal, 0);
 
-      if (weekTotal === 0 && nextWeekTotal === 0) {
+      if (lastWeekTotal === 0 && weekTotal === 0 && nextWeekTotal === 0) {
         if (statusEl) {
           statusEl.textContent = "No lunch box data available.";
           statusEl.style.display = "flex";
@@ -3455,6 +3519,8 @@ function initDashboard() {
       } else {
         lunchboxChartInstance = new Chart(ctx, chartConfig);
       }
+
+      if (selectedLunchboxWeek !== "this") updateLunchboxWeekSelection(selectedLunchboxWeek);
     });
   }
   // END MEAL CHART

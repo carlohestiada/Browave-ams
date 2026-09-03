@@ -229,16 +229,22 @@
         </div>
         <div class="dashboard-card-body lunchbox-chart-body">
             <div class="lunchbox-summary-grid">
-                <div class="lunchbox-summary-item">
+                <button type="button" class="lunchbox-summary-item lunchbox-week-selector" id="lunchbox-last-week" data-week="last" aria-pressed="false">
+                    <span class="lunchbox-summary-label">Last Week</span>
+                    <span class="lunchbox-summary-value" id="lunchbox-lastweek-total">-</span>
+                </button>
+                <div class="lunchbox-summary-divider"></div>
+                <button type="button" class="lunchbox-summary-item lunchbox-week-selector is-selected" id="lunchbox-this-week" data-week="this" aria-pressed="true">
                     <span class="lunchbox-summary-label">This Week</span>
                     <span class="lunchbox-summary-value" id="lunchbox-week-total">-</span>
-                </div>
+                </button>
                 <div class="lunchbox-summary-divider"></div>
-                <div class="lunchbox-summary-item">
+                <button type="button" class="lunchbox-summary-item lunchbox-week-selector" id="lunchbox-next-week" data-week="next" aria-pressed="false">
                     <span class="lunchbox-summary-label">Next Week</span>
                     <span class="lunchbox-summary-value" id="lunchbox-nextweek-total">-</span>
-                </div>
+                </button>
             </div>
+            <div class="lunchbox-selected-week-label" id="lunchbox-selected-week-label">This Week</div>
             <div class="lunchbox-chart-canvas-wrap">
                 <canvas id="lunchboxChart" role="img" aria-label="Bar chart of daily lunch box requirement"></canvas>
                 <div id="lunchboxChartStatus" class="dept-chart-empty">Loading lunch box data...</div>
