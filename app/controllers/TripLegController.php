@@ -74,6 +74,7 @@ class TripLegController
             return;
         }
 
+        $this->trip->recalculateStoredStatus($tripId);
         echo json_encode([
             'success' => true,
             'message' => 'Trip leg created successfully.',
@@ -100,6 +101,7 @@ class TripLegController
             return;
         }
 
+        $this->trip->recalculateStoredStatus($leg['trip_id']);
         echo json_encode(['success' => true, 'message' => 'Trip leg updated successfully.']);
     }
 
@@ -120,6 +122,7 @@ class TripLegController
             return;
         }
 
+        $this->trip->recalculateStoredStatus($leg['trip_id']);
         echo json_encode(['success' => true, 'message' => 'Trip leg deleted successfully.']);
     }
 }

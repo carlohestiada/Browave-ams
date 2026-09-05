@@ -2,18 +2,21 @@
 
 require_once __DIR__ . '/../models/Trip.php';
 require_once __DIR__ . '/../models/TripLeg.php';
+require_once __DIR__ . '/../models/AuditLog.php';
 
 class TripController
 {
     private $trip;
     private $tripLeg;
     private $db;
+    private $auditLog;
 
     public function __construct($db)
     {
         $this->db = $db;
         $this->trip = new Trip($db);
         $this->tripLeg = new TripLeg($db);
+        $this->auditLog = new AuditLog($db);
     }
 
     public function index()
@@ -80,7 +83,6 @@ class TripController
             $createTripResult = $this->trip->create([
                 'employee_id' => $data['employee_id'],
                 'trip_type' => $data['trip_type'],
-                'status' => $data['status'] ?? 'PLANNED',
                 'remarks' => $data['remarks'] ?? ''
             ]);
 
@@ -117,6 +119,7 @@ class TripController
                 $createdLegIds[] = $createLegResult['id'];
             }
 
+            $this->trip->recalculateStoredStatus($tripId);
             $this->db->commit();
 
             echo json_encode([
@@ -142,9 +145,6 @@ class TripController
         if (isset($data['trip_type'])) {
             $updateData['trip_type'] = $data['trip_type'];
         }
-        if (isset($data['status'])) {
-            $updateData['status'] = $data['status'];
-        }
         if (isset($data['remarks'])) {
             $updateData['remarks'] = $data['remarks'];
         }
@@ -163,7 +163,34 @@ class TripController
             return;
         }
 
+        $this->trip->recalculateStoredStatus($id);
         echo json_encode(['success' => true, 'message' => 'Trip updated successfully.']);
+    }
+
+    public function complete($id)
+    {
+        $result = $this->trip->complete($id);
+        if (!$result['success']) {
+            http_response_code($result['error'] === 'Trip not found.' ? 404 : 400);
+            echo json_encode($result);
+            return;
+        }
+
+        $this->auditLog->log($_SESSION['user_id'] ?? null, 'Trip Completed', 'trip', $id, ['status' => 'ACTIVE'], ['status' => 'COMPLETED']);
+        echo json_encode($result);
+    }
+
+    public function cancel($id)
+    {
+        $result = $this->trip->cancel($id);
+        if (!$result['success']) {
+            http_response_code($result['error'] === 'Trip not found.' ? 404 : 400);
+            echo json_encode($result);
+            return;
+        }
+
+        $this->auditLog->log($_SESSION['user_id'] ?? null, 'Trip Cancelled', 'trip', $id, ['status' => 'PLANNED or ACTIVE'], ['status' => 'CANCELLED']);
+        echo json_encode($result);
     }
 
     public function destroy($id)

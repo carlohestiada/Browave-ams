@@ -96,7 +96,7 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-6"><label class="form-label" for="tripEmployee">Employee</label><select id="tripEmployee" class="form-select" required><option value="">Select employee</option></select></div>
                         <div class="col-md-3"><label class="form-label" for="tripType">Trip Type</label><select id="tripType" class="form-select" required><option value="NORMAL_TRIP">Normal trip</option><option value="ROUND_TRIP">Round trip</option></select></div>
-                        <div class="col-md-3"><label class="form-label" for="tripStatus">Status</label><select id="tripStatus" class="form-select"><option value="PLANNED">Planned</option><option value="ACTIVE">Active</option><option value="COMPLETED">Completed</option><option value="CANCELLED">Cancelled</option></select></div>
+                        <div class="col-md-3"><label class="form-label" for="tripStatus">Status</label><select id="tripStatus" class="form-select" disabled><option value="PLANNED">Planned</option><option value="ACTIVE">Active</option><option value="COMPLETED">Completed</option><option value="CANCELLED">Cancelled</option></select><div class="form-text">Status updates automatically from the schedule.</div></div>
                     </div>
                     <div id="employeePreview" class="alert alert-light border d-none mb-4"></div>
                     <div id="tripLegsForm" class="row g-3"></div>

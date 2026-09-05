@@ -12,6 +12,14 @@ $tripController = new TripController($db);
 $tripLegController = new TripLegController($db);
 
 $path = isset($_SERVER['PATH_INFO']) ? trim($_SERVER['PATH_INFO'], '/') : '';
+if ($path === '' && isset($_SERVER['REQUEST_URI'])) {
+    $requestPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '';
+    $scriptPath = parse_url($_SERVER['SCRIPT_NAME'] ?? '', PHP_URL_PATH) ?: '';
+    $scriptPosition = $scriptPath !== '' ? strpos($requestPath, $scriptPath) : false;
+    if ($scriptPosition !== false) {
+        $path = trim(substr($requestPath, $scriptPosition + strlen($scriptPath)), '/');
+    }
+}
 $segments = $path !== '' ? explode('/', $path) : [];
 $id = $segments[0] ?? null;
 $action = $segments[1] ?? null;
@@ -36,6 +44,17 @@ if ($action === 'legs') {
         http_response_code(405);
         echo json_encode(['success' => false, 'error' => 'Method not allowed']);
     }
+    exit;
+}
+
+if ($action === 'complete' || $action === 'cancel') {
+    if ($method !== 'POST' || !$id) {
+        http_response_code(405);
+        echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+        exit;
+    }
+
+    $action === 'complete' ? $tripController->complete($id) : $tripController->cancel($id);
     exit;
 }
 

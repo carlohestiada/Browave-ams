@@ -288,14 +288,12 @@ function saveTrip() {
         method: "PUT",
         data: {
           trip_type: data.trip_type,
-          status: data.status,
           remarks: data.remarks,
         },
       })
     : $.post(tripApiUrl("api/trips/index.php"), {
         employee_id: data.employee_id,
         trip_type: data.trip_type,
-        status: data.status,
         remarks: data.remarks,
         legs: JSON.stringify(data.legs),
       });
@@ -682,9 +680,15 @@ function renderTripDetails(trip) {
         .on("click", ".trip-accommodation-edit", () => openTripAccommodationEditor(trip))
         .on("click", ".trip-accommodation-add", () => openTripAccommodationEditor(trip));
 
+      const lifecycleActions = trip.status === "ACTIVE"
+        ? `<button type="button" class="btn btn-success" id="completeTripButton">Mark as Completed</button><button type="button" class="btn btn-outline-danger" id="cancelTripButton">Cancel Trip</button>`
+        : trip.status === "PLANNED"
+          ? `<button type="button" class="btn btn-outline-danger" id="cancelTripButton">Cancel Trip</button>`
+          : "";
+
       $("#tripDetailsFooter")
         .html(
-          `<button type="button" class="btn btn-outline-primary" id="editTripButton">Edit Trip</button><button type="button" class="btn btn-outline-danger" id="deleteTripButton">Delete Trip</button><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>`,
+          `${lifecycleActions}<button type="button" class="btn btn-outline-primary" id="editTripButton">Edit Trip</button><button type="button" class="btn btn-outline-danger" id="deleteTripButton">Delete Trip</button><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>`,
         )
         .off("click")
         .on("click", "#editTripButton", () => {
@@ -692,10 +696,36 @@ function renderTripDetails(trip) {
           showTripForm(trip);
         })
         .on("click", "#deleteTripButton", () => deleteTrip(trip.id))
+        .on("click", "#completeTripButton", () => completeTrip(trip.id))
+        .on("click", "#cancelTripButton", () => cancelTrip(trip.id))
         .on("click", ".delete-transportation", function() {
           deleteTransportation($(this).data("id"));
         });
     });
+}
+
+function completeTrip(id) {
+  swalConfirm("Are you sure this trip has been completed?", () => {
+    $.ajax({ url: tripApiUrl(`api/trips/index.php/${id}/complete`), method: "POST" })
+      .done(() => {
+        swalSuccess("Trip marked as completed.");
+        detailsModal.hide();
+        loadTrips();
+      })
+      .fail((xhr) => swalError(xhr.responseJSON?.error || "Unable to complete trip."));
+  });
+}
+
+function cancelTrip(id) {
+  swalConfirm("Cancel this trip?", () => {
+    $.ajax({ url: tripApiUrl(`api/trips/index.php/${id}/cancel`), method: "POST" })
+      .done(() => {
+        swalSuccess("Trip cancelled.");
+        detailsModal.hide();
+        loadTrips();
+      })
+      .fail((xhr) => swalError(xhr.responseJSON?.error || "Unable to cancel trip."));
+  });
 }
 
 function getStatusColor(status) {

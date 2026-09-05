@@ -21,7 +21,8 @@ class Trip
                     t.status,
                     t.remarks,
                     t.created_at,
-                    t.updated_at
+                    t.updated_at,
+                    (SELECT MIN(leg_date) FROM trip_legs start_leg WHERE start_leg.trip_id = t.id) AS start_date
                 FROM trips t
                 JOIN employees e ON t.employee_id = e.id
                 LEFT JOIN departments d ON e.department_id = d.id";
@@ -54,11 +55,6 @@ class Trip
             $params[] = $filters['trip_type'];
         }
 
-        if (!empty($filters['status']) && in_array($filters['status'], ['PLANNED', 'ACTIVE', 'COMPLETED', 'CANCELLED'])) {
-            $conditions[] = 't.status = ?';
-            $params[] = $filters['status'];
-        }
-
         if (!empty($filters['search'])) {
             $conditions[] = "(
                 e.employee_code LIKE ? OR
@@ -80,7 +76,17 @@ class Trip
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $trips = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($trips as &$trip) {
+            $trip['status'] = $this->effectiveStatus($trip['status'], $trip['start_date']);
+        }
+        unset($trip);
+
+        if (!empty($filters['status']) && in_array($filters['status'], ['PLANNED', 'ACTIVE', 'COMPLETED', 'CANCELLED'], true)) {
+            $trips = array_values(array_filter($trips, static fn($trip) => $trip['status'] === $filters['status']));
+        }
+
+        return $trips;
     }
 
     public function getById($id)
@@ -96,7 +102,8 @@ class Trip
                 t.status,
                 t.remarks,
                 t.created_at,
-                t.updated_at
+                t.updated_at,
+                (SELECT MIN(leg_date) FROM trip_legs start_leg WHERE start_leg.trip_id = t.id) AS start_date
             FROM trips t
             JOIN employees e ON t.employee_id = e.id
             LEFT JOIN departments d ON e.department_id = d.id
@@ -104,7 +111,11 @@ class Trip
         );
 
         $stmt->execute([$id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $trip = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($trip) {
+            $trip['status'] = $this->effectiveStatus($trip['status'], $trip['start_date']);
+        }
+        return $trip;
     }
 
     public function create(array $data)
@@ -133,7 +144,7 @@ class Trip
         $success = $stmt->execute([
             $data['employee_id'],
             $data['trip_type'],
-            $data['status'] ?? 'PLANNED',
+            'PLANNED',
             $data['remarks'] ?? ''
         ]);
 
@@ -169,14 +180,6 @@ class Trip
             $params[] = $data['trip_type'];
         }
 
-        if (isset($data['status'])) {
-            if (!in_array($data['status'], ['PLANNED', 'ACTIVE', 'COMPLETED', 'CANCELLED'])) {
-                return ['success' => false, 'error' => 'Invalid trip status.'];
-            }
-            $updateFields[] = 'status = ?';
-            $params[] = $data['status'];
-        }
-
         if (isset($data['remarks'])) {
             $updateFields[] = 'remarks = ?';
             $params[] = $data['remarks'];
@@ -198,6 +201,71 @@ class Trip
         }
 
         return ['success' => true];
+    }
+
+    public function effectiveStatus(?string $status, ?string $startDate): string
+    {
+        if ($status === 'COMPLETED' || $status === 'CANCELLED') {
+            return $status;
+        }
+
+        return $startDate && date('Y-m-d') >= $startDate ? 'ACTIVE' : 'PLANNED';
+    }
+
+    public function recalculateStoredStatus($id): string
+    {
+        $stmt = $this->db->prepare('SELECT status FROM trips WHERE id = ?');
+        $stmt->execute([$id]);
+        $storedStatus = $stmt->fetchColumn();
+        if (!$storedStatus || in_array($storedStatus, ['COMPLETED', 'CANCELLED'], true)) {
+            return $storedStatus ?: 'PLANNED';
+        }
+
+        $legStmt = $this->db->prepare('SELECT MIN(leg_date) FROM trip_legs WHERE trip_id = ?');
+        $legStmt->execute([$id]);
+        $status = $this->effectiveStatus($storedStatus, $legStmt->fetchColumn());
+        if ($status !== $storedStatus) {
+            $update = $this->db->prepare("UPDATE trips SET status = ?, updated_at = NOW() WHERE id = ? AND status IN ('PLANNED', 'ACTIVE')");
+            $update->execute([$status, $id]);
+        }
+
+        return $status;
+    }
+
+    public function complete($id): array
+    {
+        $trip = $this->getById($id);
+        if (!$trip) {
+            return ['success' => false, 'error' => 'Trip not found.'];
+        }
+        if ($trip['status'] !== 'ACTIVE') {
+            return ['success' => false, 'error' => 'Only active trips can be completed.'];
+        }
+
+        $stmt = $this->db->prepare("UPDATE trips SET status = 'COMPLETED', updated_at = NOW() WHERE id = ? AND status IN ('PLANNED', 'ACTIVE')");
+        $stmt->execute([$id]);
+
+        return $stmt->rowCount() === 1
+            ? ['success' => true, 'trip' => $this->getById($id)]
+            : ['success' => false, 'error' => 'Trip could not be completed.'];
+    }
+
+    public function cancel($id): array
+    {
+        $trip = $this->getById($id);
+        if (!$trip) {
+            return ['success' => false, 'error' => 'Trip not found.'];
+        }
+        if (!in_array($trip['status'], ['PLANNED', 'ACTIVE'], true)) {
+            return ['success' => false, 'error' => 'Only planned or active trips can be cancelled.'];
+        }
+
+        $stmt = $this->db->prepare("UPDATE trips SET status = 'CANCELLED', updated_at = NOW() WHERE id = ? AND status IN ('PLANNED', 'ACTIVE')");
+        $stmt->execute([$id]);
+
+        return $stmt->rowCount() === 1
+            ? ['success' => true, 'trip' => $this->getById($id)]
+            : ['success' => false, 'error' => 'Trip could not be cancelled.'];
     }
 
     public function delete($id)
