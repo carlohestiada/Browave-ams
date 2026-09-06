@@ -83,7 +83,6 @@ if (($_SESSION['role'] ?? 'Viewer') !== 'Admin') {
                         <th>Username</th>
                         <th>Role</th>
                         <th>Status</th>
-                        <th>Created At</th>
                         <th width="180">Action</th>
                     </tr>
                 </thead>

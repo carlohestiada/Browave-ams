@@ -61,7 +61,6 @@ function renderUserRow(user) {
             <td>${displayValue(user.username)}</td>
             <td><span class="badge bg-info">${displayValue(user.role)}</span></td>
             <td><span class="badge ${user.status === 'Active' ? 'bg-success' : 'bg-danger'}">${displayValue(user.status)}</span></td>
-            <td>${displayValue(user.created_at)}</td>
             <td>
                 <button class="btn btn-warning btn-sm me-1" onclick="editUser(${user.id})">
                     Edit
@@ -107,8 +106,7 @@ function loadUsers(page = 1)
             sortColumns: [
                 { index: 1, key: 'username' },
                 { index: 2, key: 'role' },
-                { index: 3, key: 'status' },
-                { index: 4, key: 'created_at' }
+                { index: 3, key: 'status' }
             ]
         });
         updateUserSelectionControls();
