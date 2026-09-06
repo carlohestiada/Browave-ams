@@ -4,8 +4,13 @@ require_once '../app/controllers/AuthController.php';
 header('Content-Type: text/html; charset=UTF-8');
 
 $error = '';
+$loginUsername = '';
+$loginRole = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+
+    $loginUsername = trim((string) ($_POST['username'] ?? ''));
+    $loginRole = (string) ($_POST['role'] ?? '');
 
     if (!csrfRequestIsValid()) {
         $error = 'Invalid security token. Please try again.';
@@ -13,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         $auth = new AuthController();
 
-        if ($auth->login($_POST['username'], $_POST['password'], $_POST['role'])) {
+        if ($auth->login($loginUsername, $_POST['password'] ?? '', $loginRole)) {
 
             header("Location: dashboard.php");
             exit;
@@ -135,9 +140,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <span class="material-symbols-outlined text-[18px]">badge</span>
                             </span>
                             <select name="role" class="select-field" required>
-                                <option value="Admin">Admin</option>
-                                <option value="HR">HR</option>
-                                <option value="Viewer">Viewer</option>
+                                <option value="" disabled <?= $loginRole === '' ? 'selected' : '' ?>>Select your role</option>
+                                <option value="Admin" <?= $loginRole === 'Admin' ? 'selected' : '' ?>>Admin</option>
+                                <option value="HR" <?= $loginRole === 'HR' ? 'selected' : '' ?>>HR</option>
+                                <option value="Viewer" <?= $loginRole === 'Viewer' ? 'selected' : '' ?>>Viewer</option>
                             </select>
                             <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-outline">
                                 <span class="material-symbols-outlined text-[18px]">expand_more</span>
@@ -153,6 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 name="username"
                                 class="input-field"
                                 placeholder="Enter your username"
+                                value="<?= htmlspecialchars($loginUsername, ENT_QUOTES, 'UTF-8') ?>"
                                 required
                                 autocomplete="username"/>
                         </div>
