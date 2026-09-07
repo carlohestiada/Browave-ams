@@ -474,7 +474,7 @@ class TransportationRequest
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
     private function normalizeInput(array $data): array

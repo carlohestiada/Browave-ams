@@ -585,7 +585,7 @@ function renderTripDetails(trip) {
   tripDetailBody.data("trip-id", trip.id);
 
   const transportationPromises = legs.map((leg) =>
-    $.get(tripApiUrl(`api/company-car/trip-leg/${leg.id}`))
+    $.get(tripApiUrl(`api/company-car/index.php/trip-leg/${leg.id}`))
       .done((data) => {
         leg.transportation = tripResponse(data)?.data || null;
       })
@@ -742,7 +742,7 @@ function getStatusColor(status) {
 function deleteTransportation(id) {
   swalConfirm("Delete this transportation request?", () => {
     $.ajax({
-      url: tripApiUrl(`api/company-car/${id}`),
+      url: tripApiUrl(`api/company-car/index.php/${id}`),
       method: "DELETE"
     })
       .done(() => {
