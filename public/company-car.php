@@ -51,9 +51,9 @@
         </a>
     </div>
 
-    <div class="dashboard-grid-charts ams-card p-4 mb-4">
-        <div class="row g-3 align-items-end">
-            <div class="col-lg-4">
+    <div class="transportation-filter-card ams-card p-4 mb-4">
+        <div class="transportation-filter-grid">
+            <div class="transportation-filter-field transportation-filter-field--employee">
                 <label class="ams-label" for="filterEmployeeSearch">Employee</label>
                 <div class="search-input-wrapper">
                     <input id="filterEmployeeSearch" type="text" class="ams-input" placeholder="Search employee">
@@ -61,11 +61,11 @@
                     <div id="filterEmployeeList" class="dropdown-list"></div>
                 </div>
             </div>
-            <div class="col-lg-2">
+            <div class="transportation-filter-field">
                 <label class="ams-label" for="filterPickupDate">Departure Date</label>
                 <input id="filterPickupDate" type="date" class="ams-input">
             </div>
-            <div class="col-lg-2">
+            <div class="transportation-filter-field">
                 <label class="ams-label" for="filterTransportationType">Transportation Type</label>
                 <select id="filterTransportationType" class="ams-input">
                     <option value="">All types</option>
@@ -76,15 +76,15 @@
                     <option value="Other">Other</option>
                 </select>
             </div>
-            <div class="col-lg-2">
+            <div class="transportation-filter-field">
                 <label class="ams-label" for="filterVehicle">Vehicle</label>
                 <select id="filterVehicle" class="ams-input"></select>
             </div>
-            <div class="col-lg-2">
+            <div class="transportation-filter-field">
                 <label class="ams-label" for="filterDriver">Driver</label>
                 <select id="filterDriver" class="ams-input"></select>
             </div>
-            <div class="col-lg-2">
+            <div class="transportation-filter-field">
                 <label class="ams-label" for="filterLegType">Leg Type</label>
                 <select id="filterLegType" class="ams-input">
                     <option value="">All leg types</option>
@@ -92,7 +92,7 @@
                     <option value="DEPARTURE">Departure</option>
                 </select>
             </div>
-            <div class="col-lg-2">
+            <div class="transportation-filter-field">
                 <label class="ams-label" for="filterStatus">Status</label>
                 <select id="filterStatus" class="ams-input">
                     <option value="">All statuses</option>
@@ -103,17 +103,9 @@
                     <option value="Cancelled">Cancelled</option>
                 </select>
             </div>
-            <div class="col-12 d-flex gap-2">
+            <div class="transportation-filter-actions">
                 <button type="button" id="applyFilters" class="btn btn-primary">Apply</button>
                 <button type="button" id="resetFilters" class="btn btn-outline-secondary">Reset</button>
-            </div>
-        </div>
-        <div class="ams-card dashboard      -card-panel">
-            <div class="dashboard-card-header">
-                <div class="dashboard-card-title"><i class="bi bi-clock-history"></i> Today's Pickup Timeline</div>
-            </div>
-            <div class="dashboard-card-body">
-                <div id="pickupTimeline"></div>
             </div>
         </div>
     </div>

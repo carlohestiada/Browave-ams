@@ -13,6 +13,64 @@ body {
   font-family: var(--font-sans);
 }
 
+.transportation-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.25fr) minmax(0, 1.65fr) repeat(3, minmax(0, 1fr)) minmax(0, 1.15fr) max-content;
+  gap: 0.75rem;
+  align-items: end;
+  width: 100%;
+}
+
+.transportation-filter-card {
+  width: 100%;
+}
+
+.transportation-filter-field,
+.transportation-filter-actions {
+  min-width: 0;
+}
+
+.transportation-filter-field .ams-input {
+  min-width: 0;
+}
+
+.transportation-filter-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: end;
+  min-width: max-content;
+  white-space: nowrap;
+}
+
+.transportation-filter-actions .btn {
+  min-height: 38px;
+}
+
+@media (max-width: 1199.98px) {
+  .transportation-filter-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .transportation-filter-field--employee {
+    grid-column: span 2;
+  }
+
+  .transportation-filter-actions {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .transportation-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .transportation-filter-field--employee,
+  .transportation-filter-actions {
+    grid-column: auto;
+  }
+}
+
 /* --------------------------------------
  Arrival / Departure search dropdowns
 ----------------------------------------- */
