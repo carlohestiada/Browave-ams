@@ -177,12 +177,7 @@ function renderMealPlannerRow(meal) {
   });
   const lunchValue = Number(meal?.lunch_box ?? meal?.meal_count ?? 0);
   const workDayStatus = meal?.work_day_status || "Non-Working Day";
-  const workDayCell = window.mealIsAdmin
-    ? `<select class="form-select form-select-sm meal-work-day-status" data-date="${mealEscapeHtml(meal.date)}" onchange="saveWorkDayStatus('${mealEscapeHtml(meal.date)}', this.value)">
-          <option value="Working Day" ${workDayStatus === "Working Day" ? "selected" : ""}>Working Day</option>
-          <option value="Non-Working Day" ${workDayStatus === "Non-Working Day" ? "selected" : ""}>Non-Working Day</option>
-       </select>`
-    : `<span class="meal-planner-status">${mealEscapeHtml(workDayStatus)}</span>`;
+  const workDayCell = `<span class="meal-planner-status">${mealEscapeHtml(workDayStatus)}</span>`;
 
   let lunchCell = `<div class="meal-planner-muted">${lunchValue} Lunch Box</div>`;
 
@@ -354,31 +349,6 @@ function saveSundayLunchBoxValue(date, value) {
   }).fail(function (xhr) {
     if (typeof swalError === "function") {
       swalError(xhr.responseJSON?.error || "Unable to save Sunday lunch box");
-    }
-  });
-}
-
-function saveWorkDayStatus(date, status) {
-  $.post(mealApiUrl("api/meals.php"), {
-    date: date,
-    status: status,
-    mode: "work_day_status",
-  }, function (response) {
-    const result = parseJsonResponse(response);
-    if (result.success) {
-      refreshCurrentMealView();
-      if (typeof swalSuccess === "function") {
-        swalSuccess("Work day status updated");
-      }
-      return;
-    }
-
-    if (typeof swalError === "function") {
-      swalError(result.error || "Unable to save work day status");
-    }
-  }).fail(function (xhr) {
-    if (typeof swalError === "function") {
-      swalError(xhr.responseJSON?.error || "Unable to save work day status");
     }
   });
 }

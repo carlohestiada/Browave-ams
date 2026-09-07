@@ -48,24 +48,6 @@ class MealPlanningController
         echo json_encode($withTransactions[$date] ?? ($rows[0] ?? ['date' => $date]));
     }
 
-    public function saveWorkDayStatus($date)
-    {
-        if (!$this->isValidDate($date)) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Invalid date']);
-            return;
-        }
-
-        $status = trim((string) ($_POST['status'] ?? ''));
-        if (!$this->calculationService->saveWorkDayStatus($date, $status)) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Invalid work day status']);
-            return;
-        }
-
-        echo json_encode(['success' => true]);
-    }
-
     public function getRange($startDate, $endDate)
     {
         if (!$this->isValidDate($startDate) || !$this->isValidDate($endDate) || $startDate > $endDate) {

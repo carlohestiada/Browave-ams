@@ -42,12 +42,8 @@ if ($method === 'GET') {
 
 if ($method === 'POST') {
     if (!empty($_POST['mode']) && $_POST['mode'] === 'work_day_status') {
-        if (($_SESSION['role'] ?? '') !== 'Admin') {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Admin access required.']);
-            return;
-        }
-        $controller->saveWorkDayStatus($_POST['date'] ?? '');
+        http_response_code(410);
+        echo json_encode(['success' => false, 'error' => 'Work day status is managed in Work Calendar.']);
         return;
     }
 

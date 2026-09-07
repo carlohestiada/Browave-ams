@@ -8,6 +8,9 @@ function selectedCalendarFilters() { return { year: $('#calendarYear').val(), mo
 function statusLabel(status) { return status === 'working_day' ? 'WORKING' : 'NON-WORKING'; }
 function statusBadge(status) { const working = status === 'working_day'; return `<span class="badge ${working ? 'bg-success' : 'bg-secondary'}">${statusLabel(status)}</span>`; }
 function escapeCalendar(value) { return $('<div>').text(value ?? '').html(); }
+function calendarTodayString(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
 
 function setupCalendarFilters() {
     $('#calendarMonth').html(workCalendarMonths.map((month, index) => `<option value="${index + 1}">${month}</option>`).join(''));
@@ -45,8 +48,9 @@ function renderCalendar(year, month) {
     for (let day = 1; day <= days; day += 1) {
         const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const row = byDate[date];
-        html += `<button type="button" class="work-calendar-day ${row.status === 'working_day' ? 'work-calendar-day--working' : 'work-calendar-day--non-working'}" data-date="${date}" ${window.workCalendarIsAdmin ? '' : 'disabled'}>
-            <strong>${day}</strong><span>${row.day}</span>${statusBadge(row.status)}<small>${escapeCalendar(row.reason)}</small>
+        const isToday = date === calendarTodayString();
+        html += `<button type="button" class="work-calendar-day ${row.status === 'working_day' ? 'work-calendar-day--working' : 'work-calendar-day--non-working'}${isToday ? ' work-calendar-day--today' : ''}" data-date="${date}" ${window.workCalendarIsAdmin ? '' : 'disabled'}>
+            <strong>${day}</strong>${isToday ? '<span class="work-calendar-today">TODAY</span>' : ''}<span>${row.day}</span>${statusBadge(row.status)}<small>${escapeCalendar(row.reason)}</small>
         </button>`;
     }
     $('#workCalendarGrid').html(html);
@@ -113,4 +117,17 @@ $(function () {
         }).fail(xhr => swalError(xhr.responseJSON?.error || 'Unable to save work day.'));
     });
     loadWorkCalendar();
+    setupMidnightCalendarRefresh();
 });
+
+function setupMidnightCalendarRefresh() {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 1, 0);
+
+    setTimeout(() => {
+        loadWorkCalendar();
+        setupMidnightCalendarRefresh();
+    }, tomorrow.getTime() - now.getTime());
+}

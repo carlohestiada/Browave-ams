@@ -78,7 +78,6 @@
 
 </div>
 
-<script>window.mealIsAdmin = <?= json_encode(currentUserRole() === 'Admin') ?>;</script>
 <script src="assets/js/meals.js?v=<?= filemtime(__DIR__ . '/assets/js/meals.js') ?>"></script>
 
 <?php include 'layouts/footer.php'; ?>

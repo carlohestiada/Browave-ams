@@ -72,20 +72,12 @@ class MealCalculationService
                 'is_working_day' => $isWorkingDay,
                 'is_sunday' => (new DateTime($date))->format('w') === '0',
                 'can_edit_lunch_box' => !$isWorkingDay,
-                'can_edit_work_day' => true,
             ];
 
             $current->modify('+1 day');
         }
 
         return $rows;
-    }
-
-    public function saveWorkDayStatus($date, $status)
-    {
-        $normalizedStatus = $status === 'Working Day' ? 'working_day' : ($status === 'Non-Working Day' ? 'non_working_day' : $status);
-        $defaultReason = $normalizedStatus === 'working_day' ? 'Regular Work' : 'Weekend';
-        return $this->workCalendar->save($date, $normalizedStatus, $defaultReason)['success'];
     }
 
     public function getLunchboxEligibleEmployees($date)
