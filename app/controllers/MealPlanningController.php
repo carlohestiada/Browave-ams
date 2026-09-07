@@ -34,12 +34,13 @@ class MealPlanningController
     {
         $headcount = $this->dailyHeadcount->getByDate($date);
         $activeCount = $this->calculationService->calculateActiveCount($date);
+        $isSunday = (new DateTime($date))->format('w') === '0';
 
         if (!$headcount) {
             $headcount = [
                 'date' => $date,
                 'active_count' => $activeCount,
-                'meal_count' => $activeCount
+                'meal_count' => $isSunday ? 0 : $activeCount
             ];
         } else {
             $headcount['active_count'] = $activeCount;

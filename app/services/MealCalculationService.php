@@ -43,9 +43,9 @@ class MealCalculationService
             $override = $overrides[$date] ?? null;
             $isSunday = (new DateTime($date))->format('w') === '0';
 
-            $headcount = $activeCount;
-            $companyPay = $activeCount;
-            $lunchBox = $activeCount;
+            $headcount = $isSunday ? 0 : $activeCount;
+            $companyPay = $isSunday ? 0 : $activeCount;
+            $lunchBox = $isSunday ? 0 : $activeCount;
 
             if ($isSunday && $override) {
                 $overrideValue = $this->resolveOverrideValue($override);
@@ -59,7 +59,7 @@ class MealCalculationService
             $rows[] = [
                 'date' => $date,
                 'active_count' => $activeCount,
-                'meal_count' => $activeCount,
+                'meal_count' => $lunchBox,
                 'headcount' => $headcount,
                 'company_pay' => $companyPay,
                 'lunch_box' => $lunchBox,
