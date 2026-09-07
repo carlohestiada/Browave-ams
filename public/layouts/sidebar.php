@@ -107,7 +107,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
             <?php endif; ?>
 
             <?php
-            $opsPages = ['meals.php', 'room-assignments.php'];
+            $opsPages = ['meals.php', 'work-calendar.php', 'room-assignments.php'];
             $opsAllowed = array_values(array_filter($opsPages, function ($p) use ($allowedPages) {
                 return in_array($p, $allowedPages, true);
             }));
@@ -122,6 +122,15 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
                     <a href="meals.php" class="nav-link <?= $currentPage === 'meals.php' ? 'active' : '' ?>" title="Meals">
                         <i class="bi bi-cup-hot nav-icon"></i>
                         <span>Meals</span>
+                    </a>
+                </li>
+            <?php endif; ?>
+
+            <?php if (in_array('work-calendar.php', $allowedPages, true)): ?>
+                <li class="nav-item mb-1">
+                    <a href="work-calendar.php" class="nav-link <?= $currentPage === 'work-calendar.php' ? 'active' : '' ?>" title="Work Calendar">
+                        <i class="bi bi-calendar3 nav-icon"></i>
+                        <span>Work Calendar</span>
                     </a>
                 </li>
             <?php endif; ?>

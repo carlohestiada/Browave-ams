@@ -20,33 +20,50 @@ class MealPlanningController
     public function index()
     {
         $headcounts = $this->dailyHeadcount->getAll();
-        $normalized = [];
-
-        foreach ($headcounts as $headcount) {
-            $headcount['active_count'] = $this->calculationService->calculateActiveCount($headcount['date']);
-            $normalized[] = $headcount;
+        if (empty($headcounts)) {
+            echo json_encode([]);
+            return;
         }
+
+        $dates = array_column($headcounts, 'date');
+        $calculated = $this->calculationService->getHeadcountsForDateRange(min($dates), max($dates));
+        $byDate = [];
+        foreach ($calculated as $headcount) {
+            $byDate[$headcount['date']] = $headcount;
+        }
+
+        $normalized = array_values(array_filter(array_map(
+            static fn($headcount) => $byDate[$headcount['date']] ?? null,
+            $headcounts
+        )));
 
         echo json_encode(array_values($this->calculationService->attachTransactionsToHeadcounts($normalized)));
     }
 
     public function getByDate($date)
     {
-        $headcount = $this->dailyHeadcount->getByDate($date);
-        $activeCount = $this->calculationService->calculateActiveCount($date);
-        $isSunday = (new DateTime($date))->format('w') === '0';
+        $rows = $this->calculationService->getHeadcountsForDateRange($date, $date);
+        $withTransactions = $this->calculationService->attachTransactionsToHeadcounts($rows, $date, $date);
 
-        if (!$headcount) {
-            $headcount = [
-                'date' => $date,
-                'active_count' => $activeCount,
-                'meal_count' => $isSunday ? 0 : $activeCount
-            ];
-        } else {
-            $headcount['active_count'] = $activeCount;
+        echo json_encode($withTransactions[$date] ?? ($rows[0] ?? ['date' => $date]));
+    }
+
+    public function saveWorkDayStatus($date)
+    {
+        if (!$this->isValidDate($date)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Invalid date']);
+            return;
         }
 
-        echo json_encode($this->calculationService->attachTransactionsToHeadcounts([$headcount])[$date] ?? $headcount);
+        $status = trim((string) ($_POST['status'] ?? ''));
+        if (!$this->calculationService->saveWorkDayStatus($date, $status)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Invalid work day status']);
+            return;
+        }
+
+        echo json_encode(['success' => true]);
     }
 
     public function getRange($startDate, $endDate)

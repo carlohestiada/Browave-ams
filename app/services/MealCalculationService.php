@@ -1,12 +1,16 @@
 <?php
 
+require_once __DIR__ . '/../models/WorkCalendar.php';
+
 class MealCalculationService
 {
     private $db;
+    private $workCalendar;
 
     public function __construct($db)
     {
         $this->db = $db;
+        $this->workCalendar = new WorkCalendar($db);
     }
 
     /**
@@ -39,15 +43,16 @@ class MealCalculationService
 
         while ($current <= $last) {
             $date = $current->format('Y-m-d');
-            $activeCount = $this->calculateActiveCount($date);
             $override = $overrides[$date] ?? null;
-            $isSunday = (new DateTime($date))->format('w') === '0';
+            $workDayStatus = $this->workCalendar->getStatusForDate($date);
+            $isWorkingDay = $workDayStatus === 'working_day';
+            $activeCount = $isWorkingDay ? $this->calculateActiveCount($date) : 0;
 
-            $headcount = $isSunday ? 0 : $activeCount;
-            $companyPay = $isSunday ? 0 : $activeCount;
-            $lunchBox = $isSunday ? 0 : $activeCount;
+            $headcount = $activeCount;
+            $companyPay = $activeCount;
+            $lunchBox = $activeCount;
 
-            if ($isSunday && $override) {
+            if (!$isWorkingDay && $override) {
                 $overrideValue = $this->resolveOverrideValue($override);
                 if ($overrideValue !== null) {
                     $headcount = $overrideValue;
@@ -63,14 +68,24 @@ class MealCalculationService
                 'headcount' => $headcount,
                 'company_pay' => $companyPay,
                 'lunch_box' => $lunchBox,
-                'is_sunday' => $isSunday,
-                'can_edit_lunch_box' => $isSunday,
+                'work_day_status' => $isWorkingDay ? 'Working Day' : 'Non-Working Day',
+                'is_working_day' => $isWorkingDay,
+                'is_sunday' => (new DateTime($date))->format('w') === '0',
+                'can_edit_lunch_box' => !$isWorkingDay,
+                'can_edit_work_day' => true,
             ];
 
             $current->modify('+1 day');
         }
 
         return $rows;
+    }
+
+    public function saveWorkDayStatus($date, $status)
+    {
+        $normalizedStatus = $status === 'Working Day' ? 'working_day' : ($status === 'Non-Working Day' ? 'non_working_day' : $status);
+        $defaultReason = $normalizedStatus === 'working_day' ? 'Regular Work' : 'Weekend';
+        return $this->workCalendar->save($date, $normalizedStatus, $defaultReason)['success'];
     }
 
     public function getLunchboxEligibleEmployees($date)

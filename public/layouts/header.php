@@ -25,6 +25,7 @@ function getAllowedPagesForRole($role)
             'company-car.php',
             'room-assignments.php',
             'meals.php',
+            'work-calendar.php',
             'users.php',
             'guide.php',
             'trips.php'
@@ -38,6 +39,7 @@ function getAllowedPagesForRole($role)
             'company-car.php',
             'room-assignments.php',
             'meals.php',
+            'work-calendar.php',
             'guide.php',
             'trips.php'
         ],

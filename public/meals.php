@@ -39,7 +39,7 @@
                     </div>
                 </div>
                 <div class="col-md-5 d-flex align-items-end">
-                    <div class="form-text">The planner automatically calculates the lunch box requirement and highlights arrivals, departures, and Sunday rest days.</div>
+                    <div class="form-text">The planner calculates meal requirements from the work calendar and highlights arrivals and departures.</div>
                 </div>
             </div>
         </div>
@@ -62,6 +62,7 @@
                     <tr>
                         <th>Day</th>
                         <th>Date</th>
+                        <th>Work Day Status</th>
                         <th>Headcount</th>
                         <th>Company Pay</th>
                         <th>Lunch Box</th>
@@ -77,6 +78,7 @@
 
 </div>
 
+<script>window.mealIsAdmin = <?= json_encode(currentUserRole() === 'Admin') ?>;</script>
 <script src="assets/js/meals.js?v=<?= filemtime(__DIR__ . '/assets/js/meals.js') ?>"></script>
 
 <?php include 'layouts/footer.php'; ?>
