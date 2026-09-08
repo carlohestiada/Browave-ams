@@ -39,10 +39,10 @@
     </div>
 
     <div class="ams-card p-0 overflow-hidden work-calendar-records" id="workCalendarRecords">
-        <div class="work-calendar-records__header">
+        <div class="work-calendar-records__header" role="button" tabindex="0" aria-controls="workCalendarRecordsBody" aria-label="Toggle Work Day Records">
             <div><strong>Work Day Records</strong><span class="work-calendar-records__count" id="tableRecordCount">0 records</span></div>
-            <button type="button" class="work-calendar-records__toggle" id="workCalendarRecordsToggle" aria-controls="workCalendarRecordsBody" aria-expanded="true">
-                <span class="work-calendar-records__toggle-label">Minimize</span><i class="bi bi-chevron-up" aria-hidden="true"></i>
+            <button type="button" class="work-calendar-records__toggle" id="workCalendarRecordsToggle" aria-controls="workCalendarRecordsBody" aria-expanded="false">
+                <span class="work-calendar-records__toggle-label">Expand</span><i class="bi bi-chevron-down" aria-hidden="true"></i>
             </button>
         </div>
         <div class="work-calendar-records__body" id="workCalendarRecordsBody">

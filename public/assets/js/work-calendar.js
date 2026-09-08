@@ -1,6 +1,5 @@
 const workCalendarApi = 'api/work-calendar/index.php';
 const workCalendarMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const workCalendarRecordsStorageKey = 'browave-work-calendar-records-collapsed';
 let workCalendarRows = [];
 let workCalendarModal;
 
@@ -60,7 +59,7 @@ function renderCalendar(year, month) {
     $('.work-calendar-day[data-date]').on('click', function () { openWorkDayModal($(this).data('date')); });
 }
 
-function setRecordsCollapsed(collapsed, persist = true) {
+function setRecordsCollapsed(collapsed) {
     const records = $('#workCalendarRecords');
     const toggle = $('#workCalendarRecordsToggle');
     if (!records.length || !toggle.length) return;
@@ -69,14 +68,17 @@ function setRecordsCollapsed(collapsed, persist = true) {
     toggle.attr('aria-expanded', String(!collapsed));
     toggle.find('.work-calendar-records__toggle-label').text(collapsed ? 'Expand' : 'Minimize');
     toggle.find('i').toggleClass('bi-chevron-down', collapsed).toggleClass('bi-chevron-up', !collapsed);
-    if (persist) window.localStorage.setItem(workCalendarRecordsStorageKey, collapsed ? 'true' : 'false');
 }
 
 function setupRecordsToggle() {
-    const collapsed = window.localStorage.getItem(workCalendarRecordsStorageKey) === 'true';
-    setRecordsCollapsed(collapsed, false);
-    $('#workCalendarRecordsToggle').on('click', function () {
+    setRecordsCollapsed(true);
+    $('#workCalendarRecords').on('click', function () {
         setRecordsCollapsed(!$('#workCalendarRecords').hasClass('work-calendar-records--collapsed'));
+    });
+    $('#workCalendarRecords').on('keydown', function (event) {
+        if (event.target !== this || (event.key !== 'Enter' && event.key !== ' ')) return;
+        event.preventDefault();
+        setRecordsCollapsed(!$(this).hasClass('work-calendar-records--collapsed'));
     });
 }
 
