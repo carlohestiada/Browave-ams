@@ -32,15 +32,22 @@
         </div>
     </div>
 
-    <div class="ams-card p-3 mb-3">
+    <div class="ams-card p-3 mb-3 work-calendar-panel">
         <div class="d-flex justify-content-between align-items-center mb-3"><strong id="calendarTitle">Work Calendar</strong><span class="text-muted small" id="calendarRecordCount">0 records</span></div>
         <div class="work-calendar-weekdays"><span>Monday</span><span>Tuesday</span><span>Wednesday</span><span>Thursday</span><span>Friday</span><span>Saturday</span><span>Sunday</span></div>
         <div class="work-calendar-grid" id="workCalendarGrid"></div>
     </div>
 
-    <div class="ams-card p-0 overflow-hidden">
-        <div class="d-flex justify-content-between align-items-center p-3 border-bottom"><strong>Work Day Records</strong><span class="text-muted small" id="tableRecordCount">0 records</span></div>
-        <div class="table-responsive"><table class="table table-bordered mb-0"><thead><tr><th>Date</th><th>Day</th><th>Status</th><th>Reason</th><th>Notes</th><th>Actions</th></tr></thead><tbody id="workCalendarTable"></tbody></table></div>
+    <div class="ams-card p-0 overflow-hidden work-calendar-records" id="workCalendarRecords">
+        <div class="work-calendar-records__header">
+            <div><strong>Work Day Records</strong><span class="work-calendar-records__count" id="tableRecordCount">0 records</span></div>
+            <button type="button" class="work-calendar-records__toggle" id="workCalendarRecordsToggle" aria-controls="workCalendarRecordsBody" aria-expanded="true">
+                <span class="work-calendar-records__toggle-label">Minimize</span><i class="bi bi-chevron-up" aria-hidden="true"></i>
+            </button>
+        </div>
+        <div class="work-calendar-records__body" id="workCalendarRecordsBody">
+            <div class="work-calendar-records__inner"><div class="table-responsive"><table class="table table-bordered mb-0"><thead><tr><th>Date</th><th>Day</th><th>Status</th><th>Reason</th><th>Notes</th><th>Actions</th></tr></thead><tbody id="workCalendarTable"></tbody></table></div></div>
+        </div>
     </div>
 </div>
 

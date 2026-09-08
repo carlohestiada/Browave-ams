@@ -1,5 +1,6 @@
 const workCalendarApi = 'api/work-calendar/index.php';
 const workCalendarMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const workCalendarRecordsStorageKey = 'browave-work-calendar-records-collapsed';
 let workCalendarRows = [];
 let workCalendarModal;
 
@@ -49,14 +50,34 @@ function renderCalendar(year, month) {
         const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const row = byDate[date];
         const isToday = date === calendarTodayString();
-        html += `<button type="button" class="work-calendar-day ${row.status === 'working_day' ? 'work-calendar-day--working' : 'work-calendar-day--non-working'}${isToday ? ' work-calendar-day--today' : ''}" data-date="${date}" ${window.workCalendarIsAdmin ? '' : 'disabled'}>
-            <strong>${day}</strong>${isToday ? '<span class="work-calendar-today">TODAY</span>' : ''}<span>${row.day}</span>${statusBadge(row.status)}<small>${escapeCalendar(row.reason)}</small>
+        html += `<button type="button" class="work-calendar-day ${row.status === 'working_day' ? 'work-calendar-day--working' : 'work-calendar-day--non-working'}${isToday ? ' work-calendar-day--today' : ''}" data-date="${date}" ${isToday ? 'aria-current="date"' : ''} ${window.workCalendarIsAdmin ? '' : 'disabled'}>
+            <span class="work-calendar-day__topline"><strong class="work-calendar-day__number">${String(day).padStart(2, '0')}</strong>${isToday ? '<span class="work-calendar-today">TODAY</span>' : ''}</span><span class="work-calendar-day__month">${workCalendarMonths[month - 1]} ${year}</span><span class="work-calendar-day__weekday">${row.day}</span>${statusBadge(row.status)}<small>${escapeCalendar(row.reason)}</small>
         </button>`;
     }
     $('#workCalendarGrid').html(html);
     $('#calendarTitle').text(`${workCalendarMonths[month - 1]} ${year}`);
     $('#calendarRecordCount').text(`${workCalendarRows.length} records`);
     $('.work-calendar-day[data-date]').on('click', function () { openWorkDayModal($(this).data('date')); });
+}
+
+function setRecordsCollapsed(collapsed, persist = true) {
+    const records = $('#workCalendarRecords');
+    const toggle = $('#workCalendarRecordsToggle');
+    if (!records.length || !toggle.length) return;
+
+    records.toggleClass('work-calendar-records--collapsed', collapsed);
+    toggle.attr('aria-expanded', String(!collapsed));
+    toggle.find('.work-calendar-records__toggle-label').text(collapsed ? 'Expand' : 'Minimize');
+    toggle.find('i').toggleClass('bi-chevron-down', collapsed).toggleClass('bi-chevron-up', !collapsed);
+    if (persist) window.localStorage.setItem(workCalendarRecordsStorageKey, collapsed ? 'true' : 'false');
+}
+
+function setupRecordsToggle() {
+    const collapsed = window.localStorage.getItem(workCalendarRecordsStorageKey) === 'true';
+    setRecordsCollapsed(collapsed, false);
+    $('#workCalendarRecordsToggle').on('click', function () {
+        setRecordsCollapsed(!$('#workCalendarRecords').hasClass('work-calendar-records--collapsed'));
+    });
 }
 
 function renderTable() {
@@ -116,6 +137,7 @@ $(function () {
             workCalendarModal.hide(); loadWorkCalendar(); swalSuccess('Work day saved successfully.');
         }).fail(xhr => swalError(xhr.responseJSON?.error || 'Unable to save work day.'));
     });
+    setupRecordsToggle();
     loadWorkCalendar();
     setupMidnightCalendarRefresh();
 });
