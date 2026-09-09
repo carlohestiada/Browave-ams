@@ -676,9 +676,12 @@ function renderTripDetails(trip) {
       );
 
       tripDetailBody
-        .off("click", ".trip-accommodation-edit, .trip-accommodation-add")
+        .off("click", ".trip-accommodation-edit, .trip-accommodation-add, .delete-transportation")
         .on("click", ".trip-accommodation-edit", () => openTripAccommodationEditor(trip))
-        .on("click", ".trip-accommodation-add", () => openTripAccommodationEditor(trip));
+        .on("click", ".trip-accommodation-add", () => openTripAccommodationEditor(trip))
+        .on("click", ".delete-transportation", function() {
+          deleteTransportation($(this).data("id"));
+        });
 
       const lifecycleActions = trip.status === "ACTIVE"
         ? `<button type="button" class="btn btn-success" id="completeTripButton">Mark as Completed</button><button type="button" class="btn btn-outline-danger" id="cancelTripButton">Cancel Trip</button>`
@@ -697,10 +700,7 @@ function renderTripDetails(trip) {
         })
         .on("click", "#deleteTripButton", () => deleteTrip(trip.id))
         .on("click", "#completeTripButton", () => completeTrip(trip.id))
-        .on("click", "#cancelTripButton", () => cancelTrip(trip.id))
-        .on("click", ".delete-transportation", function() {
-          deleteTransportation($(this).data("id"));
-        });
+        .on("click", "#cancelTripButton", () => cancelTrip(trip.id));
     });
 }
 

@@ -437,12 +437,13 @@ function renderTable() {
 
     rows.forEach(row => {
         const overdue = isRowOverdue(row) ? 'overdue-row' : '';
-        const checked = selectedTransportationIds.has(String(row.trip_id)) ? 'checked' : '';
+        const checked = selectedTransportationIds.has(String(row.id)) ? 'checked' : '';
         const tripLabel = row.trip_id ? `Trip #${row.trip_id}` : '<span class="text-muted">Legacy / Unlinked</span>';
         const overallStatus = String(row.trip_status || row.status || 'SCHEDULED').toUpperCase().replace(/\s+/g, '_');
         const arrivalDate = row.arrival_date || '';
         const departureDate = row.departure_date || '';
         const tripType = formatTripType(row.trip_type || 'NORMAL_TRIP');
+        const transportId = row.id || row.transportation_id || row.trip_id;
 
         html += `
             <tr class="${overdue}">
@@ -450,9 +451,9 @@ function renderTable() {
                     <input
                         type="checkbox"
                         class="transportation-select-checkbox"
-                        value="${row.trip_id || row.id}"
+                        value="${transportId}"
                         aria-label="Select transportation request"
-                        onchange="toggleTransportationSelection(${row.trip_id || row.id}, this.checked)"
+                        onchange="toggleTransportationSelection(${transportId}, this.checked)"
                         ${checked}>
                 </td>
                 <td>${formatEmployeeName(row)}</td>
@@ -467,8 +468,8 @@ function renderTable() {
                 <td>${formatBadge(overallStatus)}</td>
                 <td style="white-space:nowrap;">
                     <button type="button" class="btn btn-sm btn-secondary me-1" data-action="view" data-id="${row.trip_id}">View Details</button>
-                    <button type="button" class="btn btn-sm btn-warning me-1" data-action="edit" data-id="${row.id}">Edit</button>
-                    <button type="button" class="btn btn-sm btn-danger me-1" data-action="delete" data-id="${row.trip_id}">Delete</button>
+                    <button type="button" class="btn btn-sm btn-warning me-1" data-action="edit" data-id="${transportId}">Edit</button>
+                    <button type="button" class="btn btn-sm btn-danger me-1" data-action="delete" data-id="${transportId}">Delete</button>
                 </td>
             </tr>
         `;
