@@ -258,7 +258,7 @@ function loadEmployees(search = '', targetList = '#filterEmployeeList', inputId 
     });
 }
 
-function fetchEmployeeDetails(employeeId) {
+function fetchEmployeeDetails(employeeId, tripLegId = '') {
     const normalizedEmployeeId = String(employeeId || '').trim();
     console.log('Selected Employee ID:', normalizedEmployeeId);
 
@@ -267,7 +267,8 @@ function fetchEmployeeDetails(employeeId) {
         return;
     }
 
-    $.get(apiUrl(`api/company-car/index.php/employee/${encodeURIComponent(normalizedEmployeeId)}`), function(data) {
+    const tripLegQuery = tripLegId ? `?trip_leg_id=${encodeURIComponent(tripLegId)}` : '';
+    $.get(apiUrl(`api/company-car/index.php/employee/${encodeURIComponent(normalizedEmployeeId)}${tripLegQuery}`), function(data) {
         const employee = typeof data === 'string' ? JSON.parse(data) : data;
 
         if (!employee || !employee.id) {
@@ -547,7 +548,7 @@ function openModal(mode, id = null) {
         }
         
         if (pickupDate) $('#companyCar_pickup_date').val(pickupDate);
-        if (employeeId) fetchEmployeeDetails(employeeId);
+        if (employeeId) fetchEmployeeDetails(employeeId, tripLegId);
     }
 
     if (id) {
@@ -565,7 +566,7 @@ function openModal(mode, id = null) {
             $('#companyCar_pickup_location').val(row.pickup_location || '');
             $('#companyCar_status').val(row.status || 'Pending');
             $('#companyCar_remarks').val(row.remarks || '');
-            fetchEmployeeDetails(row.employee_id);
+            fetchEmployeeDetails(row.employee_id, row.trip_leg_id);
 
             // Phase 4: Show trip context if linked to trip leg
             if (row.trip_leg_id) {

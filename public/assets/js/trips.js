@@ -118,7 +118,7 @@ function renderTrips(rows) {
             <td><div style="white-space: normal; line-height: 1.4;">${escapeTripHtml(roomData.accommodation)}<br>${escapeTripHtml(roomData.room)}</div></td>
             <td>${escapeTripHtml(trip.trip_type || "—")}</td>
             <td>${statusBadge(trip.status)}</td>
-            <td><button type="button" class="btn btn-sm btn-outline-primary view-trip" data-id="${escapeTripHtml(trip.id)}">View</button></td>
+            <td><button type="button" class="btn btn-primary view-trip" data-id="${escapeTripHtml(trip.id)}">View</button></td>
         </tr>`;
       })
       .join(""),

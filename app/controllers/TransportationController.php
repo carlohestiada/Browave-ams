@@ -93,7 +93,7 @@ class TransportationController
 
     public function getEmployeeDetails($employeeId)
     {
-        $employee = $this->transportation->getEmployeeDetails($employeeId);
+        $employee = $this->transportation->getEmployeeDetails($employeeId, $_GET['trip_leg_id'] ?? null);
 
         if (!$employee) {
             http_response_code(404);

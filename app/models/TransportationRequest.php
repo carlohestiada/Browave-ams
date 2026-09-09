@@ -344,13 +344,62 @@ class TransportationRequest
         ];
     }
 
-    public function getEmployeeDetails($employeeId)
+    public function getEmployeeDetails($employeeId, $tripLegId = null)
     {
+        $tripId = null;
+        if (!empty($tripLegId)) {
+            $tripStmt = $this->db->prepare(
+                "SELECT t.id
+                 FROM trip_legs tl
+                 JOIN trips t ON tl.trip_id = t.id
+                 WHERE tl.id = ? AND t.employee_id = ?"
+            );
+            $tripStmt->execute([$tripLegId, $employeeId]);
+            $tripId = $tripStmt->fetchColumn();
+        }
+
+        $dateJoins = '';
+        $dateParams = [];
+        if ($tripId) {
+            $dateJoins = "
+             LEFT JOIN LATERAL (
+                 SELECT MIN(tl.leg_date) AS arrival_date
+                 FROM trip_legs tl
+                 WHERE tl.trip_id = ? AND tl.leg_type = 'ARRIVAL'
+             ) trip_arrival ON TRUE
+             LEFT JOIN LATERAL (
+                 SELECT MAX(tl.leg_date) AS departure_date
+                 FROM trip_legs tl
+                 WHERE tl.trip_id = ? AND tl.leg_type = 'DEPARTURE'
+             ) trip_departure ON TRUE";
+            $dateParams = [$tripId, $tripId];
+            $arrivalDate = 'trip_arrival.arrival_date';
+            $departureDate = 'trip_departure.departure_date';
+        } else {
+            $dateJoins = "
+             LEFT JOIN LATERAL (
+                 SELECT t.transaction_date AS last_arrival_date
+                 FROM transactions t
+                 WHERE t.employee_id = e.id AND LOWER(t.transaction_type) = 'arrival'
+                 ORDER BY t.transaction_date DESC
+                 LIMIT 1
+             ) arrival ON TRUE
+             LEFT JOIN LATERAL (
+                 SELECT t.transaction_date AS last_departure_date
+                 FROM transactions t
+                 WHERE t.employee_id = e.id AND LOWER(t.transaction_type) = 'departure'
+                 ORDER BY t.transaction_date DESC
+                 LIMIT 1
+             ) departure ON TRUE";
+            $arrivalDate = 'arrival.last_arrival_date';
+            $departureDate = 'departure.last_departure_date';
+        }
+
         $stmt = $this->db->prepare(
             "SELECT e.id, e.employee_code, e.english_name, e.chinese_name, e.gender,
                 d.department_name,
-                arrival.last_arrival_date,
-                departure.last_departure_date,
+                {$arrivalDate} AS last_arrival_date,
+                {$departureDate} AS last_departure_date,
                 r.room_no AS room_number,
                 a.accommodation_name AS accommodation_name
              FROM employees e
@@ -366,23 +415,10 @@ class TransportationRequest
              LEFT JOIN floors f ON r.floor_id = f.id
              LEFT JOIN buildings b ON f.building_id = b.id
              LEFT JOIN accommodations a ON b.accommodation_id = a.id
-             LEFT JOIN LATERAL (
-                 SELECT t.transaction_date AS last_arrival_date
-                 FROM transactions t
-                 WHERE t.employee_id = e.id AND LOWER(t.transaction_type) = 'arrival'
-                 ORDER BY t.transaction_date DESC
-                 LIMIT 1
-             ) arrival ON TRUE
-             LEFT JOIN LATERAL (
-                 SELECT t.transaction_date AS last_departure_date
-                 FROM transactions t
-                 WHERE t.employee_id = e.id AND LOWER(t.transaction_type) = 'departure'
-                 ORDER BY t.transaction_date DESC
-                 LIMIT 1
-             ) departure ON TRUE
+             {$dateJoins}
              WHERE e.id = ?"
         );
-        $stmt->execute([$employeeId]);
+        $stmt->execute(array_merge($dateParams, [$employeeId]));
 
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
