@@ -91,16 +91,6 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
                                     </a>
                                 </li>
                             <?php endif; ?>
-
-                            <!-- COMPANY CAR SIDEBAR MODULE -->
-                            <?php if (in_array('company-car.php', $managementAllowed, true)): ?>
-                                <li class="nav-item mb-1">
-                                    <a href="company-car.php" class="nav-link <?= $currentPage === 'company-car.php' ? 'active' : '' ?>" title="Company Car">
-                                        <i class="bi bi-car-front nav-icon"></i>
-                                        <span>Company Car</span>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
                         </ul>
                     </div>
                 </li>
@@ -116,21 +106,21 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
                 <li class="nav-group-label">Operations</li>
             <?php endif; ?>
 
+            <?php if (in_array('work-calendar.php', $allowedPages, true)): ?>
+                <li class="nav-item mb-1">
+                    <a href="work-calendar.php" class="nav-link <?= $currentPage === 'work-calendar.php' ? 'active' : '' ?>" title="Work Calendar">
+                        <i class="bi bi-calendar3 nav-icon"></i>
+                        <span>Work Calendar</span>
+                    </a>
+                </li>
+            <?php endif; ?>
+
             <!-- MEALS SIDEBAR MODULE -->
             <?php if (in_array('meals.php', $allowedPages, true)): ?>
                 <li class="nav-item mb-1">
                     <a href="meals.php" class="nav-link <?= $currentPage === 'meals.php' ? 'active' : '' ?>" title="Meals">
                         <i class="bi bi-cup-hot nav-icon"></i>
                         <span>Meals</span>
-                    </a>
-                </li>
-            <?php endif; ?>
-
-            <?php if (in_array('work-calendar.php', $allowedPages, true)): ?>
-                <li class="nav-item mb-1">
-                    <a href="work-calendar.php" class="nav-link <?= $currentPage === 'work-calendar.php' ? 'active' : '' ?>" title="Work Calendar">
-                        <i class="bi bi-calendar3 nav-icon"></i>
-                        <span>Work Calendar</span>
                     </a>
                 </li>
             <?php endif; ?>
@@ -150,6 +140,16 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
                     <a href="trips.php" class="nav-link <?= $currentPage === 'trips.php' ? 'active' : '' ?>" title="Trips">
                         <i class="bi bi-airplane nav-icon"></i>
                         <span>Trips</span>
+                    </a>
+                </li>
+            <?php endif; ?>
+
+            <!-- COMPANY CAR SIDEBAR MODULE -->
+            <?php if (in_array('company-car.php', $managementAllowed, true)): ?>
+                <li class="nav-item mb-1">
+                    <a href="company-car.php" class="nav-link <?= $currentPage === 'company-car.php' ? 'active' : '' ?>" title="Company Car">
+                        <i class="bi bi-car-front nav-icon"></i>
+                        <span>Company Car</span>
                     </a>
                 </li>
             <?php endif; ?>
