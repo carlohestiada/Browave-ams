@@ -20,6 +20,16 @@ function formatBadge(status) {
     return `<span class="badge status-badge status-${key}">${status}</span>`;
 }
 
+function formatTripType(tripType) {
+    if (!tripType) {
+        return `<span class="trip-type-badge trip-type-normal">Normal Trip</span>`;
+    }
+
+    const display = tripType === 'ROUND_TRIP' ? 'Round Trip' : 'Normal Trip';
+    const className = tripType === 'ROUND_TRIP' ? 'trip-type-round' : 'trip-type-normal';
+    return `<span class="trip-type-badge ${className}">${display}</span>`;
+}
+
 function formatEmployeeName(row) {
     const chinese = row.chinese_name ? ` <span class="text-muted">(${row.chinese_name})</span>` : '';
     return `${row.employee_code} - ${row.english_name}${chinese}`;
@@ -420,7 +430,8 @@ function renderTable() {
         const overallStatus = row.status || 'Pending';
         const arrivalDate = row.arrival_date || '';
         const departureDate = row.departure_date || '';
-        
+        const tripType = formatTripType(row.trip_type || 'NORMAL_TRIP');
+
         html += `
             <tr class="${overdue}">
                 <td style="text-align:center;">
@@ -435,6 +446,7 @@ function renderTable() {
                 <td>${formatEmployeeName(row)}</td>
                 <td>${row.department_name || ''}</td>
                 <td>${tripLabel}</td>
+                <td>${tripType}</td>
                 <td>${arrivalDate}</td>
                 <td>${departureDate}</td>
                 <td>${row.transportation_type || ''}</td>
@@ -450,7 +462,7 @@ function renderTable() {
         `;
     });
 
-    body.html(html || '<tr><td colspan="11" class="text-center text-muted">No transportation requests found.</td></tr>');
+    body.html(html || '<tr><td colspan="12" class="text-center text-muted">No transportation requests found.</td></tr>');
     renderPagination();
     $('#tableSummary').text(`Showing ${rows.length} of ${transportationRows.length} records`);
     bindRowActions();
@@ -506,6 +518,7 @@ function openModal(mode, id = null) {
     $('#companyCar_trip_leg_id').val('');
     $('#companyCar_status').val('Pending');
     $('#companyCar_transportation_type').val('Company Car');
+    $('#companyCar_trip_type').val('NORMAL_TRIP');
 
     if (mode === 'view') {
         $('#companyCarForm input, #companyCarForm select, #companyCarForm textarea').prop('disabled', true);
@@ -557,6 +570,7 @@ function openModal(mode, id = null) {
             $('#companyCar_employee_id').val(row.employee_id || '');
             $('#companyCar_employee_search').val(formatEmployeeName(row));
             $('#companyCar_transportation_type').val(row.transportation_type || 'Company Car');
+            $('#companyCar_trip_type').val(row.trip_type || 'NORMAL_TRIP');
             $('#companyCar_driver_id').val(row.driver_id || '');
             $('#companyCar_vehicle_id').val(row.vehicle_id || '');
             $('#companyCar_pickup_date').val(row.pickup_date || new Date().toISOString().slice(0, 10));

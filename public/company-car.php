@@ -143,6 +143,7 @@
                             <th>Employee</th>
                             <th>Department</th>
                             <th>Trip</th>
+                            <th>Trip Type</th>
                             <th>Arrival Date</th>
                             <th>Departure Date</th>
                             <th>Transportation</th>
@@ -235,6 +236,13 @@
                         <div class="col-md-4">
                             <label class="ams-label" for="companyCar_departure_date">Departure Date</label>
                             <input id="companyCar_departure_date" type="date" class="ams-input" readonly>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="ams-label" for="companyCar_trip_type">Trip Type</label>
+                            <select id="companyCar_trip_type" name="trip_type" class="ams-input">
+                                <option value="NORMAL_TRIP">Normal Trip</option>
+                                <option value="ROUND_TRIP">Round Trip</option>
+                            </select>
                         </div>
                         <div class="col-md-4">
                             <label class="ams-label" for="companyCar_transportation_type">Transportation Type</label>

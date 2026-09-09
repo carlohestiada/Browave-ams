@@ -19,6 +19,7 @@ class TransportationRequest
                     e.chinese_name,
                     e.gender,
                     d.department_name,
+                    t.trip_type,
                     MIN(tr.id) AS id,
                     MIN(CASE WHEN tl.leg_type = 'ARRIVAL' THEN tl.leg_date END) AS arrival_date,
                     MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN tl.leg_date END) AS departure_date,
@@ -287,30 +288,43 @@ class TransportationRequest
 
         $data = $this->normalizeInput($data);
 
-        $stmt = $this->db->prepare(
-            "INSERT INTO transportation_requests
-             (employee_id, transportation_type, driver_id, vehicle_id, pickup_date, pickup_time, pickup_location, status, remarks, trip_leg_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        );
+        $this->db->beginTransaction();
+        try {
+            $tripId = $this->resolveTripIdForTripLeg($data['trip_leg_id']);
+            if ($tripId) {
+                $this->persistTripType($tripId, $data['trip_type']);
+            }
 
-        $success = $stmt->execute([
-            $data['employee_id'],
-            $data['transportation_type'],
-            $data['driver_id'],
-            $data['vehicle_id'],
-            $data['pickup_date'],
-            $data['pickup_time'],
-            $data['pickup_location'],
-            $data['status'],
-            $data['remarks'],
-            $data['trip_leg_id']
-        ]);
+            $stmt = $this->db->prepare(
+                "INSERT INTO transportation_requests
+                 (employee_id, transportation_type, driver_id, vehicle_id, pickup_date, pickup_time, pickup_location, status, remarks, trip_leg_id)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            );
 
-        if (!$success) {
+            $success = $stmt->execute([
+                $data['employee_id'],
+                $data['transportation_type'],
+                $data['driver_id'],
+                $data['vehicle_id'],
+                $data['pickup_date'],
+                $data['pickup_time'],
+                $data['pickup_location'],
+                $data['status'],
+                $data['remarks'],
+                $data['trip_leg_id']
+            ]);
+
+            if (!$success) {
+                $this->db->rollBack();
+                return ['success' => false, 'error' => 'Unable to save transportation request.'];
+            }
+
+            $this->db->commit();
+            return ['success' => true, 'id' => (int) $this->db->lastInsertId()];
+        } catch (Exception $e) {
+            $this->db->rollBack();
             return ['success' => false, 'error' => 'Unable to save transportation request.'];
         }
-
-        return ['success' => true, 'id' => (int) $this->db->lastInsertId()];
     }
 
     public function createBulk(array $data)
@@ -358,6 +372,11 @@ class TransportationRequest
                     throw new Exception('Unable to save transportation request.');
                 }
 
+                $tripId = $this->resolveTripIdForTripLeg($rowData['trip_leg_id']);
+                if ($tripId) {
+                    $this->persistTripType($tripId, $rowData['trip_type']);
+                }
+
                 $createdIds[] = (int) $this->db->lastInsertId();
             }
 
@@ -378,40 +397,53 @@ class TransportationRequest
 
         $data = $this->normalizeInput($data);
 
-        $stmt = $this->db->prepare(
-            "UPDATE transportation_requests SET
-             employee_id = ?,
-             transportation_type = ?,
-             driver_id = ?,
-             vehicle_id = ?,
-             pickup_date = ?,
-             pickup_time = ?,
-             pickup_location = ?,
-             status = ?,
-             remarks = ?,
-             trip_leg_id = ?
-             WHERE id = ?"
-        );
+        $this->db->beginTransaction();
+        try {
+            $tripId = $this->resolveTripIdForTripLeg($data['trip_leg_id']);
+            if ($tripId) {
+                $this->persistTripType($tripId, $data['trip_type']);
+            }
 
-        $success = $stmt->execute([
-            $data['employee_id'],
-            $data['transportation_type'],
-            $data['driver_id'],
-            $data['vehicle_id'],
-            $data['pickup_date'],
-            $data['pickup_time'],
-            $data['pickup_location'],
-            $data['status'],
-            $data['remarks'],
-            $data['trip_leg_id'],
-            $id
-        ]);
+            $stmt = $this->db->prepare(
+                "UPDATE transportation_requests SET
+                 employee_id = ?,
+                 transportation_type = ?,
+                 driver_id = ?,
+                 vehicle_id = ?,
+                 pickup_date = ?,
+                 pickup_time = ?,
+                 pickup_location = ?,
+                 status = ?,
+                 remarks = ?,
+                 trip_leg_id = ?
+                 WHERE id = ?"
+            );
 
-        if (!$success) {
+            $success = $stmt->execute([
+                $data['employee_id'],
+                $data['transportation_type'],
+                $data['driver_id'],
+                $data['vehicle_id'],
+                $data['pickup_date'],
+                $data['pickup_time'],
+                $data['pickup_location'],
+                $data['status'],
+                $data['remarks'],
+                $data['trip_leg_id'],
+                $id
+            ]);
+
+            if (!$success) {
+                $this->db->rollBack();
+                return ['success' => false, 'error' => 'Unable to update transportation request.'];
+            }
+
+            $this->db->commit();
+            return ['success' => true];
+        } catch (Exception $e) {
+            $this->db->rollBack();
             return ['success' => false, 'error' => 'Unable to update transportation request.'];
         }
-
-        return ['success' => true];
     }
 
     public function delete($id)
@@ -608,6 +640,11 @@ class TransportationRequest
             return ['success' => false, 'error' => 'Invalid transportation type'];
         }
 
+        $tripType = strtoupper(trim((string) ($data['trip_type'] ?? 'NORMAL_TRIP')));
+        if ($tripType !== '' && !in_array($tripType, ['NORMAL_TRIP', 'ROUND_TRIP'], true)) {
+            return ['success' => false, 'error' => 'Invalid trip type'];
+        }
+
         if (!$this->employeeExists($data['employee_id'])) {
             return ['success' => false, 'error' => 'Employee is not valid'];
         }
@@ -682,6 +719,11 @@ class TransportationRequest
 
     private function normalizeInput(array $data): array
     {
+        $tripType = strtoupper(trim((string) ($data['trip_type'] ?? 'NORMAL_TRIP')));
+        if (!in_array($tripType, ['NORMAL_TRIP', 'ROUND_TRIP'], true)) {
+            $tripType = 'NORMAL_TRIP';
+        }
+
         return [
             'employee_id' => isset($data['employee_id']) ? (int) $data['employee_id'] : 0,
             'transportation_type' => trim($data['transportation_type'] ?? ''),
@@ -693,7 +735,37 @@ class TransportationRequest
             'status' => trim($data['status'] ?? ''),
             'remarks' => trim($data['remarks'] ?? ''),
             'trip_leg_id' => empty($data['trip_leg_id']) ? null : (int) $data['trip_leg_id'],
+            'trip_type' => $tripType,
         ];
+    }
+
+    private function resolveTripIdForTripLeg(?int $tripLegId): ?int
+    {
+        if (!$tripLegId) {
+            return null;
+        }
+
+        $stmt = $this->db->prepare(
+            "SELECT t.id
+             FROM trip_legs tl
+             JOIN trips t ON t.id = tl.trip_id
+             WHERE tl.id = ?"
+        );
+        $stmt->execute([$tripLegId]);
+        $tripId = $stmt->fetchColumn();
+
+        return $tripId ? (int) $tripId : null;
+    }
+
+    private function persistTripType(int $tripId, string $tripType): void
+    {
+        $tripType = strtoupper(trim($tripType));
+        if (!in_array($tripType, ['NORMAL_TRIP', 'ROUND_TRIP'], true)) {
+            $tripType = 'NORMAL_TRIP';
+        }
+
+        $stmt = $this->db->prepare("UPDATE trips SET trip_type = ? WHERE id = ?");
+        $stmt->execute([$tripType, $tripId]);
     }
 
     private function extractEmployeeIds(array $data): array
@@ -721,16 +793,17 @@ class TransportationRequest
     private function checkAssignmentConflicts(array $data, ?int $excludeId = null)
     {
         $data = $this->normalizeInput($data);
+        $targetTripId = $this->resolveTripIdForTripLeg($data['trip_leg_id']);
 
         if (!empty($data['driver_id'])) {
-            $conflict = $this->findConflict('driver_id', $data['driver_id'], $data['pickup_date'], $data['pickup_time'], $excludeId);
+            $conflict = $this->findConflict('driver_id', $data['driver_id'], $data['pickup_date'], $data['pickup_time'], $excludeId, $targetTripId);
             if ($conflict) {
                 return 'Selected driver is already assigned to another pickup at the same date and time.';
             }
         }
 
         if (!empty($data['vehicle_id'])) {
-            $conflict = $this->findConflict('vehicle_id', $data['vehicle_id'], $data['pickup_date'], $data['pickup_time'], $excludeId);
+            $conflict = $this->findConflict('vehicle_id', $data['vehicle_id'], $data['pickup_date'], $data['pickup_time'], $excludeId, $targetTripId);
             if ($conflict) {
                 return 'Selected vehicle is already assigned to another pickup at the same date and time.';
             }
@@ -739,20 +812,55 @@ class TransportationRequest
         return null;
     }
 
-    private function findConflict(string $field, int $value, string $pickupDate, string $pickupTime, ?int $excludeId = null): bool
+    private function findConflict(string $field, int $value, string $pickupDate, string $pickupTime, ?int $excludeId = null, ?int $targetTripId = null): bool
     {
-        $sql = "SELECT COUNT(*) AS count FROM transportation_requests WHERE {$field} = ? AND pickup_date = ? AND pickup_time = ? AND status IN ('Pending', 'Scheduled', 'Picked Up')";
-        $params = [$value, $pickupDate, $pickupTime];
+        $sql = "SELECT tr.id, tr.pickup_time, t.id AS trip_id
+                FROM transportation_requests tr
+                JOIN trip_legs tl ON tl.id = tr.trip_leg_id
+                JOIN trips t ON t.id = tl.trip_id
+                WHERE tr.{$field} = ?
+                  AND tr.pickup_date = ?
+                  AND tr.status IN ('Pending', 'Scheduled', 'Picked Up')";
+        $params = [$value, $pickupDate];
 
         if ($excludeId !== null) {
-            $sql .= ' AND id != ?';
+            $sql .= ' AND tr.id != ?';
             $params[] = $excludeId;
         }
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return $row && (int) $row['count'] > 0;
+        if (empty($rows)) {
+            return false;
+        }
+
+        $targetMinutes = $this->timeToMinutes($pickupTime);
+        foreach ($rows as $row) {
+            if ($targetTripId !== null && (int) $row['trip_id'] === $targetTripId) {
+                continue;
+            }
+
+            $existingMinutes = $this->timeToMinutes($row['pickup_time']);
+            if (abs($targetMinutes - $existingMinutes) < 60) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function timeToMinutes(string $time): int
+    {
+        $parts = explode(':', trim((string) $time));
+        if (count($parts) < 2) {
+            return 0;
+        }
+
+        $hour = (int) ($parts[0] ?? 0);
+        $minute = (int) ($parts[1] ?? 0);
+
+        return ($hour * 60) + $minute;
     }
 }
