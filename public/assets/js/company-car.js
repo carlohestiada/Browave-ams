@@ -15,8 +15,17 @@ let filterEmployeeData = [];
 let modalMode = 'create';
 let selectedTransportationIds = new Set();
 
+function escapeTripHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 function formatBadge(status) {
-    const key = status.toLowerCase().replace(/ /g, '-');
+    const key = String(status || 'Pending').toLowerCase().replace(/ /g, '-');
     return `<span class="badge status-badge status-${key}">${status}</span>`;
 }
 
@@ -318,15 +327,18 @@ function clearEmployeeDetails() {
 
 function getViewStatusFilter() {
     if (currentScheduleView === 'archive') {
-        return ['Completed', 'Cancelled'];
+        return ['COMPLETED'];
     }
 
-    return ['Pending', 'Scheduled', 'Picked Up'];
+    return ['SCHEDULED', 'IN_PROGRESS'];
 }
 
 function applyScheduleViewFilter(rows) {
     const allowedStatuses = getViewStatusFilter();
-    return rows.filter(row => allowedStatuses.includes(row.status));
+    return rows.filter(row => {
+        const tripStatus = String(row.trip_status || row.status || 'SCHEDULED').toUpperCase().replace(/\s+/g, '_');
+        return allowedStatuses.includes(tripStatus);
+    });
 }
 
 function setScheduleView(view) {
@@ -427,7 +439,7 @@ function renderTable() {
         const overdue = isRowOverdue(row) ? 'overdue-row' : '';
         const checked = selectedTransportationIds.has(String(row.trip_id)) ? 'checked' : '';
         const tripLabel = row.trip_id ? `Trip #${row.trip_id}` : '<span class="text-muted">Legacy / Unlinked</span>';
-        const overallStatus = row.status || 'Pending';
+        const overallStatus = String(row.trip_status || row.status || 'SCHEDULED').toUpperCase().replace(/\s+/g, '_');
         const arrivalDate = row.arrival_date || '';
         const departureDate = row.departure_date || '';
         const tripType = formatTripType(row.trip_type || 'NORMAL_TRIP');
@@ -618,62 +630,63 @@ function openTripDetailsModal(tripId) {
             return;
         }
 
-        let html = `<div class="trip-details-summary mb-3">
-            <div class="row g-3">
-                <div class="col-md-6"><strong>Employee:</strong> ${formatEmployeeName(trip)}</div>
-                <div class="col-md-6"><strong>Department:</strong> ${trip.department_name || ''}</div>
-                <div class="col-md-6"><strong>Trip:</strong> Trip #${trip.trip_id}</div>
-                <div class="col-md-6"><strong>Overall Status:</strong> ${formatBadge(trip.trip_status || trip.status || 'Pending')}</div>
-            </div>
-        </div>`;
+        const legs = Array.isArray(trip.legs) ? trip.legs : [];
+        const assigned = legs.filter((leg) => leg.transportation_id).length;
+        const pending = Math.max(legs.length - assigned, 0);
+        const accommodation = trip.accommodation_name || trip.room_number || '—';
 
-        const legs = trip.legs || [];
-        const arrival = legs.find(leg => leg.leg_type === 'ARRIVAL') || {};
-        const departure = legs.find(leg => leg.leg_type === 'DEPARTURE') || {};
+        const legRows = legs.map((leg) => `
+            <tr>
+                <td>${escapeTripHtml(leg.leg_type || '—')}</td>
+                <td>${escapeTripHtml(leg.leg_date || '—')}</td>
+                <td>${escapeTripHtml(leg.origin || '—')}</td>
+                <td>${escapeTripHtml(leg.destination || '—')}</td>
+                <td>${escapeTripHtml(leg.arrival_airport || leg.departure_airport || '—')}</td>
+                <td>
+                    ${leg.transportation_id ? `
+                        <div class="text-sm">
+                            <strong>${escapeTripHtml(leg.transportation_type || '—')}</strong><br>
+                            ${leg.driver_name ? `${escapeTripHtml(leg.driver_name)}<br>` : ''}
+                            ${leg.vehicle_name ? `${escapeTripHtml(leg.vehicle_name)}<br>` : ''}
+                            <span class="badge status-badge status-${String(leg.status || '').toLowerCase()}">${escapeTripHtml(leg.status || 'Pending')}</span><br>
+                            <a class="btn btn-sm btn-outline-primary mt-2" href="company-car.php?edit=${leg.transportation_id}">Edit</a>
+                            <button type="button" class="btn btn-sm btn-outline-danger mt-2 delete-transportation" data-id="${leg.transportation_id}">Delete</button>
+                        </div>
+                    ` : `<div class="text-muted"><em>No transportation assigned</em><br><a class="btn btn-sm btn-outline-primary mt-2" href="company-car.php?trip_leg_id=${encodeURIComponent(leg.trip_leg_id)}&employee_id=${encodeURIComponent(trip.employee_id)}&pickup_date=${encodeURIComponent(leg.leg_date)}">+ Add Transportation</a></div>`}
+                </td>
+            </tr>`).join('');
 
-        html += `<div class="row g-3">
-            <div class="col-md-6">
-                <div class="border rounded p-3 bg-light">
-                    <div class="fw-bold mb-3">ARRIVAL</div>
-                    <div class="mb-2"><label class="form-label">Arrival Date</label><input class="form-control" value="${arrival.leg_date || ''}" readonly></div>
-                    <div class="mb-2"><label class="form-label">Arrival Time</label><input class="form-control" value="${arrival.pickup_time || ''}" readonly></div>
-                    <div class="mb-2"><label class="form-label">Arrival Airport</label><input class="form-control" value="${arrival.arrival_airport || ''}" readonly></div>
-                    <div class="mb-2"><label class="form-label">Pickup Location</label><input class="form-control" value="${arrival.pickup_location || ''}" readonly></div>
-                    <div class="mb-2"><label class="form-label">Transportation</label><input class="form-control" value="${arrival.transportation_type || ''}" readonly></div>
-                    <div class="mb-2"><label class="form-label">Driver</label><input class="form-control" value="${arrival.driver_name || ''}" readonly></div>
-                    <div class="mb-2"><label class="form-label">Vehicle</label><input class="form-control" value="${arrival.vehicle_name || ''}" readonly></div>
-                    <div class="mb-2">
-                        <label class="form-label">Status</label>
-                        <select class="form-select trip-leg-status" data-leg-type="ARRIVAL">
-                            ${requestStatuses.map(status => `<option value="${status}" ${status === (arrival.status || 'Pending') ? 'selected' : ''}>${status}</option>`).join('')}
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="border rounded p-3 bg-light">
-                    <div class="fw-bold mb-3">DEPARTURE</div>
-                    <div class="mb-2"><label class="form-label">Departure Date</label><input class="form-control" value="${departure.leg_date || ''}" readonly></div>
-                    <div class="mb-2"><label class="form-label">Departure Time</label><input class="form-control" value="${departure.pickup_time || ''}" readonly></div>
-                    <div class="mb-2"><label class="form-label">Departure Airport</label><input class="form-control" value="${departure.departure_airport || ''}" readonly></div>
-                    <div class="mb-2"><label class="form-label">Pickup Location</label><input class="form-control" value="${departure.pickup_location || ''}" readonly></div>
-                    <div class="mb-2"><label class="form-label">Transportation</label><input class="form-control" value="${departure.transportation_type || ''}" readonly></div>
-                    <div class="mb-2"><label class="form-label">Driver</label><input class="form-control" value="${departure.driver_name || ''}" readonly></div>
-                    <div class="mb-2"><label class="form-label">Vehicle</label><input class="form-control" value="${departure.vehicle_name || ''}" readonly></div>
-                    <div class="mb-2">
-                        <label class="form-label">Status</label>
-                        <select class="form-select trip-leg-status" data-leg-type="DEPARTURE">
-                            ${requestStatuses.map(status => `<option value="${status}" ${status === (departure.status || 'Pending') ? 'selected' : ''}>${status}</option>`).join('')}
-                        </select>
-                    </div>
-                </div>
-            </div>
+        const html = `<div class="row g-3 mb-4">
+            <div class="col-md-3"><strong>Employee</strong><br>${formatEmployeeName(trip)}</div>
+            <div class="col-md-3"><strong>Employee ID</strong><br>${trip.employee_code || trip.employee_id || '—'}</div>
+            <div class="col-md-3"><strong>Department</strong><br>${trip.department_name || '—'}</div>
+            <div class="col-md-3"><strong>Accommodation Room</strong><br>${escapeTripHtml(accommodation)}</div>
+            <div class="col-md-3"><strong>Trip Type</strong><br>${formatTripType(trip.trip_type || 'NORMAL_TRIP')}</div>
+            <div class="col-md-3"><strong>Status</strong><br>${formatBadge(trip.trip_status || trip.status || 'Pending')}</div>
+            <div class="col-md-6"><strong>Remarks</strong><br>${escapeTripHtml(trip.remarks || '—')}</div>
+        </div>
+        <div class="alert alert-info" style="margin-bottom:1rem;">
+          <strong>Transportation Summary</strong>
+          <div class="mt-2">
+            <small>
+              <strong>Total Trip Legs:</strong> ${legs.length}<br>
+              <strong>Transportation Assigned:</strong> <span style="color:green;">${assigned}</span><br>
+              <strong>Transportation Pending:</strong> <span style="color:orange;">${pending}</span>
+            </small>
+          </div>
+        </div>
+        <h6>Trip Legs & Transportation</h6>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead><tr><th>Type</th><th>Date</th><th>Origin</th><th>Destination</th><th>Airport</th><th>Transportation</th></tr></thead>
+            <tbody>${legRows}</tbody>
+          </table>
         </div>`;
 
         $('#tripDetailsContent').html(html);
         $('#tripDetailsModal').data('trip-id', trip.trip_id);
-        $('#tripDetailsModal').data('arrival-status', arrival.status || 'Pending');
-        $('#tripDetailsModal').data('departure-status', departure.status || 'Pending');
+        $('#tripDetailsModal').data('arrival-status', trip.legs?.find(leg => leg.leg_type === 'ARRIVAL')?.status || 'Pending');
+        $('#tripDetailsModal').data('departure-status', trip.legs?.find(leg => leg.leg_type === 'DEPARTURE')?.status || 'Pending');
         const modal = new bootstrap.Modal(document.getElementById('tripDetailsModal'));
         modal.show();
     }).fail(function(xhr) {

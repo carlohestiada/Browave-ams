@@ -20,6 +20,7 @@ class TransportationRequest
                     e.gender,
                     d.department_name,
                     t.trip_type,
+                    t.status AS trip_record_status,
                     MIN(tr.id) AS id,
                     MIN(CASE WHEN tl.leg_type = 'ARRIVAL' THEN tl.leg_date END) AS arrival_date,
                     MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN tl.leg_date END) AS departure_date,
@@ -39,10 +40,8 @@ class TransportationRequest
                         MIN(CASE WHEN tl.leg_type = 'ARRIVAL' THEN tr.pickup_location END),
                         MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN tr.pickup_location END)
                     ) AS pickup_location,
-                    COALESCE(
-                        MIN(CASE WHEN tl.leg_type = 'ARRIVAL' THEN tr.status END),
-                        MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN tr.status END)
-                    ) AS status,
+                    MIN(CASE WHEN tl.leg_type = 'ARRIVAL' THEN tr.status END) AS arrival_status,
+                    MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN tr.status END) AS departure_status,
                     MIN(tr.remarks) AS remarks,
                     MIN(tl.id) AS arrival_trip_leg_id,
                     MAX(tl.id) AS departure_trip_leg_id,
@@ -125,7 +124,17 @@ class TransportationRequest
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$row) {
+            $row['status'] = $this->calculateTripStatusFromLegStatuses(
+                $row['arrival_status'] ?? null,
+                $row['departure_status'] ?? null
+            );
+            $row['trip_status'] = $row['status'];
+        }
+        unset($row);
+
+        return $rows;
     }
 
     /**
@@ -210,8 +219,56 @@ class TransportationRequest
         $legs->execute([$tripId]);
         $legRows = $legs->fetchAll(PDO::FETCH_ASSOC);
 
+        $arrivalStatus = null;
+        $departureStatus = null;
+        foreach ($legRows as $leg) {
+            if (($leg['leg_type'] ?? '') === 'ARRIVAL') {
+                $arrivalStatus = $leg['status'] ?? null;
+            }
+            if (($leg['leg_type'] ?? '') === 'DEPARTURE') {
+                $departureStatus = $leg['status'] ?? null;
+            }
+        }
+
+        $derived = $this->calculateTripStatusFromLegStatuses($arrivalStatus, $departureStatus);
+        $tripRow['trip_status'] = $derived;
+        $tripRow['status'] = $derived;
         $tripRow['legs'] = $legRows;
         return $tripRow;
+    }
+
+    private function recalculateTripStatusFromLegs(int $tripId): void
+    {
+        $stmt = $this->db->prepare(
+            "SELECT
+                SUM(CASE WHEN tl.leg_type = 'ARRIVAL' AND tr.status = 'Completed' THEN 1 ELSE 0 END) AS arrival_completed,
+                SUM(CASE WHEN tl.leg_type = 'DEPARTURE' AND tr.status = 'Completed' THEN 1 ELSE 0 END) AS departure_completed
+             FROM trip_legs tl
+             LEFT JOIN transportation_requests tr ON tr.trip_leg_id = tl.id
+             WHERE tl.trip_id = ?"
+        );
+        $stmt->execute([$tripId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $wasCompleted = (int) ($row['arrival_completed'] ?? 0) >= 1 && (int) ($row['departure_completed'] ?? 0) >= 1;
+        $hasOneCompleted = (int) ($row['arrival_completed'] ?? 0) + (int) ($row['departure_completed'] ?? 0) >= 1;
+
+        $status = 'PLANNED';
+        if ($wasCompleted) {
+            $status = 'COMPLETED';
+        } elseif ($hasOneCompleted) {
+            $status = 'ACTIVE';
+        }
+
+        $tripCheck = $this->db->prepare("SELECT status FROM trips WHERE id = ? AND status != 'CANCELLED'");
+        $tripCheck->execute([$tripId]);
+        $existingStatus = $tripCheck->fetchColumn();
+        if ($existingStatus === false) {
+            return;
+        }
+
+        $update = $this->db->prepare("UPDATE trips SET status = ?, updated_at = NOW() WHERE id = ? AND status != 'CANCELLED'");
+        $update->execute([$status, $tripId]);
     }
 
     public function updateTripLegStatuses(int $tripId, array $data): array
@@ -247,6 +304,7 @@ class TransportationRequest
                 $this->db->prepare("UPDATE transportation_requests SET status = ? WHERE trip_leg_id = ?")->execute([$departureStatus, $departureLegId]);
             }
             $this->db->commit();
+            $this->recalculateTripStatusFromLegs($tripId);
             return ['success' => true];
         } catch (Exception $e) {
             $this->db->rollBack();
@@ -320,6 +378,9 @@ class TransportationRequest
             }
 
             $this->db->commit();
+            if ($tripId) {
+                $this->recalculateTripStatusFromLegs($tripId);
+            }
             return ['success' => true, 'id' => (int) $this->db->lastInsertId()];
         } catch (Exception $e) {
             $this->db->rollBack();
@@ -439,6 +500,9 @@ class TransportationRequest
             }
 
             $this->db->commit();
+            if ($tripId) {
+                $this->recalculateTripStatusFromLegs($tripId);
+            }
             return ['success' => true];
         } catch (Exception $e) {
             $this->db->rollBack();
@@ -448,25 +512,14 @@ class TransportationRequest
 
     public function delete($id)
     {
-        $tripStmt = $this->db->prepare("SELECT id FROM trips WHERE id = ?");
-        $tripStmt->execute([$id]);
-        $trip = $tripStmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($trip) {
-            $legStmt = $this->db->prepare("SELECT id FROM trip_legs WHERE trip_id = ?");
-            $legStmt->execute([$id]);
-            $legIds = $legStmt->fetchAll(PDO::FETCH_COLUMN);
-            if (!$legIds) {
-                return ['success' => false, 'error' => 'No transportation trip legs found.'];
-            }
-
-            $placeholders = implode(',', array_fill(0, count($legIds), '?'));
-            $deleteStmt = $this->db->prepare("DELETE FROM transportation_requests WHERE trip_leg_id IN ($placeholders)");
-            $success = $deleteStmt->execute($legIds);
-            if (!$success) {
-                return ['success' => false, 'error' => 'Unable to delete trip transportation requests.'];
-            }
-            return ['success' => true];
+        $tripId = null;
+        $legIdStmt = $this->db->prepare("SELECT trip_leg_id FROM transportation_requests WHERE id = ?");
+        $legIdStmt->execute([$id]);
+        $legId = $legIdStmt->fetchColumn();
+        if ($legId) {
+            $tripIdStmt = $this->db->prepare("SELECT trip_id FROM trip_legs WHERE id = ?");
+            $tripIdStmt->execute([$legId]);
+            $tripId = (int) $tripIdStmt->fetchColumn();
         }
 
         $stmt = $this->db->prepare("DELETE FROM transportation_requests WHERE id = ?");
@@ -474,6 +527,10 @@ class TransportationRequest
 
         if (!$success) {
             return ['success' => false, 'error' => 'Unable to delete transportation request.'];
+        }
+
+        if ($tripId) {
+            $this->recalculateTripStatusFromLegs($tripId);
         }
 
         return ['success' => true];
@@ -599,6 +656,22 @@ class TransportationRequest
         $stmt->execute(array_merge($dateParams, [$employeeId]));
 
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function calculateTripStatusFromLegStatuses(?string $arrivalStatus, ?string $departureStatus): string
+    {
+        $arrival = strtoupper(trim((string) ($arrivalStatus ?? '')));
+        $departure = strtoupper(trim((string) ($departureStatus ?? '')));
+
+        if ($arrival === 'COMPLETED' && $departure === 'COMPLETED') {
+            return 'COMPLETED';
+        }
+
+        if ($arrival === 'COMPLETED' || $departure === 'COMPLETED') {
+            return 'IN_PROGRESS';
+        }
+
+        return 'SCHEDULED';
     }
 
     private function calculateOverallStatus(?string $arrivalStatus, ?string $departureStatus): string

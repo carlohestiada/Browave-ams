@@ -238,8 +238,34 @@ class Trip
         if (!$trip) {
             return ['success' => false, 'error' => 'Trip not found.'];
         }
-        if ($trip['status'] !== 'ACTIVE') {
+        if (!in_array($trip['status'], ['PLANNED', 'ACTIVE'], true)) {
             return ['success' => false, 'error' => 'Only active trips can be completed.'];
+        }
+
+        $arrivalReady = $this->db->prepare(
+            "SELECT tr.status
+             FROM trip_legs tl
+             LEFT JOIN transportation_requests tr ON tr.trip_leg_id = tl.id
+             WHERE tl.trip_id = ? AND tl.leg_type = 'ARRIVAL'
+             ORDER BY tl.id ASC
+             LIMIT 1"
+        );
+        $arrivalReady->execute([$id]);
+        $arrivalStatus = $arrivalReady->fetchColumn() ?: 'Pending';
+
+        $departureReady = $this->db->prepare(
+            "SELECT tr.status
+             FROM trip_legs tl
+             LEFT JOIN transportation_requests tr ON tr.trip_leg_id = tl.id
+             WHERE tl.trip_id = ? AND tl.leg_type = 'DEPARTURE'
+             ORDER BY tl.id ASC
+             LIMIT 1"
+        );
+        $departureReady->execute([$id]);
+        $departureStatus = $departureReady->fetchColumn() ?: 'Pending';
+
+        if ($arrivalStatus !== 'Completed' || $departureStatus !== 'Completed') {
+            return ['success' => false, 'error' => 'Trip cannot be completed yet. Both Arrival and Departure transportation must be completed first.'];
         }
 
         $stmt = $this->db->prepare("UPDATE trips SET status = 'COMPLETED', updated_at = NOW() WHERE id = ? AND status IN ('PLANNED', 'ACTIVE')");

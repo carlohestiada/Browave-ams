@@ -2844,6 +2844,13 @@ body {
   border: 1px solid #93c5fd;
 }
 
+.status-in-progress,
+.status-in_progress {
+  background: #e0f2fe;
+  color: #075985;
+  border: 1px solid #7dd3fc;
+}
+
 .status-picked-up {
   background: #ede9fe;
   color: #7c3aed;
