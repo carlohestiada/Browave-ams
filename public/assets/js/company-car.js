@@ -415,11 +415,11 @@ function renderTable() {
 
     rows.forEach(row => {
         const overdue = isRowOverdue(row) ? 'overdue-row' : '';
-        const checked = selectedTransportationIds.has(String(row.id)) ? 'checked' : '';
-        // Phase 4: Show trip context if available, otherwise show "Legacy"
-        const tripContext = row.trip_id ? 
-            `Trip #${row.trip_id} - ${row.leg_type || ''}` : 
-            '<span class="text-muted">Legacy / Unlinked</span>';
+        const checked = selectedTransportationIds.has(String(row.trip_id)) ? 'checked' : '';
+        const tripLabel = row.trip_id ? `Trip #${row.trip_id}` : '<span class="text-muted">Legacy / Unlinked</span>';
+        const overallStatus = row.status || 'Pending';
+        const arrivalDate = row.arrival_date || '';
+        const departureDate = row.departure_date || '';
         
         html += `
             <tr class="${overdue}">
@@ -427,32 +427,30 @@ function renderTable() {
                     <input
                         type="checkbox"
                         class="transportation-select-checkbox"
-                        value="${row.id}"
+                        value="${row.trip_id || row.id}"
                         aria-label="Select transportation request"
-                        onchange="toggleTransportationSelection(${row.id}, this.checked)"
+                        onchange="toggleTransportationSelection(${row.trip_id || row.id}, this.checked)"
                         ${checked}>
                 </td>
                 <td>${formatEmployeeName(row)}</td>
                 <td>${row.department_name || ''}</td>
-                <td>${tripContext}</td>
-                <td>${row.pickup_date || ''}</td>
-                <td>${row.pickup_time || ''}</td>
+                <td>${tripLabel}</td>
+                <td>${arrivalDate}</td>
+                <td>${departureDate}</td>
                 <td>${row.transportation_type || ''}</td>
                 <td>${row.driver_name || ''}</td>
                 <td>${row.vehicle_name || ''}</td>
-                <td>${row.pickup_location || ''}</td>
-                <td>${formatBadge(row.status || '')}</td>
+                <td>${formatBadge(overallStatus)}</td>
                 <td style="white-space:nowrap;">
-                    <button type="button" class="btn btn-sm btn-secondary me-1" data-action="view" data-id="${row.id}">View</button>
+                    <button type="button" class="btn btn-sm btn-secondary me-1" data-action="view" data-id="${row.trip_id}">View Details</button>
                     <button type="button" class="btn btn-sm btn-warning me-1" data-action="edit" data-id="${row.id}">Edit</button>
-                    <button type="button" class="btn btn-sm btn-danger me-1" data-action="delete" data-id="${row.id}">Delete</button>
-                    ${row.status === 'Pending' ? `<button type="button" class="btn btn-sm btn-primary" data-action="assign" data-id="${row.id}">Assign Driver</button>` : ''}
+                    <button type="button" class="btn btn-sm btn-danger me-1" data-action="delete" data-id="${row.trip_id}">Delete</button>
                 </td>
             </tr>
         `;
     });
 
-    body.html(html || '<tr><td colspan="12" class="text-center text-muted">No transportation requests found.</td></tr>');
+    body.html(html || '<tr><td colspan="11" class="text-center text-muted">No transportation requests found.</td></tr>');
     renderPagination();
     $('#tableSummary').text(`Showing ${rows.length} of ${transportationRows.length} records`);
     bindRowActions();
@@ -481,7 +479,7 @@ function bindRowActions() {
         const id = $(this).data('id');
 
         if (action === 'view') {
-            openModal('view', id);
+            openTripDetailsModal(id);
         } else if (action === 'edit') {
             openModal('edit', id);
         } else if (action === 'delete') {
@@ -595,6 +593,111 @@ function openModal(mode, id = null) {
         modal.show();
     }
 }
+
+function openTripDetailsModal(tripId) {
+    if (!tripId) return;
+    $.get(apiUrl(`api/company-car/index.php/trip/${encodeURIComponent(tripId)}`), function(response) {
+        const payload = typeof response === 'string' ? JSON.parse(response) : response;
+        const trip = payload?.data || payload;
+        if (!trip) {
+            swalError('Unable to load trip details.');
+            return;
+        }
+
+        let html = `<div class="trip-details-summary mb-3">
+            <div class="row g-3">
+                <div class="col-md-6"><strong>Employee:</strong> ${formatEmployeeName(trip)}</div>
+                <div class="col-md-6"><strong>Department:</strong> ${trip.department_name || ''}</div>
+                <div class="col-md-6"><strong>Trip:</strong> Trip #${trip.trip_id}</div>
+                <div class="col-md-6"><strong>Overall Status:</strong> ${formatBadge(trip.trip_status || trip.status || 'Pending')}</div>
+            </div>
+        </div>`;
+
+        const legs = trip.legs || [];
+        const arrival = legs.find(leg => leg.leg_type === 'ARRIVAL') || {};
+        const departure = legs.find(leg => leg.leg_type === 'DEPARTURE') || {};
+
+        html += `<div class="row g-3">
+            <div class="col-md-6">
+                <div class="border rounded p-3 bg-light">
+                    <div class="fw-bold mb-3">ARRIVAL</div>
+                    <div class="mb-2"><label class="form-label">Arrival Date</label><input class="form-control" value="${arrival.leg_date || ''}" readonly></div>
+                    <div class="mb-2"><label class="form-label">Arrival Time</label><input class="form-control" value="${arrival.pickup_time || ''}" readonly></div>
+                    <div class="mb-2"><label class="form-label">Arrival Airport</label><input class="form-control" value="${arrival.arrival_airport || ''}" readonly></div>
+                    <div class="mb-2"><label class="form-label">Pickup Location</label><input class="form-control" value="${arrival.pickup_location || ''}" readonly></div>
+                    <div class="mb-2"><label class="form-label">Transportation</label><input class="form-control" value="${arrival.transportation_type || ''}" readonly></div>
+                    <div class="mb-2"><label class="form-label">Driver</label><input class="form-control" value="${arrival.driver_name || ''}" readonly></div>
+                    <div class="mb-2"><label class="form-label">Vehicle</label><input class="form-control" value="${arrival.vehicle_name || ''}" readonly></div>
+                    <div class="mb-2">
+                        <label class="form-label">Status</label>
+                        <select class="form-select trip-leg-status" data-leg-type="ARRIVAL">
+                            ${requestStatuses.map(status => `<option value="${status}" ${status === (arrival.status || 'Pending') ? 'selected' : ''}>${status}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="border rounded p-3 bg-light">
+                    <div class="fw-bold mb-3">DEPARTURE</div>
+                    <div class="mb-2"><label class="form-label">Departure Date</label><input class="form-control" value="${departure.leg_date || ''}" readonly></div>
+                    <div class="mb-2"><label class="form-label">Departure Time</label><input class="form-control" value="${departure.pickup_time || ''}" readonly></div>
+                    <div class="mb-2"><label class="form-label">Departure Airport</label><input class="form-control" value="${departure.departure_airport || ''}" readonly></div>
+                    <div class="mb-2"><label class="form-label">Pickup Location</label><input class="form-control" value="${departure.pickup_location || ''}" readonly></div>
+                    <div class="mb-2"><label class="form-label">Transportation</label><input class="form-control" value="${departure.transportation_type || ''}" readonly></div>
+                    <div class="mb-2"><label class="form-label">Driver</label><input class="form-control" value="${departure.driver_name || ''}" readonly></div>
+                    <div class="mb-2"><label class="form-label">Vehicle</label><input class="form-control" value="${departure.vehicle_name || ''}" readonly></div>
+                    <div class="mb-2">
+                        <label class="form-label">Status</label>
+                        <select class="form-select trip-leg-status" data-leg-type="DEPARTURE">
+                            ${requestStatuses.map(status => `<option value="${status}" ${status === (departure.status || 'Pending') ? 'selected' : ''}>${status}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        $('#tripDetailsContent').html(html);
+        $('#tripDetailsModal').data('trip-id', trip.trip_id);
+        $('#tripDetailsModal').data('arrival-status', arrival.status || 'Pending');
+        $('#tripDetailsModal').data('departure-status', departure.status || 'Pending');
+        const modal = new bootstrap.Modal(document.getElementById('tripDetailsModal'));
+        modal.show();
+    }).fail(function(xhr) {
+        swalError(getAjaxErrorMessage(xhr, 'Unable to load trip details.'));
+    });
+}
+
+$('#saveTripDetailsStatusBtn').on('click', function() {
+    const tripId = Number($('#tripDetailsModal').data('trip-id'));
+    if (!tripId) return;
+
+    const arrivalStatus = $('#tripDetailsModal .trip-leg-status[data-leg-type="ARRIVAL"]').val();
+    const departureStatus = $('#tripDetailsModal .trip-leg-status[data-leg-type="DEPARTURE"]').val();
+
+    $.ajax({
+        url: apiUrl(`api/company-car/index.php/trip/${tripId}`),
+        type: 'PUT',
+        data: {
+            arrival_status: arrivalStatus,
+            departure_status: departureStatus
+        },
+        success: function(response) {
+            const result = typeof response === 'string' ? JSON.parse(response) : response;
+            if (result.success) {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('tripDetailsModal'));
+                if (modal) modal.hide();
+                loadTransportationSchedule();
+                loadStats();
+                swalSuccess('Trip leg statuses saved successfully');
+            } else {
+                swalError(result.error || 'Unable to save leg statuses');
+            }
+        },
+        error: function(xhr) {
+            swalError(getAjaxErrorMessage(xhr, 'Unable to save leg statuses.'));
+        }
+    });
+});
 
 function confirmDelete(id) {
     swalConfirm('Delete this transportation request?', function() {

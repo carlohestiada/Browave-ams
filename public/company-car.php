@@ -142,13 +142,12 @@
                             </th>
                             <th>Employee</th>
                             <th>Department</th>
-                            <th>Trip / Leg</th>
+                            <th>Trip</th>
+                            <th>Arrival Date</th>
                             <th>Departure Date</th>
-                            <th>Pickup Time</th>
                             <th>Transportation</th>
                             <th>Driver</th>
                             <th>Vehicle</th>
-                            <th>Pickup Location</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -307,6 +306,26 @@
                         <button type="submit" id="companyCarSaveButton" class="btn btn-primary">Save</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="tripDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Trip Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="tripDetailsContent">
+                    <div class="text-muted">Loading trip details...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveTripDetailsStatusBtn">Save Changes</button>
             </div>
         </div>
     </div>

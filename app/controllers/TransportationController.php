@@ -104,6 +104,32 @@ class TransportationController
         echo json_encode($employee);
     }
 
+    public function getTripDetails($tripId)
+    {
+        $data = $this->transportation->getTripDetails((int) $tripId);
+        if (!$data) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => 'Trip not found']);
+            return;
+        }
+
+        echo json_encode(['success' => true, 'data' => $data]);
+    }
+
+    public function updateTripStatuses($tripId)
+    {
+        parse_str(file_get_contents('php://input'), $data);
+        $result = $this->transportation->updateTripLegStatuses((int) $tripId, $data);
+
+        if (!isset($result['success']) || !$result['success']) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => $result['error'] ?? 'Unable to update trip leg statuses.']);
+            return;
+        }
+
+        echo json_encode(['success' => true]);
+    }
+
     /**
      * Phase 4: Get transportation for a specific trip leg
      * Used when displaying trip details to show transportation for each leg

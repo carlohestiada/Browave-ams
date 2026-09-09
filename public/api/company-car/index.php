@@ -39,6 +39,17 @@ if (count($segments) > 0 && $segments[0] === 'employee' && isset($segments[1])) 
     }
 }
 
+if (count($segments) > 0 && $segments[0] === 'trip' && isset($segments[1])) {
+    if ($method === 'GET') {
+        $controller->getTripDetails($segments[1]);
+        return;
+    }
+    if ($method === 'PUT') {
+        $controller->updateTripStatuses($segments[1]);
+        return;
+    }
+}
+
 if (count($segments) > 0 && $segments[0] === 'stats') {
     if ($method === 'GET') {
         $controller->index();
