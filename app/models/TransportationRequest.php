@@ -512,6 +512,16 @@ class TransportationRequest
 
     public function delete($id)
     {
+        if (empty($id) || !ctype_digit((string) $id)) {
+            return ['success' => false, 'error' => 'Invalid transportation request ID.'];
+        }
+
+        $existsStmt = $this->db->prepare("SELECT id FROM transportation_requests WHERE id = ?");
+        $existsStmt->execute([$id]);
+        if (!$existsStmt->fetchColumn()) {
+            return ['success' => false, 'error' => 'Transportation request not found.'];
+        }
+
         $tripId = null;
         $legIdStmt = $this->db->prepare("SELECT trip_leg_id FROM transportation_requests WHERE id = ?");
         $legIdStmt->execute([$id]);
@@ -522,18 +532,22 @@ class TransportationRequest
             $tripId = (int) $tripIdStmt->fetchColumn();
         }
 
-        $stmt = $this->db->prepare("DELETE FROM transportation_requests WHERE id = ?");
-        $success = $stmt->execute([$id]);
+        try {
+            $stmt = $this->db->prepare("DELETE FROM transportation_requests WHERE id = ?");
+            $success = $stmt->execute([$id]);
 
-        if (!$success) {
-            return ['success' => false, 'error' => 'Unable to delete transportation request.'];
+            if (!$success || $stmt->rowCount() < 1) {
+                return ['success' => false, 'error' => 'Transportation request not found or could not be deleted.'];
+            }
+
+            if ($tripId) {
+                $this->recalculateTripStatusFromLegs($tripId);
+            }
+
+            return ['success' => true];
+        } catch (Exception $e) {
+            return ['success' => false, 'error' => 'Unable to delete transportation request: ' . $e->getMessage()];
         }
-
-        if ($tripId) {
-            $this->recalculateTripStatusFromLegs($tripId);
-        }
-
-        return ['success' => true];
     }
 
     public function getStats()

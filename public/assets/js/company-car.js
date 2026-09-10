@@ -762,7 +762,7 @@ function confirmDelete(id) {
                 }
             },
             error: function(xhr) {
-                swalError(xhr.responseJSON?.error || xhr.responseText || 'Unable to delete request');
+                swalError(getAjaxErrorMessage(xhr, 'Unable to delete request'));
             }
         });
     });
