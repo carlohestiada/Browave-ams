@@ -14,6 +14,7 @@ let employeeSearchTimer = null;
 let filterEmployeeData = [];
 let modalMode = 'create';
 let selectedTransportationIds = new Set();
+let tripDetailsRestoreTripId = null;
 
 function escapeTripHtml(value) {
     return String(value ?? '')
@@ -524,6 +525,16 @@ function openModal(mode, id = null) {
         assign: 'Assign Driver & Vehicle'
     }[mode] || 'Assign Transportation';
 
+    if (mode === 'edit' && id) {
+        const tripDetailsModalEl = document.getElementById('tripDetailsModal');
+        const tripDetailsModalInstance = bootstrap.Modal.getInstance(tripDetailsModalEl) || new bootstrap.Modal(tripDetailsModalEl);
+        const tripDetailsVisible = tripDetailsModalEl && tripDetailsModalEl.classList.contains('show');
+        if (tripDetailsVisible) {
+            tripDetailsRestoreTripId = Number($('#tripDetailsModal').data('trip-id')) || null;
+            tripDetailsModalInstance.hide();
+        }
+    }
+
     $('#companyCarModalLabel').text(modalTitle);
     $('#companyCarForm')[0].reset();
     clearEmployeeDetails();
@@ -623,6 +634,7 @@ function openModal(mode, id = null) {
 
 function openTripDetailsModal(tripId) {
     if (!tripId) return;
+    tripDetailsRestoreTripId = Number(tripId) || null;
     $.get(apiUrl(`api/company-car/index.php/trip/${encodeURIComponent(tripId)}`), function(response) {
         const payload = typeof response === 'string' ? JSON.parse(response) : response;
         const trip = payload?.data || payload;
@@ -650,7 +662,7 @@ function openTripDetailsModal(tripId) {
                             ${leg.driver_name ? `${escapeTripHtml(leg.driver_name)}<br>` : ''}
                             ${leg.vehicle_name ? `${escapeTripHtml(leg.vehicle_name)}<br>` : ''}
                             <span class="badge status-badge status-${String(leg.status || '').toLowerCase()}">${escapeTripHtml(leg.status || 'Pending')}</span><br>
-                            <a class="btn btn-sm btn-outline-primary mt-2" href="company-car.php?edit=${leg.transportation_id}">Edit</a>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2 btn-edit-transportation" data-transportation-id="${leg.transportation_id}">Edit</button>
                             <button type="button" class="btn btn-sm btn-outline-danger mt-2 delete-transportation" data-id="${leg.transportation_id}">Delete</button>
                         </div>
                     ` : `<div class="text-muted"><em>No transportation assigned</em><br><a class="btn btn-sm btn-outline-primary mt-2" href="company-car.php?trip_leg_id=${encodeURIComponent(leg.trip_leg_id)}&employee_id=${encodeURIComponent(trip.employee_id)}&pickup_date=${encodeURIComponent(leg.leg_date)}">+ Add Transportation</a></div>`}
@@ -688,7 +700,7 @@ function openTripDetailsModal(tripId) {
         $('#tripDetailsModal').data('trip-id', trip.trip_id);
         $('#tripDetailsModal').data('arrival-status', trip.legs?.find(leg => leg.leg_type === 'ARRIVAL')?.status || 'Pending');
         $('#tripDetailsModal').data('departure-status', trip.legs?.find(leg => leg.leg_type === 'DEPARTURE')?.status || 'Pending');
-        const modal = new bootstrap.Modal(document.getElementById('tripDetailsModal'));
+        const modal = bootstrap.Modal.getInstance(document.getElementById('tripDetailsModal')) || new bootstrap.Modal(document.getElementById('tripDetailsModal'));
         modal.show();
     }).fail(function(xhr) {
         swalError(getAjaxErrorMessage(xhr, 'Unable to load trip details.'));
@@ -738,6 +750,12 @@ function confirmDelete(id) {
                     selectedTransportationIds.delete(String(id));
                     loadTransportationSchedule();
                     loadStats();
+
+                    const tripId = Number($('#tripDetailsModal').data('trip-id')) || Number($('#tripDetailsContent').data('trip-id')) || null;
+                    if (tripId) {
+                        openTripDetailsModal(tripId);
+                    }
+
                     swalSuccess('Request deleted successfully');
                 } else {
                     swalError(result.error || 'Unable to delete request');
@@ -949,6 +967,12 @@ function submitCompanyCarForm() {
                     bsModal.hide();
                     loadTransportationSchedule();
                     loadStats();
+
+                    const tripId = Number($('#tripDetailsModal').data('trip-id')) || null;
+                    if (tripId) {
+                        openTripDetailsModal(tripId);
+                    }
+
                     swalSuccess('Transportation request saved successfully');
                 } else {
                     swalError(result.error || 'Unable to save transportation request');
@@ -1079,6 +1103,17 @@ function exportToCsv() {
 }
 
 $(function() {
+    const companyCarModalElement = document.getElementById('companyCarModal');
+    const companyCarModalInstance = bootstrap.Modal.getInstance(companyCarModalElement) || new bootstrap.Modal(companyCarModalElement);
+    const tripDetailsModalElement = document.getElementById('tripDetailsModal');
+
+    $(companyCarModalElement).on('hidden.bs.modal', function() {
+        if (tripDetailsRestoreTripId) {
+            openTripDetailsModal(tripDetailsRestoreTripId);
+            tripDetailsRestoreTripId = null;
+        }
+    });
+
     loadStats();
     loadDrivers();
     loadVehicles();
@@ -1162,6 +1197,24 @@ $(function() {
     $('#exportScheduleBtn').on('click', exportToCsv);
     $('#selectAllTransportation').on('change', function() {
         toggleAllTransportation(this.checked);
+    });
+
+    $(document).on('click', '#tripDetailsContent .btn-edit-transportation', function() {
+        const transportationId = Number($(this).data('transportation-id'));
+        if (!transportationId) {
+            swalError('Unable to locate the transportation record.');
+            return;
+        }
+        openModal('edit', transportationId);
+    });
+
+    $(document).on('click', '#tripDetailsContent .delete-transportation', function() {
+        const transportId = Number($(this).data('id'));
+        if (!transportId) {
+            swalError('Unable to locate the transportation record.');
+            return;
+        }
+        confirmDelete(transportId);
     });
 
     if (new URLSearchParams(window.location.search).get('trip_leg_id')) {
