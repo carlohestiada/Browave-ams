@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>BROWAVE AMS — Login</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="assets/css/style.css?v=<?= filemtime(__DIR__ . '/assets/css/style.css') ?>">
     <script id="tailwind-config">
@@ -94,36 +94,123 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             },
         }
     </script>
+    <style>
+        /* ---------------------------------------------
+           Login — light enterprise scene
+           Scoped to this page only, no shared classes touched.
+           --------------------------------------------- */
+        @keyframes loginRise {
+            from { opacity: 0; transform: translateY(14px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .login-rise { animation: none !important; }
+        }
+
+        .login-scene {
+            min-height: 100vh;
+            position: relative;
+            background:
+                radial-gradient(circle at 15% 15%, rgba(177, 197, 255, 0.35), transparent 45%),
+                radial-gradient(circle at 85% 85%, rgba(0, 99, 157, 0.12), transparent 50%),
+                linear-gradient(160deg, #eef4ff 0%, #f8f9ff 55%, #e5eeff 100%);
+        }
+
+        .login-topbar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            padding: 24px 32px;
+        }
+
+        .login-rise {
+            animation: loginRise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .login-card {
+            background: #ffffff;
+            border: 1px solid rgba(195, 198, 213, 0.5);
+            border-radius: 28px;
+            box-shadow:
+                0 30px 60px -20px rgba(0, 54, 134, 0.16),
+                0 4px 12px rgba(18, 28, 40, 0.04);
+            width: 100%;
+        }
+
+        .login-icon-badge {
+            background: linear-gradient(135deg, #003686, #00639d);
+            box-shadow: 0 12px 26px -8px rgba(0, 54, 134, 0.45);
+        }
+
+        .login-divider {
+            border-top: 1px solid #eef1f6;
+        }
+
+        .login-field {
+            width: 100%;
+            background: #f8f9ff;
+            border: 1px solid #c3c6d5;
+            border-radius: 0.75rem;
+            padding: 11px 14px 11px 42px;
+            font-size: 14px;
+            line-height: 20px;
+            color: #121c28;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+            outline: none;
+        }
+        .login-field::placeholder { color: #9aa0af; }
+        .login-field:focus {
+            background: #ffffff;
+            border-color: #003686;
+            box-shadow: 0 0 0 3px rgba(0, 54, 134, 0.1);
+        }
+
+        select.login-field {
+            appearance: none;
+            -webkit-appearance: none;
+            padding-right: 38px;
+            cursor: pointer;
+        }
+
+        .login-submit {
+            background: linear-gradient(120deg, #003686, #00639d);
+            box-shadow: 0 14px 30px -10px rgba(0, 54, 134, 0.45);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+        }
+        .login-submit:hover {
+            box-shadow: 0 18px 36px -10px rgba(0, 54, 134, 0.55);
+            opacity: 0.96;
+        }
+        .login-submit:active { transform: scale(0.98); }
+    </style>
 </head>
-<body class="bg-background text-on-background min-h-screen flex items-center justify-center">
-    
-    <!-- Subtle grid pattern background -->
-    <div class="fixed inset-0 opacity-[0.03] pointer-events-none" style="background-image: radial-gradient(circle, #003686 1px, transparent 1px); background-size: 28px 28px;"></div>
+<body>
 
-    <!-- Centered login card -->
-    <div class="relative w-full max-w-sm mx-4">
+    <div class="login-scene flex items-center justify-center px-4 py-10">
 
-        <!-- Brand header above card -->
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary mb-4 shadow-lg">
-                <span class="material-symbols-outlined text-white text-[28px]">hotel</span>
-            </div>
-            <h1 class="text-display-sm font-bold text-primary tracking-tight">BROWAVE AMS</h1>
-            <p class="text-label-md text-outline mt-1 uppercase tracking-widest">Management Control</p>
-        </div>
+        <div class="relative w-full max-w-sm login-rise">
 
-        <!-- Card -->
-        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg overflow-hidden">
+            <div class="login-card p-8">
 
-            <!-- Card top stripe -->
-            <div class="h-1 bg-gradient-to-r from-primary via-secondary to-primary"></div>
+                <!-- Brand header -->
+                <div class="text-center mb-6">
+                    <div class="login-icon-badge inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4">
+                        <span class="material-symbols-outlined text-white text-[26px]">bed</span>
+                    </div>
+                    <h1 class="text-display-sm font-bold text-on-surface tracking-tight">BROWAVE AMS</h1>
+                    <p class="text-label-md text-outline mt-1.5 uppercase tracking-widest">Management Control</p>
+                </div>
 
-            <div class="p-8">
+                <div class="login-divider mb-6"></div>
+
                 <h2 class="text-headline-md text-on-surface mb-1">Sign in</h2>
-                <p class="text-body-sm text-on-surface-variant mb-6">Enter your credentials to access the dashboard.</p>
+                <p class="text-body-sm text-on-surface-variant mb-6">Enter your credentials to continue.</p>
 
                 <?php if ($error): ?>
-                <div class="flex items-start gap-3 bg-error-container border border-red-200 rounded-lg px-4 py-3 mb-5">
+                <div class="flex items-start gap-3 bg-error-container border border-red-200 rounded-xl px-4 py-3 mb-5">
                     <span class="material-symbols-outlined text-error text-[18px] mt-0.5 flex-shrink-0">error</span>
                     <p class="text-body-sm text-on-error-container font-medium"><?= htmlspecialchars($error) ?></p>
                 </div>
@@ -136,16 +223,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <div>
                         <label class="block text-label-md text-on-surface mb-1.5 uppercase tracking-wide">Role</label>
                         <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-outline">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-outline">
                                 <span class="material-symbols-outlined text-[18px]">badge</span>
                             </span>
-                            <select name="role" class="select-field" required>
+                            <select name="role" class="login-field" required>
                                 <option value="" disabled <?= $loginRole === '' ? 'selected' : '' ?>>Select your role</option>
                                 <option value="Admin" <?= $loginRole === 'Admin' ? 'selected' : '' ?>>Admin</option>
                                 <option value="HR" <?= $loginRole === 'HR' ? 'selected' : '' ?>>HR</option>
                                 <option value="Viewer" <?= $loginRole === 'Viewer' ? 'selected' : '' ?>>Viewer</option>
                             </select>
-                            <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-outline">
+                            <span class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-outline">
                                 <span class="material-symbols-outlined text-[18px]">expand_more</span>
                             </span>
                         </div>
@@ -157,7 +244,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <div class="relative">
                             <input type="text"
                                 name="username"
-                                class="input-field"
+                                class="login-field"
                                 placeholder="Enter your username"
                                 value="<?= htmlspecialchars($loginUsername, ENT_QUOTES, 'UTF-8') ?>"
                                 required
@@ -172,13 +259,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <input type="password"
                                 id="password-input"
                                 name="password"
-                                class="input-field"
+                                class="login-field"
                                 placeholder="Enter your password"
                                 required
                                 autocomplete="current-password"/>
                             <button type="button"
                                 id="toggle-password"
-                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-outline hover:text-primary transition-colors">
+                                class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-outline hover:text-primary transition-colors">
                                 <span class="material-symbols-outlined text-[18px]" id="eye-icon">visibility</span>
                             </button>
                         </div>
@@ -186,19 +273,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                     <!-- Submit -->
                     <button type="submit"
-                        class="w-full bg-primary text-on-primary font-semibold py-2.5 px-4 rounded-lg hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-body-md mt-2">
+                        class="login-submit w-full text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 text-body-md mt-2">
                         <span class="material-symbols-outlined text-[18px]">login</span>
                         Sign In
                     </button>
 
                 </form>
-            </div>
-        </div>
 
-        <!-- Footer note -->
-        <p class="text-center text-label-md text-outline mt-6">
-            Authorized access only &mdash; BROWAVE AMS &copy; <?= date('Y') ?>
-        </p>
+            </div>
+
+            <!-- Footer note -->
+            <p class="text-center text-label-md text-outline mt-6">
+                Authorized access only &mdash; BROWAVE AMS &copy; <?= date('Y') ?>
+            </p>
+        </div>
     </div>
 
     <script>
