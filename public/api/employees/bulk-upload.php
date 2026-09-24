@@ -73,6 +73,26 @@ function findCsvColumn($headers, $acceptedNames)
     return false;
 }
 
+// Treat a blank cell or a literal "N/A" / "NA" placeholder as "no code given".
+function isBlankEmployeeCode($value)
+{
+    if ($value === '' || $value === null) {
+        return true;
+    }
+
+    $normalized = strtolower(str_replace([' ', '.', '-', '_', '/'], '', $value));
+    return in_array($normalized, ['na', 'n a'], true);
+}
+
+// Unique per-row placeholder so multiple "no code" rows never collide into
+// the same employee_code and get upserted onto each other. Mirrors the
+// employees.js generateNAEmployeeCode() convention so the same "N/A-..."
+// prefix is recognized and displayed as plain "N/A" in the UI.
+function generateNAEmployeeCode($rowNum)
+{
+    return 'N/A-' . round(microtime(true) * 1000) . '-' . $rowNum . '-' . random_int(100, 999);
+}
+
 try {
     // Check if file was uploaded
     if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
@@ -164,8 +184,16 @@ try {
             }
             $deptName = normalizeCsvField($row[$columnIndexes['department']] ?? '');
 
+            // If the CSV left Employee ID blank or wrote "N/A"/"NA", generate a
+            // unique placeholder per row instead of requiring a real code. This
+            // avoids collapsing multiple different employees onto one record
+            // (see isBlankEmployeeCode/generateNAEmployeeCode above).
+            $isPlaceholderCode = isBlankEmployeeCode($empCode);
+            if ($isPlaceholderCode) {
+                $empCode = generateNAEmployeeCode($rowNum);
+            }
+
             // Validation
-            if (!$empCode) throw new Exception('Employee ID is required.');
             if (!$deptName) throw new Exception('Department is required.');
 
             // Normalize gender values and default blank/missing to Others
@@ -195,12 +223,17 @@ try {
                 'status' => 'Active'  // Default status
             ];
 
-            // Check if employee exists
-            $existingStmt = $db->prepare(
-                "SELECT id FROM employees WHERE employee_code = ?"
-            );
-            $existingStmt->execute([$empCode]);
-            $existing = $existingStmt->fetch(PDO::FETCH_ASSOC);
+            // Check if employee exists (skip this for generated placeholder
+            // codes - each blank/N-A row is always a new employee, never a
+            // match against a previous placeholder row).
+            $existing = null;
+            if (!$isPlaceholderCode) {
+                $existingStmt = $db->prepare(
+                    "SELECT id FROM employees WHERE employee_code = ?"
+                );
+                $existingStmt->execute([$empCode]);
+                $existing = $existingStmt->fetch(PDO::FETCH_ASSOC);
+            }
 
             if ($existing) {
                 // Update existing employee
