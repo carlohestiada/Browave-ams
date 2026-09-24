@@ -101,6 +101,7 @@
             <div class="form-text">Defaults to 49 days after the start date and can be edited manually.</div>
           </div>
           <button class="btn btn-primary">Save</button>
+          <a href="employees.php" class="btn btn-ams-primary" type="button">Add Employee</a>
         </form>
       </div>
     </div>

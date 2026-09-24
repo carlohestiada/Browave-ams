@@ -8,7 +8,6 @@
             <p class="ams-page-subtitle">Manage working days, non-working days, holidays, and special working schedules.</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
-            <button type="button" class="btn btn-outline-secondary" id="workCalendarExportBtn"><i class="bi bi-download me-1"></i>Export</button>
             <?php if (currentUserRole() === 'Admin'): ?>
                 <button type="button" class="btn btn-primary" id="addWorkDayBtn"><i class="bi bi-plus-lg me-1"></i>Add Work Day</button>
             <?php endif; ?>

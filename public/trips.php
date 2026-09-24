@@ -109,7 +109,19 @@
 </div>
 
 <div class="modal fade" id="tripDetailsModal" tabindex="-1" aria-labelledby="tripDetailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="tripDetailsModalLabel">Trip Details</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div><div class="modal-body" id="tripDetailsBody"><div class="text-center text-muted py-4">Loading...</div></div><div class="modal-footer" id="tripDetailsFooter"></div></div></div>
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tripDetailsModalLabel">Trip Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                </button>
+            </div>
+            <div class="modal-body" id="tripDetailsBody">
+                <div class="text-center text-muted py-4">Loading...</div>
+            </div>
+            <div class="modal-footer" id="tripDetailsFooter"></div>
+        </div>
+    </div>
 </div>
 
 <script src="assets/js/trips.js?v=<?= filemtime(__DIR__ . '/assets/js/trips.js') ?>"></script>
