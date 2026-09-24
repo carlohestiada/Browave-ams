@@ -122,7 +122,7 @@
 
                     <div class="ams-field">
                         <label for="employee_code" class="ams-label">Employee ID</label>
-                        <input type="text" class="ams-input" id="employee_code" name="employee_code" placeholder="e.g. PS26Y087" required>
+                        <input type="text" class="ams-input" id="employee_code" name="employee_code" placeholder="e.g. PS26Y087">
                     </div>
 
                     <div class="ams-field">

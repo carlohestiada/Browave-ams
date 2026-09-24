@@ -108,7 +108,7 @@ function renderEmployeeRow(emp) {
                     onchange="toggleEmployeeSelection(${employeeId}, this.checked)"
                     ${checked}>
             </td>
-            <td>${displayValue(emp.employee_code)}</td>
+            <td>${displayEmployeeCode(emp.employee_code)}</td>
             <td>${displayValue(emp.english_name)}</td>
             <td>${displayValue(emp.chinese_name)}</td>
             <td>${displayValue(emp.gender)}</td>
@@ -301,7 +301,9 @@ function openEmployeeModal(employee) {
   if (employee) {
     currentEmployeeId = employee.id;
     $("#employeeId").val(employee.id);
-    $("#employee_code").val(employee.employee_code);
+    $("#employee_code").val(
+      isNAEmployeeCode(employee.employee_code) ? "" : employee.employee_code
+    );
     $("#english_name").val(employee.english_name);
     $("#chinese_name").val(employee.chinese_name);
     $("#gender").val(employee.gender);
@@ -324,12 +326,35 @@ function editEmployee(id) {
 
 const employeeApiUrl = "api/employees.php";
 
+
+// Save or update employee
+function generateNAEmployeeCode() {
+  // Unique placeholder so multiple blank codes don't collide under a
+  // unique constraint on employee_code. Displayed to the user as "N/A".
+  return `N/A-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+}
+
+function isNAEmployeeCode(code) {
+  return typeof code === "string" && code.startsWith("N/A-");
+}
+
+function displayEmployeeCode(code) {
+  return isNAEmployeeCode(code) ? "N/A" : displayValue(code);
+}
+
 function saveEmployee(event) {
   event.preventDefault();
 
   const id = $("#employeeId").val();
   const url = id ? `${employeeApiUrl}/${id}` : employeeApiUrl;
   const method = id ? "PUT" : "POST";
+
+  // If Employee ID is empty, use N/A
+  const employeeCode = $("#employee_code").val().trim();
+
+  if (!employeeCode) {
+    $("#employee_code").val(generateNAEmployeeCode());
+  }
 
   $.ajax({
     url: url,
@@ -343,6 +368,7 @@ function saveEmployee(event) {
     error: function (xhr) {
       const error =
         xhr.responseJSON?.error || xhr.responseText || "Unknown error";
+
       swalError("Error saving employee: " + error);
     },
   });
