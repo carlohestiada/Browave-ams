@@ -272,31 +272,64 @@ class Employee
         $date = $date ?: date('Y-m-d');
 
         $sql = "
-            UPDATE employees e
-            SET status = (
-                SELECT CASE
-                    WHEN t.transaction_type = 'arrival' THEN 'Active'
-                    ELSE 'Inactive'
-                END
+            WITH relevant_events AS (
+                SELECT
+                    t.employee_id,
+                    CAST(t.transaction_date AS DATE) AS event_date,
+                    CASE LOWER(CAST(t.transaction_type AS TEXT))
+                        WHEN 'arrival' THEN 'arrival'
+                        ELSE 'departure'
+                    END AS event_type,
+                    t.id AS event_id
                 FROM transactions t
-                WHERE t.employee_id = e.id
-                    AND DATE(t.transaction_date) <= ?
-                ORDER BY DATE(t.transaction_date) DESC, t.id DESC
-                LIMIT 1
+                WHERE CAST(t.transaction_date AS DATE) <= :comparison_date
+
+                UNION ALL
+
+                SELECT
+                    tr.employee_id,
+                    CAST(tl.leg_date AS DATE) AS event_date,
+                    'arrival' AS event_type,
+                    tl.id AS event_id
+                FROM trip_legs tl
+                INNER JOIN trips tr ON tr.id = tl.trip_id
+                WHERE tl.leg_type = 'ARRIVAL'
+                    AND CAST(tl.leg_date AS DATE) <= :comparison_date
+            ),
+            ranked_events AS (
+                SELECT
+                    employee_id,
+                    event_date,
+                    event_type,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY employee_id
+                        ORDER BY event_date DESC, CASE event_type WHEN 'arrival' THEN 1 ELSE 0 END DESC, event_id DESC
+                    ) AS rn
+                FROM relevant_events
             )
+            UPDATE employees e
+            SET status = CASE
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM ranked_events re
+                    WHERE re.employee_id = e.id
+                      AND re.rn = 1
+                      AND re.event_type = 'arrival'
+                ) THEN 'Active'
+                ELSE 'Inactive'
+            END
             WHERE EXISTS (
                 SELECT 1
-                FROM transactions tx
-                WHERE tx.employee_id = e.id
-                    AND DATE(tx.transaction_date) <= ?
+                FROM ranked_events re
+                WHERE re.employee_id = e.id
             )
         ";
 
-        $params = [$date, $date];
+        $params = [':comparison_date' => $date];
 
         if (!empty($employeeId)) {
-            $sql .= " AND e.id = ?";
-            $params[] = $employeeId;
+            $sql .= " AND e.id = :employee_id";
+            $params[':employee_id'] = $employeeId;
         }
 
         $stmt = $this->db->prepare($sql);

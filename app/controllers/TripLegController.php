@@ -2,16 +2,19 @@
 
 require_once __DIR__ . '/../models/TripLeg.php';
 require_once __DIR__ . '/../models/Trip.php';
+require_once __DIR__ . '/../models/Employee.php';
 
 class TripLegController
 {
     private $tripLeg;
     private $trip;
+    private $employee;
 
     public function __construct($db)
     {
         $this->tripLeg = new TripLeg($db);
         $this->trip = new Trip($db);
+        $this->employee = new Employee($db);
     }
 
     public function index($tripId = null)
@@ -75,6 +78,7 @@ class TripLegController
         }
 
         $this->trip->recalculateStoredStatus($tripId);
+        $this->employee->syncStatusesByTransactions(date('Y-m-d'), $trip['employee_id']);
         echo json_encode([
             'success' => true,
             'message' => 'Trip leg created successfully.',
@@ -102,6 +106,7 @@ class TripLegController
         }
 
         $this->trip->recalculateStoredStatus($leg['trip_id']);
+        $this->employee->syncStatusesByTransactions(date('Y-m-d'), $leg['employee_id']);
         echo json_encode(['success' => true, 'message' => 'Trip leg updated successfully.']);
     }
 
@@ -123,6 +128,7 @@ class TripLegController
         }
 
         $this->trip->recalculateStoredStatus($leg['trip_id']);
+        $this->employee->syncStatusesByTransactions(date('Y-m-d'), $leg['employee_id']);
         echo json_encode(['success' => true, 'message' => 'Trip leg deleted successfully.']);
     }
 }

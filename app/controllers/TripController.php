@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../models/Trip.php';
 require_once __DIR__ . '/../models/TripLeg.php';
 require_once __DIR__ . '/../models/AuditLog.php';
+require_once __DIR__ . '/../models/Employee.php';
 
 class TripController
 {
@@ -10,6 +11,7 @@ class TripController
     private $tripLeg;
     private $db;
     private $auditLog;
+    private $employee;
 
     public function __construct($db)
     {
@@ -17,6 +19,7 @@ class TripController
         $this->trip = new Trip($db);
         $this->tripLeg = new TripLeg($db);
         $this->auditLog = new AuditLog($db);
+        $this->employee = new Employee($db);
     }
 
     public function index()
@@ -120,6 +123,7 @@ class TripController
             }
 
             $this->trip->recalculateStoredStatus($tripId);
+            $this->employee->syncStatusesByTransactions(date('Y-m-d'), $data['employee_id']);
             $this->db->commit();
 
             echo json_encode([
@@ -139,6 +143,13 @@ class TripController
     public function update($id)
     {
         parse_str(file_get_contents('php://input'), $data);
+
+        $trip = $this->trip->getById($id);
+        if (!$trip) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => 'Trip not found.']);
+            return;
+        }
 
         // Only allow updating trip-level fields
         $updateData = [];
@@ -164,6 +175,7 @@ class TripController
         }
 
         $this->trip->recalculateStoredStatus($id);
+        $this->employee->syncStatusesByTransactions(date('Y-m-d'), $trip['employee_id']);
         echo json_encode(['success' => true, 'message' => 'Trip updated successfully.']);
     }
 
@@ -195,6 +207,13 @@ class TripController
 
     public function destroy($id)
     {
+        $trip = $this->trip->getById($id);
+        if (!$trip) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => 'Trip not found.']);
+            return;
+        }
+
         $result = $this->trip->delete($id);
 
         if (!$result['success']) {
@@ -203,6 +222,7 @@ class TripController
             return;
         }
 
+        $this->employee->syncStatusesByTransactions(date('Y-m-d'), $trip['employee_id']);
         echo json_encode(['success' => true, 'message' => 'Trip deleted successfully.']);
     }
 
