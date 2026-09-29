@@ -115,16 +115,6 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
                 </li>
             <?php endif; ?>
 
-            <!-- MEALS SIDEBAR MODULE -->
-            <?php if (in_array('meals.php', $allowedPages, true)): ?>
-                <li class="nav-item mb-1">
-                    <a href="meals.php" class="nav-link <?= $currentPage === 'meals.php' ? 'active' : '' ?>" title="Meals">
-                        <i class="bi bi-cup-hot nav-icon"></i>
-                        <span>Meals</span>
-                    </a>
-                </li>
-            <?php endif; ?>
-
             <!-- ROOM ASSIGNMENTS SIDEBAR MODULE -->
             <?php if (in_array('room-assignments.php', $allowedPages, true)): ?>
                 <li class="nav-item mb-1">
@@ -143,6 +133,16 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
                     </a>
                 </li>
             <?php endif; ?>
+
+            <!-- MEALS SIDEBAR MODULE -->
+            <?php if (in_array('meals.php', $allowedPages, true)): ?>
+                <li class="nav-item mb-1">
+                    <a href="meals.php" class="nav-link <?= $currentPage === 'meals.php' ? 'active' : '' ?>" title="Meals">
+                        <i class="bi bi-cup-hot nav-icon"></i>
+                        <span>Meals</span>
+                    </a>
+                </li>
+            <?php endif; ?>            
 
             <!-- COMPANY CAR SIDEBAR MODULE -->
             <?php if (in_array('company-car.php', $managementAllowed, true)): ?>
