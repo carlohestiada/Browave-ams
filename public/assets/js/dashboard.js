@@ -1,3 +1,8 @@
+function displayEmployeeCode(code) {
+  if (typeof code === "string" && code.startsWith("N/A-")) return "N/A";
+  return code === null || code === undefined || code === "" ? "-" : code;
+}
+
 function initDashboard() {
   function getLocalDateString(date) {
     const year = date.getFullYear();
@@ -290,7 +295,9 @@ function initDashboard() {
     fetchJSON(`api/rooms/by_status.php?status=${encodeURIComponent(status)}`)
       .then((data) => {
         if (!data || !data.success) {
-          showRoomStatusDrawerError("Failed to load " + status.toLowerCase() + " details.");
+          showRoomStatusDrawerError(
+            "Failed to load " + status.toLowerCase() + " details.",
+          );
           return;
         }
 
@@ -312,16 +319,26 @@ function initDashboard() {
           }
         }
 
-        renderRoomStatusDrawerTable(data.records, data.type, data.status, data.summary || null);
+        renderRoomStatusDrawerTable(
+          data.records,
+          data.type,
+          data.status,
+          data.summary || null,
+        );
 
         const searchInput = document.getElementById("roomStatusDrawerSearch");
         if (searchInput) {
-          searchInput.placeholder = data.type === "employees" ? "Search employees..." : "Search rooms...";
+          searchInput.placeholder =
+            data.type === "employees"
+              ? "Search employees..."
+              : "Search rooms...";
           searchInput.value = "";
         }
       })
       .catch((error) => {
-        showRoomStatusDrawerError("Unable to load room details. Please try again.");
+        showRoomStatusDrawerError(
+          "Unable to load room details. Please try again.",
+        );
         console.error("Room status drawer error:", error);
       });
   }
@@ -338,7 +355,9 @@ function initDashboard() {
     fetchJSON(`api/rooms/by_type.php?room_type=${encodeURIComponent(roomType)}`)
       .then((data) => {
         if (!data || !data.success) {
-          showRoomStatusDrawerError("Unable to load room details. Please try again.");
+          showRoomStatusDrawerError(
+            "Unable to load room details. Please try again.",
+          );
           return;
         }
 
@@ -356,7 +375,12 @@ function initDashboard() {
           subtitle.textContent = `${data.count} ${data.count === 1 ? "Room" : "Rooms"}`;
         }
 
-        renderRoomStatusDrawerTable(data.records, "rooms", roomType, data.summary || null);
+        renderRoomStatusDrawerTable(
+          data.records,
+          "rooms",
+          roomType,
+          data.summary || null,
+        );
 
         const searchInput = document.getElementById("roomStatusDrawerSearch");
         if (searchInput) {
@@ -365,7 +389,9 @@ function initDashboard() {
         }
       })
       .catch((error) => {
-        showRoomStatusDrawerError("Unable to load room details. Please try again.");
+        showRoomStatusDrawerError(
+          "Unable to load room details. Please try again.",
+        );
         console.error("Room type drawer error:", error);
       });
   }
@@ -401,7 +427,12 @@ function initDashboard() {
     errorText.textContent = message;
   }
 
-  function renderRoomStatusDrawerTable(records, type, label = null, summary = null) {
+  function renderRoomStatusDrawerTable(
+    records,
+    type,
+    label = null,
+    summary = null,
+  ) {
     const contentDiv = document.getElementById("roomStatusDrawerContent");
     const emptyDiv = document.getElementById("roomStatusDrawerEmpty");
 
@@ -509,15 +540,44 @@ function initDashboard() {
     const tbody = document.createElement("tbody");
     rooms.forEach((room) => {
       const roomStatus = normalizeRoomStatus(
-        getRoomFieldValue(room, ["status", "room_status", "roomStatus", "room_status_name"], "Unknown"),
+        getRoomFieldValue(
+          room,
+          ["status", "room_status", "roomStatus", "room_status_name"],
+          "Unknown",
+        ),
       );
-      const roomNumber = getRoomFieldValue(room, ["room_no", "room_no", "roomNumber", "room_number", "roomNo"], "N/A");
-      const buildingName = getRoomFieldValue(room, ["building_name", "buildingName", "building", "building_name_text"], "N/A");
-      const floorName = getRoomFieldValue(room, ["floor_name", "floorName", "floor", "floor_name_text"], "N/A");
+      const roomNumber = getRoomFieldValue(
+        room,
+        ["room_no", "room_no", "roomNumber", "room_number", "roomNo"],
+        "N/A",
+      );
+      const buildingName = getRoomFieldValue(
+        room,
+        ["building_name", "buildingName", "building", "building_name_text"],
+        "N/A",
+      );
+      const floorName = getRoomFieldValue(
+        room,
+        ["floor_name", "floorName", "floor", "floor_name_text"],
+        "N/A",
+      );
       const capacity = normalizeRoomCapacity(
-        getRoomFieldValue(room, ["capacity", "room_capacity", "roomCapacity", "room_capacity_value"], null),
+        getRoomFieldValue(
+          room,
+          ["capacity", "room_capacity", "roomCapacity", "room_capacity_value"],
+          null,
+        ),
       );
-      const occupied = getRoomFieldValue(room, ["current_occupancy", "currentOccupancy", "occupied_count", "occupiedCount"], 0);
+      const occupied = getRoomFieldValue(
+        room,
+        [
+          "current_occupancy",
+          "currentOccupancy",
+          "occupied_count",
+          "occupiedCount",
+        ],
+        0,
+      );
       const badgeClass = roomStatus.toLowerCase().replace(/\s+/g, "-");
       const row = document.createElement("tr");
       row.className = "drawer-table-row";
@@ -638,52 +698,58 @@ function initDashboard() {
   //   RECENT EMPLOYEES PANEL
 
   function loadTransportationOverview() {
-    return fetchJSON("api/dashboard-transportation.php").then((data) => {
-      if (!data || !data.success) {
-        console.warn("Failed to load transportation data");
-        
-        // Set error state for summary cards
+    return fetchJSON("api/dashboard-transportation.php")
+      .then((data) => {
+        if (!data || !data.success) {
+          console.warn("Failed to load transportation data");
+
+          // Set error state for summary cards
+          setTextValue("transportation-available-vehicles", "—");
+          setTextValue("transportation-available-drivers", "—");
+          setTextValue("transportation-scheduled-week", "—");
+          setTextValue("transportation-scheduled-today", "—");
+
+          // Show error in chart area
+          const statusEl = document.getElementById("transportationChartStatus");
+          if (statusEl) {
+            statusEl.textContent =
+              "Unable to load transportation data. Please refresh.";
+          }
+          return;
+        }
+
+        // Set summary values
+        setTextValue(
+          "transportation-available-vehicles",
+          data.availableVehicles,
+        );
+        setTextValue("transportation-available-drivers", data.availableDrivers);
+        setTextValue("transportation-scheduled-week", data.scheduledThisWeek);
+        setTextValue("transportation-scheduled-today", data.scheduledToday);
+
+        // Hide loading state
+        const statusEl = document.getElementById("transportationChartStatus");
+        if (statusEl) {
+          statusEl.style.display = "none";
+        }
+
+        // Render the daily chart
+        renderTransportationChart(data.weekData, data.today);
+      })
+      .catch((error) => {
+        console.error("Error loading transportation overview:", error);
+
+        // Set error state
         setTextValue("transportation-available-vehicles", "—");
         setTextValue("transportation-available-drivers", "—");
         setTextValue("transportation-scheduled-week", "—");
         setTextValue("transportation-scheduled-today", "—");
-        
-        // Show error in chart area
+
         const statusEl = document.getElementById("transportationChartStatus");
         if (statusEl) {
-          statusEl.textContent = "Unable to load transportation data. Please refresh.";
+          statusEl.textContent = "Error loading transportation data.";
         }
-        return;
-      }
-
-      // Set summary values
-      setTextValue("transportation-available-vehicles", data.availableVehicles);
-      setTextValue("transportation-available-drivers", data.availableDrivers);
-      setTextValue("transportation-scheduled-week", data.scheduledThisWeek);
-      setTextValue("transportation-scheduled-today", data.scheduledToday);
-
-      // Hide loading state
-      const statusEl = document.getElementById("transportationChartStatus");
-      if (statusEl) {
-        statusEl.style.display = "none";
-      }
-
-      // Render the daily chart
-      renderTransportationChart(data.weekData, data.today);
-    }).catch((error) => {
-      console.error("Error loading transportation overview:", error);
-      
-      // Set error state
-      setTextValue("transportation-available-vehicles", "—");
-      setTextValue("transportation-available-drivers", "—");
-      setTextValue("transportation-scheduled-week", "—");
-      setTextValue("transportation-scheduled-today", "—");
-      
-      const statusEl = document.getElementById("transportationChartStatus");
-      if (statusEl) {
-        statusEl.textContent = "Error loading transportation data.";
-      }
-    });
+      });
   }
 
   function createTransportationKpiDrawer() {
@@ -698,7 +764,10 @@ function initDashboard() {
     }
 
     drawer.onclick = (event) => {
-      if (event.target instanceof HTMLElement && event.target.closest("[data-close-drawer='true']")) {
+      if (
+        event.target instanceof HTMLElement &&
+        event.target.closest("[data-close-drawer='true']")
+      ) {
         event.preventDefault();
         event.stopPropagation();
         closeTransportationDetails();
@@ -805,8 +874,14 @@ function initDashboard() {
                 subtitle: `${records.length} available vehicle${records.length === 1 ? "" : "s"}`,
                 records,
                 columns: [
-                  { label: "Vehicle", value: (record) => record.vehicle_name || "-" },
-                  { label: "Plate Number", value: (record) => record.license_plate || "-" },
+                  {
+                    label: "Vehicle",
+                    value: (record) => record.vehicle_name || "-",
+                  },
+                  {
+                    label: "Plate Number",
+                    value: (record) => record.license_plate || "-",
+                  },
                   { label: "Status", value: (record) => record.status || "-" },
                 ],
                 emptyText: "No available vehicles",
@@ -839,7 +914,10 @@ function initDashboard() {
                 subtitle: `${records.length} available driver${records.length === 1 ? "" : "s"}`,
                 records,
                 columns: [
-                  { label: "Driver Name", value: (record) => record.driver_name || "-" },
+                  {
+                    label: "Driver Name",
+                    value: (record) => record.driver_name || "-",
+                  },
                   { label: "Driver ID", value: (record) => record.id ?? "-" },
                   { label: "Contact", value: (record) => record.phone || "-" },
                   { label: "Status", value: (record) => record.status || "-" },
@@ -891,12 +969,31 @@ function initDashboard() {
                 subtitle: `${weekRecords.length} scheduled trip${weekRecords.length === 1 ? "" : "s"}`,
                 records: weekRecords,
                 columns: [
-                  { label: "Date", value: (record) => record.pickup_date || "-" },
-                  { label: "Time", value: (record) => record.pickup_time || "-" },
-                  { label: "Employee / Passenger", value: (record) => record.english_name || record.chinese_name || "-" },
-                  { label: "Vehicle", value: (record) => record.vehicle_name || "-" },
-                  { label: "Driver", value: (record) => record.driver_name || "-" },
-                  { label: "Transportation Type", value: (record) => record.transportation_type || "-" },
+                  {
+                    label: "Date",
+                    value: (record) => record.pickup_date || "-",
+                  },
+                  {
+                    label: "Time",
+                    value: (record) => record.pickup_time || "-",
+                  },
+                  {
+                    label: "Employee / Passenger",
+                    value: (record) =>
+                      record.english_name || record.chinese_name || "-",
+                  },
+                  {
+                    label: "Vehicle",
+                    value: (record) => record.vehicle_name || "-",
+                  },
+                  {
+                    label: "Driver",
+                    value: (record) => record.driver_name || "-",
+                  },
+                  {
+                    label: "Transportation Type",
+                    value: (record) => record.transportation_type || "-",
+                  },
                   { label: "Status", value: (record) => record.status || "-" },
                 ],
                 emptyText: "No transportation schedules this week",
@@ -929,7 +1026,9 @@ function initDashboard() {
             const records = Array.isArray(response) ? response : [];
             const today = new Date();
             const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-            const dailyRecords = records.filter((record) => record.pickup_date === todayString);
+            const dailyRecords = records.filter(
+              (record) => record.pickup_date === todayString,
+            );
             const dateFormatter = new Intl.DateTimeFormat("en-US", {
               weekday: "long",
               year: "numeric",
@@ -943,10 +1042,23 @@ function initDashboard() {
               records: dailyRecords,
               columns: [
                 { label: "Time", value: (record) => record.pickup_time || "-" },
-                { label: "Employee / Passenger", value: (record) => record.english_name || record.chinese_name || "-" },
-                { label: "Vehicle", value: (record) => record.vehicle_name || "-" },
-                { label: "Driver", value: (record) => record.driver_name || "-" },
-                { label: "Transportation Type", value: (record) => record.transportation_type || "-" },
+                {
+                  label: "Employee / Passenger",
+                  value: (record) =>
+                    record.english_name || record.chinese_name || "-",
+                },
+                {
+                  label: "Vehicle",
+                  value: (record) => record.vehicle_name || "-",
+                },
+                {
+                  label: "Driver",
+                  value: (record) => record.driver_name || "-",
+                },
+                {
+                  label: "Transportation Type",
+                  value: (record) => record.transportation_type || "-",
+                },
                 { label: "Status", value: (record) => record.status || "-" },
               ],
               emptyText: "No schedules for today",
@@ -1002,7 +1114,9 @@ function initDashboard() {
   let transportationChartInstance = null;
 
   function renderTransportationChart(weekData, today) {
-    const canvasWrap = document.querySelector(".transportation-chart-canvas-wrap");
+    const canvasWrap = document.querySelector(
+      ".transportation-chart-canvas-wrap",
+    );
     if (!canvasWrap) {
       console.error("Transportation chart canvas wrapper not found");
       return;
@@ -1026,7 +1140,7 @@ function initDashboard() {
 
     // Prepare chart data
     const labels = weekData.map((d) =>
-      formatTransportationDate(d.date, d.weekday)
+      formatTransportationDate(d.date, d.weekday),
     );
     const counts = weekData.map((d) => d.count);
     const todayIndex = weekData.findIndex((d) => d.isToday);
@@ -1174,7 +1288,7 @@ function initDashboard() {
         event,
         "nearest",
         { intersect: true },
-        true
+        true,
       );
 
       if (points.length === 0) return;
@@ -1193,7 +1307,7 @@ function initDashboard() {
   function openTransportationDetails(dateStr) {
     // Fetch transportation schedules for the date
     fetchJSON(
-      `api/company-car/index.php?pickup_date=${encodeURIComponent(dateStr)}`
+      `api/company-car/index.php?pickup_date=${encodeURIComponent(dateStr)}`,
     )
       .then((response) => {
         // Handle both array and object responses
@@ -1246,7 +1360,7 @@ function initDashboard() {
                     rec.status || "-"
                   }</span></td>
                 </tr>
-              `
+              `,
                 )
                 .join("");
 
@@ -1689,7 +1803,7 @@ function initDashboard() {
         const name =
           employee.english_name ||
           employee.chinese_name ||
-          employee.employee_code ||
+          displayEmployeeCode(employee.employee_code) ||
           "Unknown";
         const status = String(employee.status || "Inactive");
         const statusClass = status === "Active" ? "" : "inactive";
@@ -1697,7 +1811,7 @@ function initDashboard() {
           employee.department_name ||
           currentDepartmentSelection?.department ||
           "-";
-        const employeeCode = employee.employee_code || "-";
+        const employeeCode = displayEmployeeCode(employee.employee_code);
         const gender = normalizeGenderDisplay(employee.gender);
 
         return `
@@ -1770,13 +1884,15 @@ function initDashboard() {
         const name =
           employee.english_name ||
           employee.chinese_name ||
-          employee.employee_code ||
+          displayEmployeeCode(employee.employee_code) ||
           "Unknown";
         const status = String(employee.status || "Inactive");
         const statusClass = status === "Active" ? "" : "inactive";
         const departmentName = employee.department_name || "-";
-        const employeeCode = employee.employee_code || "-";
-        const gender = normalizeGenderDisplay(employee.gender || currentGenderSelection);
+        const employeeCode = displayEmployeeCode(employee.employee_code);
+        const gender = normalizeGenderDisplay(
+          employee.gender || currentGenderSelection,
+        );
 
         return `
           <tr>
@@ -1868,12 +1984,12 @@ function initDashboard() {
         const name =
           employee.english_name ||
           employee.chinese_name ||
-          employee.employee_code ||
+          displayEmployeeCode(employee.employee_code) ||
           "Unknown";
         const status = String(employee.status || "Inactive");
         const statusClass = status === "Active" ? "" : "inactive";
         const departmentName = employee.department_name || "-";
-        const employeeCode = employee.employee_code || "-";
+        const employeeCode = displayEmployeeCode(employee.employee_code);
         const gender = normalizeGenderDisplay(employee.gender);
 
         return `
@@ -1977,7 +2093,10 @@ function initDashboard() {
       : [];
 
     if (filtered.length === 0) {
-      const emptyLabel = currentTrafficType === "arrival" ? "No arrivals for this date." : "No departures for this date.";
+      const emptyLabel =
+        currentTrafficType === "arrival"
+          ? "No arrivals for this date."
+          : "No departures for this date.";
       contentEl.innerHTML = `<div class="department-employee-empty">${emptyLabel}</div>`;
       return;
     }
@@ -1987,12 +2106,12 @@ function initDashboard() {
         const name =
           employee.english_name ||
           employee.chinese_name ||
-          employee.employee_code ||
+          displayEmployeeCode(employee.employee_code) ||
           "Unknown";
         const status = String(employee.status || "Inactive");
         const statusClass = status === "Active" ? "" : "inactive";
         const departmentName = employee.department_name || "-";
-        const employeeCode = employee.employee_code || "-";
+        const employeeCode = displayEmployeeCode(employee.employee_code);
         const gender = normalizeGenderDisplay(employee.gender);
 
         return `
@@ -2061,8 +2180,7 @@ function initDashboard() {
       return;
     }
 
-    contentEl.innerHTML =
-      `<div class="department-employee-loading">Loading ${movementType} employees...</div>`;
+    contentEl.innerHTML = `<div class="department-employee-loading">Loading ${movementType} employees...</div>`;
 
     fetchJSON(
       `api/dashboard-transportation.php?trip_activity=1&date_from=${encodeURIComponent(queryDate)}&date_to=${encodeURIComponent(queryDate)}&leg_type=${encodeURIComponent(movementType.toUpperCase())}`,
@@ -2084,7 +2202,8 @@ function initDashboard() {
             department_name: entry.department_name || "-",
           }))
           .filter((entry) => {
-            const activityDate = entry.leg_date || entry.activity_date || entry.date;
+            const activityDate =
+              entry.leg_date || entry.activity_date || entry.date;
             return activityDate === queryDate;
           });
 
@@ -2109,7 +2228,14 @@ function initDashboard() {
     const searchInput = document.getElementById("departmentEmployeeSearch");
     const contentEl = document.getElementById("departmentEmployeeContent");
 
-    if (!drawer || !titleEl || !metaEl || !searchInput || !contentEl || !kickerEl) {
+    if (
+      !drawer ||
+      !titleEl ||
+      !metaEl ||
+      !searchInput ||
+      !contentEl ||
+      !kickerEl
+    ) {
       return;
     }
 
@@ -2135,7 +2261,8 @@ function initDashboard() {
       "Saturday",
     ];
     const dayName = labels[dateLabel.getDay()];
-    const typeLabel = currentTrafficType === "departure" ? "DEPARTURES" : "ARRIVALS";
+    const typeLabel =
+      currentTrafficType === "departure" ? "DEPARTURES" : "ARRIVALS";
 
     kickerEl.textContent = typeLabel;
     titleEl.textContent = dayName;
@@ -2143,8 +2270,7 @@ function initDashboard() {
     searchInput.value = "";
     drawer.classList.add("is-open");
     drawer.setAttribute("aria-hidden", "false");
-    contentEl.innerHTML =
-      `<div class="department-employee-loading">Loading ${currentTrafficType} employees...</div>`;
+    contentEl.innerHTML = `<div class="department-employee-loading">Loading ${currentTrafficType} employees...</div>`;
 
     fetchTrafficEmployees(rawDate, currentTrafficType);
   }
@@ -2227,7 +2353,8 @@ function initDashboard() {
         lunchboxEmployeeCache = data;
         const count = data.length;
         const expectedCount = Number(
-          lunchboxChartPoints.find((point) => point.date === queryDate)?.count || 0,
+          lunchboxChartPoints.find((point) => point.date === queryDate)
+            ?.count || 0,
         );
 
         if (expectedCount > 0 && count !== expectedCount) {
@@ -2292,7 +2419,14 @@ function initDashboard() {
     const searchInput = document.getElementById("departmentEmployeeSearch");
     const contentEl = document.getElementById("departmentEmployeeContent");
 
-    if (!drawer || !titleEl || !metaEl || !searchInput || !contentEl || !kickerEl) {
+    if (
+      !drawer ||
+      !titleEl ||
+      !metaEl ||
+      !searchInput ||
+      !contentEl ||
+      !kickerEl
+    ) {
       return;
     }
 
@@ -2818,7 +2952,7 @@ function initDashboard() {
             <div class="tx-row">
                 <div>
                     <p class="dashboard-activity-name">${tx.english_name ?? "-"}</p>
-                    <p class="dashboard-activity-meta">${tx.employee_code ? tx.employee_code : "Employee"}</p>
+                    <p class="dashboard-activity-meta">${tx.employee_code ? displayEmployeeCode(tx.employee_code) : "Employee"}</p>
                 </div>
                 <span class="dashboard-activity-pill ${badgeClass}">${type === "arrival" ? "Arriving" : "Departing"}</span>
             </div>`,
@@ -2914,14 +3048,16 @@ function initDashboard() {
       byDate.set(entry.date, { ...entry, arrivals: 0, departures: 0 });
     });
 
-    (Array.isArray(activityRecords) ? activityRecords : []).forEach((record) => {
-      const key = record.leg_date || record.activity_date || record.date;
-      const legType = String(record.leg_type || '').toUpperCase();
-      if (!key || !byDate.has(key)) return;
+    (Array.isArray(activityRecords) ? activityRecords : []).forEach(
+      (record) => {
+        const key = record.leg_date || record.activity_date || record.date;
+        const legType = String(record.leg_type || "").toUpperCase();
+        if (!key || !byDate.has(key)) return;
 
-      if (legType === 'ARRIVAL') byDate.get(key).arrivals += 1;
-      if (legType === 'DEPARTURE') byDate.get(key).departures += 1;
-    });
+        if (legType === "ARRIVAL") byDate.get(key).arrivals += 1;
+        if (legType === "DEPARTURE") byDate.get(key).departures += 1;
+      },
+    );
 
     return weekDates.map(
       (entry) =>
@@ -2943,9 +3079,7 @@ function initDashboard() {
   }
 
   function formatTrafficXLabel(dateString, weekdayLabel) {
-    const shortLabel = weekdayLabel
-      ? weekdayLabel.slice(0, 3)
-      : "";
+    const shortLabel = weekdayLabel ? weekdayLabel.slice(0, 3) : "";
     const shortDate = formatShortDate(dateString);
 
     if (!shortLabel || !shortDate) return weekdayLabel || "";
@@ -2958,8 +3092,12 @@ function initDashboard() {
     const date = new Date(`${dateString}T00:00:00`);
     if (Number.isNaN(date.getTime())) return dateString;
 
-    const weekday = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(date);
-    const month = new Intl.DateTimeFormat("en-US", { month: "long" }).format(date);
+    const weekday = new Intl.DateTimeFormat("en-US", {
+      weekday: "long",
+    }).format(date);
+    const month = new Intl.DateTimeFormat("en-US", { month: "long" }).format(
+      date,
+    );
     const day = date.getDate();
     const year = date.getFullYear();
 
@@ -3027,38 +3165,38 @@ function initDashboard() {
     console.groupEnd();
 
     fetchJSON(tripActivityUrl).then((tripActivity) => {
-        if (tripActivity === null) {
-          console.error("Traffic chart API request failed");
-          showTrafficChartError("Unable to load arrival & departure data.");
-          return;
-        }
+      if (tripActivity === null) {
+        console.error("Traffic chart API request failed");
+        showTrafficChartError("Unable to load arrival & departure data.");
+        return;
+      }
 
-        const dailyData = buildWeekTrafficData(tripActivity, weekDates);
-        const totalArrivals = dailyData.reduce(
-          (sum, entry) => sum + entry.arrivals,
-          0,
-        );
-        const totalDepartures = dailyData.reduce(
-          (sum, entry) => sum + entry.departures,
-          0,
-        );
-        const todayEntry = dailyData.find((entry) => entry.date === today) || {
-          arrivals: 0,
-          departures: 0,
-        };
+      const dailyData = buildWeekTrafficData(tripActivity, weekDates);
+      const totalArrivals = dailyData.reduce(
+        (sum, entry) => sum + entry.arrivals,
+        0,
+      );
+      const totalDepartures = dailyData.reduce(
+        (sum, entry) => sum + entry.departures,
+        0,
+      );
+      const todayEntry = dailyData.find((entry) => entry.date === today) || {
+        arrivals: 0,
+        departures: 0,
+      };
 
-        setTrafficSummaryText(
-          "traffic-week-summary",
-          formatTrafficSummary(totalArrivals, totalDepartures),
-        );
-        setTrafficSummaryText(
-          "traffic-today-summary",
-          formatTrafficSummary(todayEntry.arrivals, todayEntry.departures),
-        );
+      setTrafficSummaryText(
+        "traffic-week-summary",
+        formatTrafficSummary(totalArrivals, totalDepartures),
+      );
+      setTrafficSummaryText(
+        "traffic-today-summary",
+        formatTrafficSummary(todayEntry.arrivals, todayEntry.departures),
+      );
 
-        console.log("✅ Rendering daily traffic chart:", dailyData);
-        renderTrafficChart(dailyData);
-      });
+      console.log("✅ Rendering daily traffic chart:", dailyData);
+      renderTrafficChart(dailyData);
+    });
   }
 
   // ARRIVAL & DEPARTURE TRAFFIC CHART
@@ -3232,7 +3370,8 @@ function initDashboard() {
               },
               label: (context) => {
                 const date = dailyData[context.dataIndex]?.date;
-                const movement = context.datasetIndex === 0 ? "Arrival" : "Departure";
+                const movement =
+                  context.datasetIndex === 0 ? "Arrival" : "Departure";
                 const count = Number(context.parsed.y || 0);
                 const label = count === 1 ? "employee" : "employees";
                 return `${movement}\n${count} ${label}`;
@@ -3318,24 +3457,30 @@ function initDashboard() {
 
     const label = document.getElementById("lunchbox-selected-week-label");
     if (label) {
-      label.textContent = selectedLunchboxWeek === "last"
-        ? "Last Week"
-        : selectedLunchboxWeek === "next" ? "Next Week" : "This Week";
+      label.textContent =
+        selectedLunchboxWeek === "last"
+          ? "Last Week"
+          : selectedLunchboxWeek === "next"
+            ? "Next Week"
+            : "This Week";
     }
 
     if (!lunchboxWeekCache || !lunchboxChartInstance) return;
 
-    const dates = selectedLunchboxWeek === "last"
-      ? lunchboxWeekCache.lastWeekDates
-      : selectedLunchboxWeek === "next"
-        ? lunchboxWeekCache.nextWeekDates
-        : lunchboxWeekCache.thisWeekDates;
+    const dates =
+      selectedLunchboxWeek === "last"
+        ? lunchboxWeekCache.lastWeekDates
+        : selectedLunchboxWeek === "next"
+          ? lunchboxWeekCache.nextWeekDates
+          : lunchboxWeekCache.thisWeekDates;
     const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const labels = dates.map((dateStr, index) => {
       const [year, month, day] = dateStr.split("-");
       return `${dayNames[index]} ${month}/${day}/${year.slice(-2)}`;
     });
-    const values = dates.map((date) => Number(lunchboxWeekCache.counts[date] || 0));
+    const values = dates.map((date) =>
+      Number(lunchboxWeekCache.counts[date] || 0),
+    );
     const todayDate = getLocalDateString(new Date());
 
     lunchboxChartPoints = dates.map((date, index) => ({
@@ -3345,8 +3490,8 @@ function initDashboard() {
     }));
     lunchboxChartInstance.data.labels = labels;
     lunchboxChartInstance.data.datasets[0].data = values;
-    lunchboxChartInstance.data.datasets[0].backgroundColor = dates.map((date) =>
-      date === todayDate ? "#0f766e" : "#003686",
+    lunchboxChartInstance.data.datasets[0].backgroundColor = dates.map(
+      (date) => (date === todayDate ? "#0f766e" : "#003686"),
     );
     lunchboxChartInstance.update();
   }
@@ -3389,23 +3534,31 @@ function initDashboard() {
     const startDate = lastWeekDates[0];
     const endDate = nextWeekDates[6];
 
-    $(".lunchbox-week-selector").off("click").on("click", function() {
-      updateLunchboxWeekSelection($(this).data("week"));
-    });
+    $(".lunchbox-week-selector")
+      .off("click")
+      .on("click", function () {
+        updateLunchboxWeekSelection($(this).data("week"));
+      });
 
     fetchJSON(
       `api/meals/lunchbox_summary.php?date_from=${startDate}&date_to=${endDate}`,
     ).then((data) => {
       if (!data || !data.daily_counts) {
         if (statusEl) {
-          statusEl.textContent = "Unable to load meal data for this week. Please try again.";
+          statusEl.textContent =
+            "Unable to load meal data for this week. Please try again.";
           statusEl.style.display = "flex";
         }
         return;
       }
 
       const counts = data.daily_counts;
-      lunchboxWeekCache = { counts, lastWeekDates, thisWeekDates, nextWeekDates };
+      lunchboxWeekCache = {
+        counts,
+        lastWeekDates,
+        thisWeekDates,
+        nextWeekDates,
+      };
 
       const thisWeekValues = thisWeekDates.map((d) => Number(counts[d] || 0));
       const weekTotal = thisWeekValues.reduce((sum, v) => sum + v, 0);
@@ -3479,7 +3632,8 @@ function initDashboard() {
           onClick: (event, elements) => {
             if (!elements.length) return;
             const index = elements[0].index;
-            const selectedDate = lunchboxChartPoints[index]?.date || thisWeekDates[index];
+            const selectedDate =
+              lunchboxChartPoints[index]?.date || thisWeekDates[index];
             if (selectedDate) {
               openLunchBoxEmployeeDrawer(selectedDate);
             }
@@ -3490,9 +3644,14 @@ function initDashboard() {
               callbacks: {
                 title: (items) => {
                   const index = items[0]?.dataIndex ?? 0;
-                  return lunchboxChartPoints[index]?.label || chartLabels[index] || "Lunch Box";
+                  return (
+                    lunchboxChartPoints[index]?.label ||
+                    chartLabels[index] ||
+                    "Lunch Box"
+                  );
                 },
-                label: (item) => `${item.parsed.y} Lunch Boxes — click to view employees`,
+                label: (item) =>
+                  `${item.parsed.y} Lunch Boxes — click to view employees`,
               },
             },
           },
@@ -3512,15 +3671,18 @@ function initDashboard() {
 
       if (lunchboxChartInstance) {
         lunchboxChartInstance.data.labels = chartLabels;
-        lunchboxChartInstance.data.datasets[0].data = chartConfig.data.datasets[0].data;
-        lunchboxChartInstance.data.datasets[0].backgroundColor = chartConfig.data.datasets[0].backgroundColor;
+        lunchboxChartInstance.data.datasets[0].data =
+          chartConfig.data.datasets[0].data;
+        lunchboxChartInstance.data.datasets[0].backgroundColor =
+          chartConfig.data.datasets[0].backgroundColor;
         lunchboxChartInstance.options = chartConfig.options;
         lunchboxChartInstance.update();
       } else {
         lunchboxChartInstance = new Chart(ctx, chartConfig);
       }
 
-      if (selectedLunchboxWeek !== "this") updateLunchboxWeekSelection(selectedLunchboxWeek);
+      if (selectedLunchboxWeek !== "this")
+        updateLunchboxWeekSelection(selectedLunchboxWeek);
     });
   }
   // END MEAL CHART
