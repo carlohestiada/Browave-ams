@@ -41,7 +41,12 @@ class AccommodationController
 
         $result = $this->accommodation->create($data);
 
-        echo json_encode(['success' => $result]);
+        if (is_array($result) && isset($result['success']) && $result['success'] === true) {
+            echo json_encode($result);
+            return;
+        }
+
+        echo json_encode(['success' => false]);
     }
 
     public function update($id)

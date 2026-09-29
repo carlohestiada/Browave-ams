@@ -35,7 +35,7 @@ class Accommodation
             "INSERT INTO accommodations (accommodation_name, accommodation_type, address, contact_person, contact_number, status) VALUES (?, ?, ?, ?, ?, ?)"
         );
 
-        return $stmt->execute([
+        $success = $stmt->execute([
             $data['accommodation_name'],
             $data['accommodation_type'],
             $data['address'] ?? '',
@@ -43,6 +43,12 @@ class Accommodation
             $data['contact_number'] ?? '',
             $data['status'] ?? 'Active'
         ]);
+
+        if (!$success) {
+            return ['success' => false];
+        }
+
+        return ['success' => true, 'id' => (int) $this->db->lastInsertId()];
     }
 
     public function update($id, $data)

@@ -6,6 +6,12 @@ let selectedRoomIds = new Set();
 let roomSearchTimer = null;
 let currentRoomTab = 'all';
 let availableRoomPrefixes = [];
+let preselectedAccommodationId = null;
+
+function getUrlParameter(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+}
 
 const roomSortColumns = [
     { index: 1, key: 'room_no' },
@@ -35,6 +41,17 @@ function loadAccommodations()
         $('#accommodation_id').html(options);
         $('#filterAccommodation').html('<option value="">All Accommodations</option>' + 
             accommodations.map(acc => `<option value="${acc.id}">${acc.accommodation_name}</option>`).join(''));
+
+        if (preselectedAccommodationId) {
+            $('#accommodation_id').val(preselectedAccommodationId);
+            const url = new URL(window.location.href);
+            url.searchParams.delete('accommodation_id');
+            window.history.replaceState({}, '', url.toString());
+            loadBuildingsForModal();
+            setTimeout(function() {
+                $('#roomModal').modal('show');
+            }, 120);
+        }
     });
 }
 
@@ -47,14 +64,15 @@ function loadBuildingsForModal(selectedBuildingIdOrEvent = null, callback = null
 
     const accommodationId = $('#accommodation_id').val();
     if (!accommodationId) {
-        $('#building_id').html('<option value="">Select building</option>');
+        $('#building_id').html('<option value="">No building</option>');
+        $('#floor_id').html('<option value="">No floor</option>');
         if (typeof callback === 'function') callback();
         return;
     }
 
     $.get(`${accommodationsApiUrl}/${accommodationId}/buildings`, function(data) {
         const buildings = parseJsonResponse(data);
-        let options = '<option value="">Select building</option>';
+        let options = '<option value="">No building</option>';
 
         buildings.forEach(bld => {
             options += `<option value="${bld.id}">${bld.building_name}</option>`;
@@ -75,6 +93,7 @@ function loadBuildingsForModal(selectedBuildingIdOrEvent = null, callback = null
 function loadBuildingsByAccommodation()
 {
     const accommodationId = $('#filterAccommodation').val();
+    $('#filterFloor').html('<option value="">All Floors</option>');
     if (!accommodationId) {
         $('#filterBuilding').html('<option value="">All Buildings</option>');
         loadRooms();
@@ -103,14 +122,14 @@ function loadFloorsForModal(selectedFloorIdOrEvent = null, callback = null)
 
     const buildingId = $('#building_id').val();
     if (!buildingId) {
-        $('#floor_id').html('<option value="">Select floor</option>');
+        $('#floor_id').html('<option value="">No floor</option>');
         if (typeof callback === 'function') callback();
         return;
     }
 
     $.get(`${buildingsApiUrl}/${buildingId}/floors`, function(data) {
         const floors = parseJsonResponse(data);
-        let options = '<option value="">Select floor</option>';
+        let options = '<option value="">No floor</option>';
 
         floors.forEach(flr => {
             options += `<option value="${flr.id}">${flr.floor_name}</option>`;
@@ -131,8 +150,8 @@ function loadFloorsForModal(selectedFloorIdOrEvent = null, callback = null)
 function loadFloorsByBuilding()
 {
     const buildingId = $('#filterBuilding').val();
+    $('#filterFloor').html('<option value="">All Floors</option>');
     if (!buildingId) {
-        $('#filterFloor').html('<option value="">All Floors</option>');
         loadRooms();
         return;
     }
@@ -330,7 +349,16 @@ function buildRoomPrefixTabs(rooms) {
 
 function filterRoomRows(rooms) {
     const search = ($('#roomSearchInput').val() || '').trim().toLowerCase();
-    const activeRooms = rooms.filter(room => String(room.status || '').toLowerCase() !== 'archived');
+    const accommodationId = String($('#filterAccommodation').val() || '');
+    const buildingId = String($('#filterBuilding').val() || '');
+    const floorId = String($('#filterFloor').val() || '');
+    const activeRooms = rooms.filter(room => {
+        if (String(room.status || '').toLowerCase() === 'archived') return false;
+        if (accommodationId && String(room.accommodation_id || '') !== accommodationId) return false;
+        if (buildingId && String(room.building_id || '') !== buildingId) return false;
+        if (floorId && String(room.floor_id || '') !== floorId) return false;
+        return true;
+    });
     let tabFilteredRooms = activeRooms;
 
     if (currentRoomTab && currentRoomTab !== 'all') {
@@ -469,8 +497,8 @@ function resetRoomForm()
     $('#roomId').val('');
     $('#roomModalLabel').text('Add Room');
     $('#accommodation_id').val('');
-    $('#building_id').html('<option value="">Select building</option>');
-    $('#floor_id').html('<option value="">Select floor</option>');
+    $('#building_id').html('<option value="">No building</option>');
+    $('#floor_id').html('<option value="">No floor</option>');
     $('#capacity').val('');
     $('#reservedEmployeeGroup').hide();
     $('#reserved_by_employee_id').html('<option value="">Select employee</option>');
@@ -513,8 +541,8 @@ function openRoomModal(room)
         $('#roomModalLabel').text('Edit Room');
         $('#accommodation_id').val(room.accommodation_id || '');
 
-        loadBuildingsForModal(room.building_id, function() {
-            loadFloorsForModal(room.floor_id, function() {
+        loadBuildingsForModal(room.building_id || '', function() {
+            loadFloorsForModal(room.floor_id || '', function() {
                 $('#room_no').val(room.room_no);
                 $('#room_type').val(room.room_type);
                 $('#capacity').val(room.capacity);
@@ -528,6 +556,11 @@ function openRoomModal(room)
         });
 
         return;
+    }
+
+    if (preselectedAccommodationId) {
+        $('#accommodation_id').val(preselectedAccommodationId);
+        loadBuildingsForModal();
     }
 
     $('#roomModal').modal('show');
@@ -675,6 +708,7 @@ function deleteSelectedRooms()
 }
 
 $(function() {
+    preselectedAccommodationId = getUrlParameter('accommodation_id');
     loadAccommodations();
     loadRooms();
     loadEmployeesForRoomReservation();

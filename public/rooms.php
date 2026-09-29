@@ -16,7 +16,7 @@
         </div>
     </div>
     <div class="alert alert-info py-3 px-3 mb-3" role="alert" style="font-size:0.95rem;">
-        <strong>Important:</strong> Add accommodation first, then add a building to that accommodation, and then add a floor before creating a room. Use the <a href="accommodations.php" class="alert-link text-decoration-underline" style="font-weight:600;">Accommodations</a> page to begin.
+        <strong>Workflow:</strong> Start with an accommodation, then create rooms directly under it. Building and floor are optional, and a room can be created without either if needed. Use the <a href="accommodations.php" class="alert-link text-decoration-underline" style="font-weight:600;">Accommodations</a> page to begin.
     </div>
 
     <!-- Room Status Summary -->
@@ -150,15 +150,15 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Building</label>
-                        <select class="form-select" id="building_id" name="building_id" required onchange="loadFloorsForModal()">
-                            <option value="">Select building</option>
+                        <label class="form-label">Building <span class="text-muted small">(optional)</span></label>
+                        <select class="form-select" id="building_id" name="building_id" onchange="loadFloorsForModal()">
+                            <option value="">No building</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Floor</label>
-                        <select class="form-select" id="floor_id" name="floor_id" required>
-                            <option value="">Select floor</option>
+                        <label class="form-label">Floor <span class="text-muted small">(optional)</span></label>
+                        <select class="form-select" id="floor_id" name="floor_id">
+                            <option value="">No floor</option>
                         </select>
                     </div>
                     <div class="mb-3">

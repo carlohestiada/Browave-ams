@@ -11,6 +11,7 @@ class Room
     {
         $this->db = $db;
         $this->assignment = new RoomAssignment($db);
+        $this->ensureRoomRelationshipColumns();
         $this->ensureReservationColumns();
     }
 
@@ -19,16 +20,17 @@ class Room
         $this->assignment->refreshRoomStatuses();
 
         $stmt = $this->db->query(
-            "SELECT r.*, f.floor_name, b.building_name, b.accommodation_id, a.accommodation_name, e.english_name AS reserved_by_employee_name,
+            "SELECT r.*, COALESCE(r.accommodation_id, b.accommodation_id) AS accommodation_id, r.building_id,
+                f.floor_name, b.building_name, a.accommodation_name, e.english_name AS reserved_by_employee_name,
                 STRING_AGG(DISTINCT emp.english_name, E'\n' ORDER BY emp.english_name) AS assigned_employee_names
              FROM rooms r
              LEFT JOIN floors f ON r.floor_id = f.id
-             LEFT JOIN buildings b ON f.building_id = b.id
-             LEFT JOIN accommodations a ON b.accommodation_id = a.id
+             LEFT JOIN buildings b ON COALESCE(r.building_id, f.building_id) = b.id
+             LEFT JOIN accommodations a ON COALESCE(r.accommodation_id, b.accommodation_id) = a.id
              LEFT JOIN employees e ON r.reserved_by_employee_id = e.id
              LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status = 'Active'
              LEFT JOIN employees emp ON emp.id = ra.employee_id
-             GROUP BY r.id, f.floor_name, b.building_name, b.accommodation_id, a.accommodation_name, e.english_name
+             GROUP BY r.id, r.accommodation_id, r.building_id, f.floor_name, b.building_name, b.accommodation_id, a.accommodation_name, e.english_name
              ORDER BY r.room_no ASC"
         );
 
@@ -40,21 +42,22 @@ class Room
         $this->assignment->refreshRoomStatuses();
 
         $stmt = $this->db->prepare(
-            "SELECT r.*, f.floor_name, b.building_name, b.accommodation_id, a.accommodation_name, e.english_name AS reserved_by_employee_name,
+            "SELECT r.*, COALESCE(r.accommodation_id, b.accommodation_id) AS accommodation_id, r.building_id,
+                f.floor_name, b.building_name, a.accommodation_name, e.english_name AS reserved_by_employee_name,
                 STRING_AGG(DISTINCT emp.english_name, E'\n' ORDER BY emp.english_name) AS assigned_employee_names
              FROM rooms r
              LEFT JOIN floors f ON r.floor_id = f.id
-             LEFT JOIN buildings b ON f.building_id = b.id
-             LEFT JOIN accommodations a ON b.accommodation_id = a.id
+             LEFT JOIN buildings b ON COALESCE(r.building_id, f.building_id) = b.id
+             LEFT JOIN accommodations a ON COALESCE(r.accommodation_id, b.accommodation_id) = a.id
              LEFT JOIN employees e ON r.reserved_by_employee_id = e.id
              LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status = 'Active'
              LEFT JOIN employees emp ON emp.id = ra.employee_id
-             WHERE r.floor_id=?
-             GROUP BY r.id, f.floor_name, b.building_name, b.accommodation_id, a.accommodation_name, e.english_name
+             WHERE r.floor_id = ? OR COALESCE(r.building_id, f.building_id) = ?
+             GROUP BY r.id, r.accommodation_id, r.building_id, f.floor_name, b.building_name, b.accommodation_id, a.accommodation_name, e.english_name
              ORDER BY r.room_no ASC"
         );
 
-        $stmt->execute([$floorId]);
+        $stmt->execute([$floorId, $floorId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -64,18 +67,18 @@ class Room
         $this->assignment->refreshRoomStatuses();
 
         $stmt = $this->db->prepare(
-            "SELECT r.*, f.floor_name, f.building_id AS building_id, b.accommodation_id AS accommodation_id,
-                b.building_name, a.accommodation_name, e.english_name AS reserved_by_employee_name,
+            "SELECT r.*, COALESCE(r.accommodation_id, b.accommodation_id) AS accommodation_id, COALESCE(r.building_id, f.building_id) AS building_id,
+                f.floor_name, b.building_name, a.accommodation_name, e.english_name AS reserved_by_employee_name,
                 STRING_AGG(DISTINCT emp.english_name, E'\n' ORDER BY emp.english_name) AS assigned_employee_names
              FROM rooms r
              LEFT JOIN floors f ON r.floor_id = f.id
-             LEFT JOIN buildings b ON f.building_id = b.id
-             LEFT JOIN accommodations a ON b.accommodation_id = a.id
+             LEFT JOIN buildings b ON COALESCE(r.building_id, f.building_id) = b.id
+             LEFT JOIN accommodations a ON COALESCE(r.accommodation_id, b.accommodation_id) = a.id
              LEFT JOIN employees e ON r.reserved_by_employee_id = e.id
              LEFT JOIN room_assignments ra ON ra.room_id = r.id AND ra.status = 'Active'
              LEFT JOIN employees emp ON emp.id = ra.employee_id
-             WHERE r.id=?
-             GROUP BY r.id, f.floor_name, f.building_id, b.accommodation_id, b.building_name, a.accommodation_name, e.english_name"
+             WHERE r.id = ?
+             GROUP BY r.id, r.accommodation_id, r.building_id, f.floor_name, f.building_id, b.building_name, b.accommodation_id, a.accommodation_name, e.english_name"
         );
 
         $stmt->execute([$id]);
@@ -85,33 +88,33 @@ class Room
 
     public function create($data)
     {
-        $status = $data['status'] ?? 'Available';
-        $reservedByEmployeeId = null;
+        $normalized = $this->normalizeRoomData($data);
 
-        if ($status === 'Reserved') {
-            $reservedByEmployeeId = $data['reserved_by_employee_id'] ?? null;
-            if (empty($reservedByEmployeeId)) {
-                return false;
-            }
+        if (!$normalized['valid']) {
+            return false;
         }
 
-        $genderRestriction = $this->normalizeGenderRestriction($data['gender_restriction'] ?? '');
+        $status = $normalized['data']['status'];
+        $reservedByEmployeeId = $normalized['data']['reserved_by_employee_id'];
+        $genderRestriction = $normalized['data']['gender_restriction'];
 
         $stmt = $this->db->prepare(
-            "INSERT INTO rooms (floor_id, room_no, room_type, capacity, current_occupancy, status, reserved_by_employee_id, gender_restriction, remarks)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO rooms (accommodation_id, building_id, floor_id, room_no, room_type, capacity, current_occupancy, status, reserved_by_employee_id, gender_restriction, remarks)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
 
         return $stmt->execute([
-            $data['floor_id'],
-            $data['room_no'],
-            $data['room_type'],
-            $data['capacity'],
-            $data['current_occupancy'] ?? 0,
+            $normalized['data']['accommodation_id'],
+            $normalized['data']['building_id'],
+            $normalized['data']['floor_id'],
+            $normalized['data']['room_no'],
+            $normalized['data']['room_type'],
+            $normalized['data']['capacity'],
+            $normalized['data']['current_occupancy'],
             $status,
             $reservedByEmployeeId,
             $genderRestriction,
-            $data['remarks'] ?? ''
+            $normalized['data']['remarks']
         ]);
     }
 
@@ -152,7 +155,7 @@ class Room
                 : (string) $i;
             $roomNo = $parsedStart['prefix'] . $formattedNumber;
 
-            if ($this->roomNumberExists($roomNo)) {
+            if ($this->roomNumberExists($roomNo, (int)($baseData['accommodation_id'] ?? 0), !empty($baseData['building_id']) ? (int)$baseData['building_id'] : null, !empty($baseData['floor_id']) ? (int)$baseData['floor_id'] : null)) {
                 continue;
             }
 
@@ -188,40 +191,59 @@ class Room
         return null;
     }
 
-    private function roomNumberExists($roomNo)
+    private function roomNumberExists($roomNo, $accommodationId = null, $buildingId = null, $floorId = null, $excludeId = null)
     {
-        $stmt = $this->db->prepare('SELECT id FROM rooms WHERE room_no = ? LIMIT 1');
-        $stmt->execute([$roomNo]);
+        $sql = 'SELECT id FROM rooms WHERE room_no = ?';
+        $params = [$roomNo];
+
+        if ($accommodationId) {
+            $sql .= ' AND accommodation_id = ?';
+            $params[] = $accommodationId;
+        }
+
+        if ($buildingId) {
+            $sql .= ' AND building_id = ?';
+            $params[] = $buildingId;
+        } elseif ($floorId) {
+            $sql .= ' AND floor_id = ?';
+            $params[] = $floorId;
+        }
+
+        if ($excludeId) {
+            $sql .= ' AND id != ?';
+            $params[] = $excludeId;
+        }
+
+        $sql .= ' LIMIT 1';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
         return (bool) $stmt->fetchColumn();
     }
 
     public function update($id, $data)
     {
-        $status = $data['status'] ?? 'Available';
-        $reservedByEmployeeId = null;
+        $normalized = $this->normalizeRoomData($data, $id);
 
-        if ($status === 'Reserved') {
-            $reservedByEmployeeId = $data['reserved_by_employee_id'] ?? null;
-            if (empty($reservedByEmployeeId)) {
-                return false;
-            }
+        if (!$normalized['valid']) {
+            return false;
         }
 
-        $genderRestriction = $this->normalizeGenderRestriction($data['gender_restriction'] ?? '');
-
         $stmt = $this->db->prepare(
-            "UPDATE rooms SET floor_id=?, room_no=?, room_type=?, capacity=?, status=?, reserved_by_employee_id=?, gender_restriction=?, remarks=? WHERE id=?"
+            "UPDATE rooms SET accommodation_id=?, building_id=?, floor_id=?, room_no=?, room_type=?, capacity=?, status=?, reserved_by_employee_id=?, gender_restriction=?, remarks=? WHERE id=?"
         );
 
         return $stmt->execute([
-            $data['floor_id'],
-            $data['room_no'],
-            $data['room_type'],
-            $data['capacity'],
-            $status,
-            $reservedByEmployeeId,
-            $genderRestriction,
-            $data['remarks'] ?? '',
+            $normalized['data']['accommodation_id'],
+            $normalized['data']['building_id'],
+            $normalized['data']['floor_id'],
+            $normalized['data']['room_no'],
+            $normalized['data']['room_type'],
+            $normalized['data']['capacity'],
+            $normalized['data']['status'],
+            $normalized['data']['reserved_by_employee_id'],
+            $normalized['data']['gender_restriction'],
+            $normalized['data']['remarks'],
             $id
         ]);
     }
@@ -244,6 +266,108 @@ class Room
         return $stmt->fetchColumn() > 0;
     }
 
+    private function normalizeRoomData(array $data, ?int $excludeId = null): array
+    {
+        $accommodationId = isset($data['accommodation_id']) ? trim((string) $data['accommodation_id']) : '';
+        $buildingId = isset($data['building_id']) ? trim((string) $data['building_id']) : '';
+        $floorId = isset($data['floor_id']) ? trim((string) $data['floor_id']) : '';
+        $roomNo = trim((string) ($data['room_no'] ?? ''));
+
+        if ($accommodationId === '') {
+            return ['valid' => false, 'error' => 'Accommodation is required.'];
+        }
+
+        if ($roomNo === '') {
+            return ['valid' => false, 'error' => 'Room number is required.'];
+        }
+
+        if ($floorId !== '') {
+            $floor = $this->fetchFloor((int) $floorId);
+            if (!$floor) {
+                return ['valid' => false, 'error' => 'Selected floor could not be found.'];
+            }
+
+            if ($buildingId === '') {
+                $buildingId = (string) $floor['building_id'];
+            }
+
+            if ($buildingId !== '' && (string) $floor['building_id'] !== $buildingId) {
+                return ['valid' => false, 'error' => 'The selected floor does not belong to the selected building.'];
+            }
+        }
+
+        if ($buildingId !== '') {
+            $building = $this->fetchBuilding((int) $buildingId);
+            if (!$building) {
+                return ['valid' => false, 'error' => 'Selected building could not be found.'];
+            }
+
+            if ((string) $building['accommodation_id'] !== $accommodationId) {
+                return ['valid' => false, 'error' => 'The selected building does not belong to the chosen accommodation.'];
+            }
+        }
+
+        $status = strtoupper(trim((string) ($data['status'] ?? 'Available')));
+        if ($status === 'OCCUPIED') {
+            $status = 'Occupied';
+        } elseif ($status === 'AVAILABLE') {
+            $status = 'Available';
+        } elseif ($status === 'RESERVED') {
+            $status = 'Reserved';
+        } elseif ($status === 'MAINTENANCE') {
+            $status = 'Maintenance';
+        } else {
+            $status = in_array($status, ['Available', 'Occupied', 'Reserved', 'Maintenance'], true) ? $status : 'Available';
+        }
+
+        $reservedByEmployeeId = null;
+        if ($status === 'Reserved') {
+            $reservedByEmployeeId = isset($data['reserved_by_employee_id']) ? trim((string) $data['reserved_by_employee_id']) : '';
+            if ($reservedByEmployeeId === '') {
+                return ['valid' => false, 'error' => 'Please select the employee who reserved this room.'];
+            }
+        }
+
+        $roomType = trim((string) ($data['room_type'] ?? ''));
+        $capacity = trim((string) ($data['capacity'] ?? ''));
+        if ($roomType === '' || $capacity === '') {
+            return ['valid' => false, 'error' => 'Room type and capacity are required.'];
+        }
+
+        $duplicateCheck = $this->roomNumberExists($roomNo, (int) $accommodationId, $buildingId !== '' ? (int) $buildingId : null, $floorId !== '' ? (int) $floorId : null, $excludeId);
+        if ($duplicateCheck) {
+            return ['valid' => false, 'error' => 'A room with this number already exists in the selected accommodation and location.'];
+        }
+
+        return ['valid' => true, 'data' => [
+            'accommodation_id' => (int) $accommodationId,
+            'building_id' => $buildingId !== '' ? (int) $buildingId : null,
+            'floor_id' => $floorId !== '' ? (int) $floorId : null,
+            'room_no' => $roomNo,
+            'room_type' => $roomType,
+            'capacity' => (int) $capacity,
+            'current_occupancy' => isset($data['current_occupancy']) ? (int) $data['current_occupancy'] : 0,
+            'status' => $status,
+            'reserved_by_employee_id' => $reservedByEmployeeId !== null && $reservedByEmployeeId !== '' ? (int) $reservedByEmployeeId : null,
+            'gender_restriction' => $this->normalizeGenderRestriction($data['gender_restriction'] ?? ''),
+            'remarks' => $data['remarks'] ?? ''
+        ]];
+    }
+
+    private function fetchBuilding($buildingId)
+    {
+        $stmt = $this->db->prepare('SELECT id, accommodation_id FROM buildings WHERE id = ? LIMIT 1');
+        $stmt->execute([$buildingId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function fetchFloor($floorId)
+    {
+        $stmt = $this->db->prepare('SELECT id, building_id FROM floors WHERE id = ? LIMIT 1');
+        $stmt->execute([$floorId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     private function normalizeGenderRestriction($value)
     {
         $normalized = trim((string) ($value ?? ''));
@@ -261,6 +385,42 @@ class Room
         }
 
         return 'Any';
+    }
+
+    private function ensureRoomRelationshipColumns()
+    {
+        static $checked = false;
+
+        if ($checked) {
+            return;
+        }
+
+        $columns = [
+            'accommodation_id' => "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS accommodation_id INTEGER NULL",
+            'building_id' => "ALTER TABLE rooms ADD COLUMN IF NOT EXISTS building_id INTEGER NULL",
+        ];
+
+        foreach ($columns as $columnName => $sql) {
+            $stmt = $this->db->query("SELECT column_name FROM information_schema.columns WHERE table_name = 'rooms' AND column_name = '{$columnName}'");
+            if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+                $this->db->exec($sql);
+            }
+        }
+
+        $this->db->exec("UPDATE rooms r
+            SET accommodation_id = b.accommodation_id
+            FROM floors f
+            JOIN buildings b ON b.id = f.building_id
+            WHERE r.floor_id = f.id
+              AND r.accommodation_id IS NULL");
+
+        $this->db->exec("UPDATE rooms r
+            SET building_id = f.building_id
+            FROM floors f
+            WHERE r.floor_id = f.id
+              AND r.building_id IS NULL");
+
+        $checked = true;
     }
 
     private function ensureReservationColumns()

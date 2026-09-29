@@ -199,6 +199,7 @@ function saveAccommodation(event)
     event.preventDefault();
 
     const id = $('#accommodationId').val();
+    const isCreate = !id;
     const url = id ? `${accommodationApiUrl}/${id}` : accommodationApiUrl;
     const method = id ? 'PUT' : 'POST';
 
@@ -206,9 +207,24 @@ function saveAccommodation(event)
         url: url,
         type: method,
         data: $('#accommodationForm').serialize(),
-        success: function() {
+        success: function(response) {
+            const payload = typeof response === 'string' ? JSON.parse(response) : response;
+            const createdId = payload && payload.id ? payload.id : null;
+
             loadAccommodations();
             $('#accommodationModal').modal('hide');
+
+            if (isCreate && createdId) {
+                swalConfirm(
+                    'Accommodation saved successfully. Do you want to create rooms for this accommodation now?',
+                    function() {
+                        window.location.href = `rooms.php?accommodation_id=${encodeURIComponent(createdId)}`;
+                    },
+                    'Create Rooms?'
+                );
+                return;
+            }
+
             swalSuccess('Accommodation saved successfully');
         },
         error: function(xhr) {

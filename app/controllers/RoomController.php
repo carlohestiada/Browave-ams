@@ -33,9 +33,9 @@ class RoomController
     {
         $data = $_POST;
 
-        if (empty($data['floor_id']) || empty($data['room_type']) || empty($data['capacity'])) {
+        if (empty($data['accommodation_id']) || empty($data['room_type']) || empty($data['capacity'])) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Missing required fields']);
+            echo json_encode(['success' => false, 'error' => 'Accommodation, room type, and capacity are required.']);
             return;
         }
 
@@ -47,28 +47,40 @@ class RoomController
 
         if (empty($data['room_no'])) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Missing required fields']);
+            echo json_encode(['success' => false, 'error' => 'Room number is required.']);
             return;
         }
 
         $result = $this->room->create($data);
 
-        echo json_encode(['success' => $result]);
+        if ($result === false) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Unable to create room. Please check the accommodation, building, floor, and room number.']);
+            return;
+        }
+
+        echo json_encode(['success' => true]);
     }
 
     public function update($id)
     {
         parse_str(file_get_contents("php://input"), $data);
 
-        if (empty($data['floor_id']) || empty($data['room_no']) || empty($data['room_type']) || empty($data['capacity'])) {
+        if (empty($data['accommodation_id']) || empty($data['room_no']) || empty($data['room_type']) || empty($data['capacity'])) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Missing required fields']);
+            echo json_encode(['success' => false, 'error' => 'Accommodation, room number, room type, and capacity are required.']);
             return;
         }
 
         $result = $this->room->update($id, $data);
 
-        echo json_encode(['success' => $result]);
+        if ($result === false) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Unable to update room. Please check the selected accommodation, building, floor, and room number.']);
+            return;
+        }
+
+        echo json_encode(['success' => true]);
     }
 
     public function destroy($id)
