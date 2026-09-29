@@ -506,5 +506,6 @@
     </div>
 </div>
 
+<script src="assets/js/employee-utils.js?v=<?= filemtime(__DIR__ . '/assets/js/employee-utils.js') ?>"></script>
 <script src="assets/js/company-car.js?v=<?= filemtime(__DIR__ . '/assets/js/company-car.js') ?>"></script>
 <?php include 'layouts/footer.php'; ?>
