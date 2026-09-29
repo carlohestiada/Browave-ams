@@ -21,7 +21,7 @@ function tripResponse(data) {
 }
 
 function employeeLabel(employee) {
-  return `${employee.employee_code || ""} - ${employee.english_name || employee.full_name || employee.chinese_name || "Unnamed employee"}`;
+  return `${displayEmployeeCode(employee.employee_code)} - ${employee.english_name || employee.full_name || employee.chinese_name || "Unnamed employee"}`;
 }
 
 function statusBadge(status) {
@@ -108,7 +108,7 @@ function renderTrips(rows) {
         const departure = legs.find((leg) => leg.leg_type === "DEPARTURE");
         const roomData = roomForEmployee(trip.employee_id);
         return `<tr>
-            <td>${escapeTripHtml(trip.employee_code || trip.employee_id)}</td>
+            <td>${escapeTripHtml(trip.employee_code ? displayEmployeeCode(trip.employee_code) : trip.employee_id)}</td>
             <td>${escapeTripHtml(trip.employee_name || "—")}</td>
             <td>${escapeTripHtml(trip.department_name || "—")}</td>
             <td>${formatTripDate(arrival?.leg_date)}</td>
@@ -179,7 +179,7 @@ function populateEmployeeInfo() {
   const roomData = roomForEmployee(employee.id);
   $("#employeePreview").removeClass("d-none").html(`<div class="row g-2 small">
         <div class="col-md-3"><strong>Employee</strong><br>${escapeTripHtml(employee.english_name || employee.full_name || employee.chinese_name || "—")}</div>
-        <div class="col-md-3"><strong>Employee ID</strong><br>${escapeTripHtml(employee.employee_code || "—")}</div>
+        <div class="col-md-3"><strong>Employee ID</strong><br>${escapeTripHtml(displayEmployeeCode(employee.employee_code))}</div>
         <div class="col-md-3"><strong>Department</strong><br>${escapeTripHtml(employee.department_name || "—")}</div>
         <div class="col-md-3"><strong>Accommodation</strong><br>${escapeTripHtml(roomData.accommodation)}<br><small>${escapeTripHtml(roomData.room)}</small></div>
     </div>`);
@@ -635,7 +635,7 @@ function renderTripDetails(trip) {
       tripDetailBody.html(
         `<div class="row g-3 mb-4">
           <div class="col-md-3"><strong>Employee</strong><br>${escapeTripHtml(trip.employee_name || "—")}</div>
-          <div class="col-md-3"><strong>Employee ID</strong><br>${escapeTripHtml(trip.employee_code || trip.employee_id)}</div>
+          <div class="col-md-3"><strong>Employee ID</strong><br>${escapeTripHtml(trip.employee_code ? displayEmployeeCode(trip.employee_code) : trip.employee_id)}</div>
           <div class="col-md-3"><strong>Department</strong><br>${escapeTripHtml(trip.department_name || "—")}</div>
           <div class="col-md-3">
             <div class="d-flex justify-content-between align-items-center gap-2">
