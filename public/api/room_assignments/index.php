@@ -42,15 +42,16 @@ switch ($method) {
         }
 
         parse_str(file_get_contents('php://input'), $data);
-        $isTransfer = !empty($data['new_room_id']) && !empty($data['transfer_date']);
-        $isAssignmentUpdate = !empty($data['room_id']) || !empty($data['checkin_date']) || !empty($data['expected_checkout_date']) || (!empty($data['new_room_id']) && !$isTransfer);
+        $isTransfer = array_key_exists('new_room_id', $data) && array_key_exists('transfer_date', $data);
+        $isAssignmentUpdate = array_key_exists('room_id', $data) || array_key_exists('checkin_date', $data) || array_key_exists('expected_checkout_date', $data);
 
         if ($isTransfer) {
             $controller->transfer($id);
         } elseif ($isAssignmentUpdate) {
             $controller->update($id);
         } else {
-            $controller->transfer($id);
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Missing assignment update or transfer fields']);
         }
         break;
 

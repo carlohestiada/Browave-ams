@@ -15,14 +15,14 @@ class RoomAssignment
         $this->syncRoomStatuses();
 
         $stmt = $this->db->query(
-            "SELECT ra.*, r.room_no, b.accommodation_id, a.accommodation_name, e.employee_code, e.english_name, e.gender, d.department_name,
+            "SELECT ra.*, r.room_no, COALESCE(r.accommodation_id, b.accommodation_id) AS accommodation_id, a.accommodation_name, e.employee_code, e.english_name, e.gender, d.department_name,
                     tr.room_no AS transferred_room_no, ta.accommodation_name AS transferred_accommodation_name
              FROM room_assignments ra
              JOIN employees e ON ra.employee_id = e.id
              JOIN rooms r ON ra.room_id = r.id
              LEFT JOIN floors f ON r.floor_id = f.id
-             LEFT JOIN buildings b ON f.building_id = b.id
-             LEFT JOIN accommodations a ON b.accommodation_id = a.id
+             LEFT JOIN buildings b ON COALESCE(r.building_id, f.building_id) = b.id
+             LEFT JOIN accommodations a ON COALESCE(r.accommodation_id, b.accommodation_id) = a.id
              LEFT JOIN rooms tr ON ra.transferred_to_room_id = tr.id
              LEFT JOIN floors tf ON tr.floor_id = tf.id
              LEFT JOIN buildings tb ON tf.building_id = tb.id
@@ -46,7 +46,7 @@ class RoomAssignment
     public function getById($assignmentId)
     {
         $stmt = $this->db->prepare(
-            "SELECT ra.*, r.room_no, bf.accommodation_id, e.employee_code, e.english_name, e.gender, d.department_name,
+            "SELECT ra.*, r.room_no, COALESCE(r.accommodation_id, bf.accommodation_id) AS accommodation_id, e.employee_code, e.english_name, e.gender, d.department_name,
                     f.floor_name AS floor_name, bf.building_name AS building_name, af.accommodation_name AS accommodation_name,
                     tr.room_no AS transferred_room_no, tf.floor_name AS transferred_floor_name,
                     tb.building_name AS transferred_building_name, ta.accommodation_name AS transferred_accommodation_name
@@ -54,8 +54,8 @@ class RoomAssignment
              JOIN employees e ON ra.employee_id = e.id
              JOIN rooms r ON ra.room_id = r.id
              LEFT JOIN floors f ON r.floor_id = f.id
-             LEFT JOIN buildings bf ON f.building_id = bf.id
-             LEFT JOIN accommodations af ON bf.accommodation_id = af.id
+             LEFT JOIN buildings bf ON COALESCE(r.building_id, f.building_id) = bf.id
+             LEFT JOIN accommodations af ON COALESCE(r.accommodation_id, bf.accommodation_id) = af.id
              LEFT JOIN rooms tr ON ra.transferred_to_room_id = tr.id
              LEFT JOIN floors tf ON tr.floor_id = tf.id
              LEFT JOIN buildings tb ON tf.building_id = tb.id
@@ -146,7 +146,7 @@ class RoomAssignment
             return ['success' => false, 'error' => 'This room has reached its maximum capacity. Please choose another room.'];
         }
 
-        $expectedCheckout = trim($data['expected_checkout_date'] ?? '') ?: $data['checkin_date'];
+        $expectedCheckout = trim((string) ($data['expected_checkout_date'] ?? '')) ?: null;
 
         $stmt = $this->db->prepare(
             "INSERT INTO room_assignments (employee_id, room_id, checkin_date, expected_checkout_date, status)
@@ -209,22 +209,40 @@ class RoomAssignment
         $employeeId = (int) ($assignment['employee_id'] ?? 0);
         $newRoomId = isset($data['new_room_id']) ? (int) $data['new_room_id'] : (isset($data['room_id']) ? (int) $data['room_id'] : (int) $assignment['room_id']);
         $checkinDate = trim((string) ($data['checkin_date'] ?? $assignment['checkin_date']));
-        $checkoutDate = trim((string) ($data['expected_checkout_date'] ?? $assignment['expected_checkout_date']));
+        $checkoutDate = array_key_exists('expected_checkout_date', $data)
+            ? (trim((string) $data['expected_checkout_date']) ?: null)
+            : $assignment['expected_checkout_date'];
 
-        if (!$newRoomId || !$checkinDate || !$checkoutDate) {
-            return ['success' => false, 'error' => 'Missing required fields'];
+        if (!$newRoomId || !$checkinDate) {
+            return ['success' => false, 'error' => 'Room and check-in date are required.'];
         }
 
-        if ($checkoutDate < $checkinDate) {
+        if ($checkoutDate !== null && $checkoutDate < $checkinDate) {
             return ['success' => false, 'error' => 'Check-out date cannot be before check-in date.'];
         }
 
-        if ((int) $assignment['room_id'] !== (int) $newRoomId) {
-            $result = $this->transfer($assignmentId, $newRoomId, $checkinDate);
-            if (is_array($result) && !$result['success']) {
-                return $result;
+        $currentRoomId = (int) $assignment['room_id'];
+        $targetAccommodationId = $this->getRoomAccommodationId($newRoomId);
+        if ($targetAccommodationId === null) {
+            return ['success' => false, 'error' => 'Selected room was not found.'];
+        }
+
+        if ($targetAccommodationId !== $this->getRoomAccommodationId($currentRoomId)) {
+            return ['success' => false, 'error' => 'The selected room must be in the assignment accommodation.'];
+        }
+
+        if ($currentRoomId !== $newRoomId) {
+            if ($this->roomIsReserved($newRoomId, $employeeId)) {
+                return ['success' => false, 'error' => 'The selected room is reserved by another employee. Please choose another room.'];
             }
-            return ['success' => true];
+
+            if (in_array($this->getRoomDisplayStatus($newRoomId), ['Reserved', 'Maintenance'], true)) {
+                return ['success' => false, 'error' => 'The selected room is reserved or under maintenance. Please choose another room.'];
+            }
+
+            if (!$this->roomHasCapacity($newRoomId, $assignmentId)) {
+                return ['success' => false, 'error' => 'The selected room has reached its maximum capacity. Please choose another room.'];
+            }
         }
 
         if ($this->roomConflict($newRoomId, $employeeId, $checkinDate, $checkoutDate, $assignmentId)) {
@@ -233,14 +251,14 @@ class RoomAssignment
 
         $update = $this->db->prepare(
             "UPDATE room_assignments
-             SET checkin_date=?, expected_checkout_date=?
+             SET room_id=?, checkin_date=?, expected_checkout_date=?
              WHERE id=?"
         );
-        if (!$update->execute([$checkinDate, $checkoutDate, $assignmentId])) {
+        if (!$update->execute([$newRoomId, $checkinDate, $checkoutDate, $assignmentId])) {
             return ['success' => false, 'error' => 'Could not update room assignment.'];
         }
 
-        $this->syncRoomStatuses([$newRoomId]);
+        $this->syncRoomStatuses([$currentRoomId, $newRoomId]);
         return ['success' => true];
     }
 
@@ -365,7 +383,7 @@ class RoomAssignment
         $checkinDate = trim((string) $checkinDate);
         $checkoutDate = trim((string) $checkoutDate);
 
-        if ($checkinDate === '' || $checkoutDate === '') {
+        if ($checkinDate === '') {
             return false;
         }
 
@@ -381,8 +399,8 @@ class RoomAssignment
             $params[] = $excludeAssignmentId;
         }
 
-        $sql .= " AND checkin_date <= ? AND expected_checkout_date >= ?";
-        $params[] = $checkoutDate;
+        $sql .= " AND checkin_date <= ? AND (expected_checkout_date IS NULL OR expected_checkout_date >= ?)";
+        $params[] = $checkoutDate !== '' ? $checkoutDate : '9999-12-31';
         $params[] = $checkinDate;
 
         $stmt = $this->db->prepare($sql);
@@ -409,6 +427,21 @@ class RoomAssignment
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ? (int) $row['capacity'] : null;
+    }
+
+    private function getRoomAccommodationId($roomId)
+    {
+        $stmt = $this->db->prepare(
+            "SELECT COALESCE(r.accommodation_id, b.accommodation_id) AS accommodation_id
+             FROM rooms r
+             LEFT JOIN floors f ON r.floor_id = f.id
+             LEFT JOIN buildings b ON COALESCE(r.building_id, f.building_id) = b.id
+             WHERE r.id = ?"
+        );
+        $stmt->execute([$roomId]);
+        $accommodationId = $stmt->fetchColumn();
+
+        return $accommodationId === false || $accommodationId === null ? null : (int) $accommodationId;
     }
 
     private function countRoomOccupants($roomId, $excludeAssignmentId = null)

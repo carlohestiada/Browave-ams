@@ -21,7 +21,7 @@ const assignmentSortColumns = [
   {
     index: 5,
     key: function (row) {
-      return row.expected_checkout_date || row.actual_checkout_date || "";
+      return row.expected_checkout_date || "";
     },
   },
   { index: 6, key: "accommodation_name" },
@@ -168,7 +168,7 @@ function renderAssignmentRow(r, lookup) {
             <td>${displayValue(r.department_name)}</td>
             <td>${displayValue(r.gender)}</td>
             <td>${displayValue(r.checkin_date)}</td>
-            <td>${displayValue(r.expected_checkout_date || r.actual_checkout_date)}</td>
+            <td>${displayValue(r.expected_checkout_date)}</td>
             <td>${displayValue(r.accommodation_name)}</td>
             <td>${displayValue(r.room_no)}</td>
             <td style="text-align:right; white-space:nowrap;">
@@ -225,7 +225,7 @@ function renderAssignments() {
   updateAssignmentSelectionControls();
 }
 
-function loadAssignments() {
+function loadAssignments(onLoaded) {
   $.get(raApi, function (data) {
     const rows = typeof data === "string" ? JSON.parse(data) : data;
     assignmentRows = (Array.isArray(rows) ? rows : []).filter((r) => r.status === "Active");
@@ -239,6 +239,9 @@ function loadAssignments() {
     renderAssignEmployeeDropdown();
     renderTransferAssignmentDropdown();
     renderAssignments();
+    if (typeof onLoaded === "function") {
+      onLoaded();
+    }
   });
 }
 
@@ -367,8 +370,14 @@ $(function () {
   $(document).on("click", "#assignmentDetailsEditBtn", function () {
     const id = $(this).data("assignmentId");
     const modal = bootstrap.Modal.getInstance(document.getElementById("assignmentDetailsModal"));
-    if (modal) modal.hide();
-    openTransfer(id, true);
+    if (modal) {
+      $("#assignmentDetailsModal").one("hidden.bs.modal", function () {
+        editAssignment(id);
+      });
+      modal.hide();
+    } else {
+      editAssignment(id);
+    }
   });
 
   $(document).on("click", "#assignmentDetailsDeleteBtn", function () {
@@ -408,13 +417,18 @@ $(function () {
     const checkinDate = $("#assign_checkin_date").val();
     const checkoutDate = $("#assign_checkout_date").val();
 
-    if (!checkinDate || !checkoutDate) {
-      swalError("Please select both arrival and departure dates.");
+    if (!isValidAssignmentDate(checkinDate)) {
+      swalError("Please select a valid check-in date.");
       return;
     }
 
-    if (checkoutDate < checkinDate) {
-      swalError("Departure date cannot be before arrival date.");
+    if (checkoutDate && !isValidAssignmentDate(checkoutDate)) {
+      swalError("Please select a valid checkout date.");
+      return;
+    }
+
+    if (checkoutDate && checkoutDate < checkinDate) {
+      swalError("Checkout date cannot be earlier than check-in date.");
       return;
     }
 
@@ -440,6 +454,67 @@ $(function () {
       } else {
         swalError(res.error || "Unable to assign room");
       }
+    });
+  });
+
+  $("#editAssignmentForm").on("submit", function (e) {
+    e.preventDefault();
+    const assignmentId = $("#edit_assignment_id").val();
+    const roomId = $("#edit_assignment_room").val();
+    const checkinDate = $("#edit_assignment_checkin").val();
+    const checkoutDate = $("#edit_assignment_checkout").val();
+
+    if (!assignmentId || !roomId || !isValidAssignmentDate(checkinDate)) {
+      swalError("Please select a room and a valid check-in date.");
+      return;
+    }
+
+    if (checkoutDate && !isValidAssignmentDate(checkoutDate)) {
+      swalError("Please select a valid checkout date.");
+      return;
+    }
+
+    if (checkoutDate && checkoutDate < checkinDate) {
+      swalError("Checkout date cannot be earlier than check-in date.");
+      return;
+    }
+
+    $.ajax({
+      url: `${raApi}/${assignmentId}`,
+      type: "PUT",
+      data: {
+        room_id: roomId,
+        checkin_date: checkinDate,
+        expected_checkout_date: checkoutDate,
+      },
+      success: function (response) {
+        const result = typeof response === "string" ? JSON.parse(response) : response;
+        if (!result.success) {
+          swalError(result.error || "Unable to update assignment");
+          return;
+        }
+
+        const editEl = document.getElementById("editAssignmentModal");
+        const editModal = bootstrap.Modal.getInstance(editEl);
+        if (editModal) {
+          $(editEl).one("hidden.bs.modal", function () {
+            loadAssignments(function () {
+              viewAssignmentDetails(assignmentId);
+            });
+          });
+          editModal.hide();
+        } else {
+          loadAssignments(function () {
+            viewAssignmentDetails(assignmentId);
+          });
+        }
+        loadRoomsForAssign("#assign_room");
+        loadRoomsForAssign("#transfer_room");
+        swalSuccess("Assignment updated successfully");
+      },
+      error: function (xhr) {
+        swalError(xhr.responseJSON?.error || xhr.responseText || "Unable to update assignment");
+      },
     });
   });
 
@@ -562,7 +637,7 @@ function viewAssignmentDetails(id) {
               <div class="col-6"><strong>Department</strong></div><div class="col-6">${displayValue(assignment.department_name || employee.department_name)}</div>
               <div class="col-6"><strong>Gender</strong></div><div class="col-6">${displayValue(employee.gender || assignment.gender)}</div>
               <div class="col-6"><strong>Check-in Date</strong></div><div class="col-6">${displayValue(assignment.checkin_date)}</div>
-              <div class="col-6"><strong>Check-out Date</strong></div><div class="col-6">${displayValue(assignment.expected_checkout_date || assignment.actual_checkout_date)}</div>
+              <div class="col-6"><strong>Check-out Date</strong></div><div class="col-6">${displayValue(assignment.expected_checkout_date)}</div>
             </div>
           </div>
         </div>
@@ -644,7 +719,66 @@ function openTransfer(id = null, lockAssignment = false) {
 }
 
 function editAssignment(id) {
-  openTransfer(id, true);
+  $.get(`${raApi}/${id}`, function (response) {
+    const result = typeof response === "string" ? JSON.parse(response) : response;
+    const assignment = result?.data?.assignment;
+    if (!assignment) {
+      swalError("Assignment could not be loaded.");
+      return;
+    }
+
+    $("#edit_assignment_id").val(assignment.id);
+    $("#edit_assignment_checkin").val(assignment.checkin_date || "");
+    $("#edit_assignment_checkout").val(assignment.expected_checkout_date || "");
+    loadRoomsForAssignmentEdit(assignment);
+
+    const editEl = document.getElementById("editAssignmentModal");
+    const editModal = bootstrap.Modal.getInstance(editEl) || new bootstrap.Modal(editEl);
+    editModal.show();
+  }).fail(function () {
+    swalError("Unable to load assignment for editing.");
+  });
+}
+
+function loadRoomsForAssignmentEdit(assignment) {
+  $.get("api/rooms.php", function (data) {
+    const rooms = typeof data === "string" ? JSON.parse(data) : data;
+    const currentRoomId = String(assignment.room_id);
+    const accommodationId = String(assignment.accommodation_id || "");
+    const eligibleRooms = (rooms || []).filter((room) => {
+      if (String(room.accommodation_id || "") !== accommodationId) {
+        return false;
+      }
+      if (String(room.id) === currentRoomId) {
+        return true;
+      }
+
+      const capacityReached = Number(room.capacity) > 0 &&
+        Number(room.current_occupancy || 0) >= Number(room.capacity);
+      return !capacityReached && room.status !== "Reserved" && room.status !== "Maintenance";
+    });
+
+    let options = '<option value="">Select room</option>';
+    eligibleRooms.forEach((room) => {
+      const selected = String(room.id) === currentRoomId ? " selected" : "";
+      options += `<option value="${room.id}"${selected}>${displayValue(room.accommodation_name)} - ${displayValue(room.room_no)}</option>`;
+    });
+    $("#edit_assignment_room").html(options);
+  }).fail(function () {
+    $("#edit_assignment_room").html('<option value="">Unable to load rooms</option>');
+    swalError("Unable to load rooms for this accommodation.");
+  });
+}
+
+function isValidAssignmentDate(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || "");
+  if (!match) {
+    return false;
+  }
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  return date.getFullYear() === Number(match[1]) &&
+    date.getMonth() === Number(match[2]) - 1 &&
+    date.getDate() === Number(match[3]);
 }
 
 function deleteAssignment(id) {

@@ -97,7 +97,7 @@
           </div>
           <div class="mb-3">
             <label>Check-out Date</label>
-            <input id="assign_checkout_date" type="date" name="expected_checkout_date" class="form-control" required>
+            <input id="assign_checkout_date" type="date" name="expected_checkout_date" class="form-control">
             <div class="form-text">Defaults to 49 days after the start date and can be edited manually.</div>
           </div>
           <button class="btn btn-primary">Save</button>
@@ -107,6 +107,35 @@
     </div>
   </div>
 </div>
+<div class="modal fade" id="editAssignmentModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Assignment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editAssignmentForm">
+          <input type="hidden" id="edit_assignment_id" name="assignment_id">
+          <div class="mb-3">
+            <label for="edit_assignment_room">Room</label>
+            <select id="edit_assignment_room" name="room_id" class="form-control" required></select>
+          </div>
+          <div class="mb-3">
+            <label for="edit_assignment_checkin">Start / Check-in Date</label>
+            <input id="edit_assignment_checkin" type="date" name="checkin_date" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit_assignment_checkout">Checkout Date</label>
+            <input id="edit_assignment_checkout" type="date" name="expected_checkout_date" class="form-control">
+          </div>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Transfer modal (moved out to avoid nested forms) -->
 <div class="modal fade" id="transferModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
