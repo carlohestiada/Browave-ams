@@ -331,5 +331,6 @@
 }
 </style>
 
+<script src="assets/js/employee-utils.js?v=<?= filemtime(__DIR__ . '/assets/js/employee-utils.js') ?>"></script>
 <script src="assets/js/room_assignments.js?v=<?= filemtime(__DIR__ . '/assets/js/room_assignments.js') ?>"></script>
 <?php include 'layouts/footer.php'; ?>

@@ -61,9 +61,10 @@ function renderAssignEmployeeDropdown() {
   assignEmployees.forEach((e) => {
     const employeeId = String(e.id);
     const disabled = activeAssignedEmployees.has(employeeId) ? " disabled" : "";
+    const code = displayEmployeeCode(e.employee_code);
     const label = activeAssignedEmployees.has(employeeId)
-      ? `${e.employee_code} - ${e.english_name} (already assigned)`
-      : `${e.employee_code} - ${e.english_name}`;
+      ? `${code} - ${e.english_name} (already assigned)`
+      : `${code} - ${e.english_name}`;
     opts += `<option value="${e.id}"${disabled}>${label}</option>`;
   });
   assignSelect.html(opts);
@@ -164,7 +165,7 @@ function renderAssignmentRow(r, lookup) {
                     onchange="toggleAssignmentSelection(${assignmentId}, this.checked)"
                     ${checked}>
             </td>
-            <td>${displayValue(r.employee_code)} - ${displayValue(r.english_name)}</td>
+            <td>${displayEmployeeCode(r.employee_code)} - ${displayValue(r.english_name)}</td>
             <td>${displayValue(r.department_name)}</td>
             <td>${displayValue(r.gender)}</td>
             <td>${displayValue(r.checkin_date)}</td>
@@ -187,7 +188,7 @@ function filterAssignmentRows(rows) {
 
   return rows.filter((r) => {
     return [
-      r.employee_code,
+      displayEmployeeCode(r.employee_code),
       r.english_name,
       r.department_name,
       r.gender,
@@ -303,7 +304,7 @@ function renderTransferAssignmentDropdown(selectedId = "") {
     .filter((r) => r.status === "Active")
     .forEach((r) => {
       const selected = String(r.id) === String(selectedId) ? " selected" : "";
-      opts += `<option value="${r.id}"${selected}>${displayValue(r.employee_code)} - ${displayValue(r.english_name)} (${displayValue(r.room_no)})</option>`;
+      opts += `<option value="${r.id}"${selected}>${displayEmployeeCode(r.employee_code)} - ${displayValue(r.english_name)} (${displayValue(r.room_no)})</option>`;
     });
   transferSelect.html(opts);
 }
