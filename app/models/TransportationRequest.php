@@ -1,12 +1,16 @@
 <?php
 
+require_once __DIR__ . '/TransportationType.php';
+
 class TransportationRequest
 {
     private $db;
+    private $transportationType;
 
     public function __construct($db)
     {
         $this->db = $db;
+        $this->transportationType = new TransportationType($db);
     }
 
     public function getAll(array $filters = [])
@@ -345,6 +349,7 @@ class TransportationRequest
         }
 
         $data = $this->normalizeInput($data);
+        $data['transportation_type'] = $validation['transportation_name'];
 
         $this->db->beginTransaction();
         try {
@@ -409,6 +414,7 @@ class TransportationRequest
                 if (!$validation['success']) {
                     throw new Exception($validation['error']);
                 }
+                $rowData['transportation_type'] = $validation['transportation_name'];
 
                 $stmt = $this->db->prepare(
                     "INSERT INTO transportation_requests
@@ -457,6 +463,7 @@ class TransportationRequest
         }
 
         $data = $this->normalizeInput($data);
+        $data['transportation_type'] = $validation['transportation_name'];
 
         $this->db->beginTransaction();
         try {
@@ -723,7 +730,8 @@ class TransportationRequest
             return ['success' => false, 'error' => 'Invalid status'];
         }
 
-        if (!in_array($data['transportation_type'], ['Company Car', 'Airport Transfer', 'Shuttle Service', 'Private Hire', 'Other'], true)) {
+        $transportationName = $this->transportationType->findCanonicalName((string) $data['transportation_type']);
+        if ($transportationName === null) {
             return ['success' => false, 'error' => 'Invalid transportation type'];
         }
 
@@ -750,7 +758,7 @@ class TransportationRequest
             }
         }
 
-        return ['success' => true];
+        return ['success' => true, 'transportation_name' => $transportationName];
     }
 
     private function validateTripLeg(int $tripLegId, int $employeeId): array

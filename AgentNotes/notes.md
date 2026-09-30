@@ -136,3 +136,11 @@ These notes will be appended for future reference whenever code affecting room a
 - Verified trip 22's arrival and departure records against PostgreSQL and the `getTripDetails()` model response.
 - Tests: JavaScript syntax checks, PHP lint for the unchanged transportation controller/API/model, editor diagnostics, and `git diff --check` passed. Browser Network inspection was unavailable because the local page redirected to login.
 - No database schema changes.
+
+## 2026-09-30 — Add user-defined transportation types
+
+- Added active transportation type listing and Admin/HR-only type creation with whitespace normalization, case-insensitive canonical lookup, 100-character validation, duplicate reuse, and PostgreSQL unique-violation recovery.
+- Updated transportation create, update, and bulk validation to use canonical catalog values; added Company Car page dropdown loading and modal-safe add-type prompts.
+- The active `browave_ams` schema did not match the task's claimed migration state (`USER-DEFINED` column, empty type table), so the existing idempotent migration 002 was applied with `psql` and then verified (`character varying`, five seeded rows). No migration file was edited.
+- Docs only contain fixed-type examples; no fixed-list requirement conflicts were found.
+- Checks: rollback-only model tests, PHP lint, JavaScript syntax checks, runtime class loading, Viewer POST 403, and `git diff --check`. Editor diagnostics still flag two cross-file types although both classes load at runtime. Authenticated UI checks were unavailable because the browser redirects to login.

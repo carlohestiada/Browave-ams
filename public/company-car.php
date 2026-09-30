@@ -69,11 +69,6 @@
                 <label class="ams-label" for="filterTransportationType">Transportation Type</label>
                 <select id="filterTransportationType" class="ams-input">
                     <option value="">All types</option>
-                    <option value="Company Car">Company Car</option>
-                    <option value="Airport Transfer">Airport Transfer</option>
-                    <option value="Shuttle Service">Shuttle Service</option>
-                    <option value="Private Hire">Private Hire</option>
-                    <option value="Other">Other</option>
                 </select>
             </div>
             <div class="transportation-filter-field">
@@ -247,11 +242,7 @@
                         <div class="col-md-4">
                             <label class="ams-label" for="companyCar_transportation_type">Transportation Type</label>
                             <select id="companyCar_transportation_type" name="transportation_type" class="ams-input">
-                                <option value="Company Car">Company Car</option>
-                                <option value="Airport Transfer">Airport Transfer</option>
-                                <option value="Shuttle Service">Shuttle Service</option>
-                                <option value="Private Hire">Private Hire</option>
-                                <option value="Other">Other</option>
+                                <option value="">Loading transportation types...</option>
                             </select>
                         </div>
                         <div class="col-md-4">
@@ -358,11 +349,7 @@
                         <div class="col-md-6">
                             <label class="ams-label" for="bulkTransportationType">Transportation Type</label>
                             <select id="bulkTransportationType" name="transportation_type" class="ams-input">
-                                <option value="Company Car">Company Car</option>
-                                <option value="Airport Transfer">Airport Transfer</option>
-                                <option value="Shuttle Service">Shuttle Service</option>
-                                <option value="Private Hire">Private Hire</option>
-                                <option value="Other">Other</option>
+                                <option value="">Loading transportation types...</option>
                             </select>
                         </div>
                         <div class="col-md-6">

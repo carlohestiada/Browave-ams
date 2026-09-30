@@ -10,13 +10,8 @@ const requestStatuses = [
   "Completed",
   "Cancelled",
 ];
-const transportationTypes = [
-  "Company Car",
-  "Airport Transfer",
-  "Shuttle Service",
-  "Private Hire",
-  "Other",
-];
+const addTransportationTypeOption = "__add_new_transportation_type__";
+let transportationTypeRows = [];
 const pageSize = 12;
 let transportationRows = [];
 let allTransportationRows = [];
@@ -35,6 +30,121 @@ function escapeTripHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/\"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function populateTransportationTypeSelect(selector, includeAddOption, preferredValue) {
+  const select = document.querySelector(selector);
+  if (!select) return;
+
+  const isFilter = selector === "#filterTransportationType";
+  const currentValue = preferredValue !== undefined ? preferredValue : select.value;
+  const selectedValue = currentValue && currentValue !== addTransportationTypeOption
+    ? String(currentValue)
+    : isFilter ? "" : "Company Car";
+
+  select.replaceChildren();
+  if (isFilter) {
+    select.add(new Option("All types", "", true, selectedValue === ""));
+  }
+
+  const names = transportationTypeRows.map((row) => row.transportation_name);
+  transportationTypeRows.forEach((row) => {
+    const name = String(row.transportation_name);
+    select.add(new Option(name, name, !isFilter && name === "Company Car", name === selectedValue));
+  });
+
+  if (selectedValue && !names.includes(selectedValue)) {
+    select.add(new Option(selectedValue, selectedValue, false, true));
+  }
+
+  if (includeAddOption) {
+    select.add(new Option("+ Add new type...", addTransportationTypeOption));
+  }
+
+  if (selectedValue && Array.from(select.options).some((option) => option.value === selectedValue)) {
+    select.value = selectedValue;
+  }
+  $(select).data("previous-value", select.value);
+}
+
+function loadTransportationTypes(preferredSelector = null, preferredValue = undefined) {
+  return $.getJSON(apiUrl("api/transportation-types/index.php")).then((response) => {
+    if (!response?.success || !Array.isArray(response.data)) {
+      throw new Error(response?.error || "Unable to load transportation types.");
+    }
+
+    transportationTypeRows = response.data;
+    ["#filterTransportationType", "#companyCar_transportation_type", "#bulkTransportationType"].forEach((selector) => {
+      const preferred = selector === preferredSelector ? preferredValue : undefined;
+      populateTransportationTypeSelect(selector, selector !== "#filterTransportationType", preferred);
+    });
+
+    return transportationTypeRows;
+  });
+}
+
+function normalizeTransportationTypeName(name) {
+  return String(name || "").trim().replace(/\s+/gu, " ");
+}
+
+function transportationTypeInputError(name) {
+  const normalized = normalizeTransportationTypeName(name);
+  if (!normalized) return "Transportation type is required.";
+  if (Array.from(normalized).length > 100) {
+    return "Transportation type must be 100 characters or fewer.";
+  }
+  return null;
+}
+
+function promptAddTransportationType(selector, previousValue) {
+  const select = $(selector);
+  const modalTarget = select.closest(".modal")[0] || document.body;
+
+  Swal.fire({
+    target: modalTarget,
+    title: "Add transportation type",
+    input: "text",
+    inputLabel: "Transportation type name",
+    inputAttributes: {
+      maxlength: "100",
+      autocapitalize: "words",
+      autocomplete: "off",
+    },
+    showCancelButton: true,
+    confirmButtonText: "Add type",
+    cancelButtonText: "Cancel",
+    focusConfirm: false,
+    didOpen: () => Swal.getInput()?.focus(),
+    inputValidator: (value) => transportationTypeInputError(value),
+    preConfirm: (value) => {
+      const transportationName = normalizeTransportationTypeName(value);
+      return $.ajax({
+        url: apiUrl("api/transportation-types/index.php"),
+        type: "POST",
+        dataType: "json",
+        data: { transportation_name: transportationName },
+      }).then((response) => {
+        if (!response?.success || !response.transportation_name) {
+          Swal.showValidationMessage(response?.error || "Unable to add transportation type.");
+          return false;
+        }
+
+        return loadTransportationTypes(selector, response.transportation_name)
+          .then(() => response.transportation_name)
+          .catch((error) => {
+            Swal.showValidationMessage(error.responseJSON?.error || error.message || "Unable to reload transportation types.");
+            return false;
+          });
+      }, (xhr) => {
+        Swal.showValidationMessage(xhr.responseJSON?.error || "Unable to add transportation type.");
+        return false;
+      });
+    },
+  }).then((result) => {
+    const value = result.isConfirmed ? result.value : previousValue;
+    select.val(value);
+    select.data("previous-value", value);
+  });
 }
 
 function formatBadge(status) {
@@ -707,9 +817,16 @@ function openModal(mode, id = null) {
       $("#companyCar_trip_leg_id").val(row.trip_leg_id || "");
       $("#companyCar_employee_id").val(row.employee_id || "");
       $("#companyCar_employee_search").val(formatEmployeeName(row));
-      $("#companyCar_transportation_type").val(
-        row.transportation_type || "Company Car",
+      const transportationName = row.transportation_type || "Company Car";
+      populateTransportationTypeSelect(
+        "#companyCar_transportation_type",
+        true,
+        transportationName,
       );
+      $("#companyCar_transportation_type").val(
+        transportationName,
+      );
+      $("#companyCar_transportation_type").data("previous-value", transportationName);
       $("#companyCar_trip_type").val(row.trip_type || "NORMAL_TRIP");
       $("#companyCar_driver_id").val(row.driver_id || "");
       $("#companyCar_vehicle_id").val(row.vehicle_id || "");
@@ -1355,6 +1472,10 @@ $(function () {
     }
   });
 
+  loadTransportationTypes().fail((error) => {
+    console.error("Unable to load transportation types", error);
+    swalError(error.responseJSON?.error || error.message || "Unable to load transportation types.");
+  });
   loadStats();
   loadDrivers();
   loadVehicles();
@@ -1403,6 +1524,22 @@ $(function () {
   });
 
   $("#applyFilters").on("click", loadTransportationSchedule);
+  $(document).on(
+    "change",
+    "#companyCar_transportation_type, #bulkTransportationType",
+    function () {
+      const select = $(this);
+      const selectedValue = String(select.val() || "");
+      if (selectedValue !== addTransportationTypeOption) {
+        select.data("previous-value", selectedValue);
+        return;
+      }
+
+      const previousValue = String(select.data("previous-value") || "Company Car");
+      select.val(previousValue);
+      promptAddTransportationType(`#${this.id}`, previousValue);
+    },
+  );
   $("#resetFilters").on("click", function () {
     $("#filterEmployeeSearch").val("");
     $("#filterEmployeeId").val("");
