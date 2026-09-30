@@ -405,7 +405,7 @@ class TransportationRequest
                 $rowData = $baseData;
                 $rowData['employee_id'] = (int) $employeeId;
 
-                $validation = $this->validate($rowData, null, true);
+                $validation = $this->validate($rowData);
                 if (!$validation['success']) {
                     throw new Exception($validation['error']);
                 }
@@ -709,7 +709,7 @@ class TransportationRequest
         return 'Pending';
     }
 
-    private function validate(array $data, ?int $excludeId = null, bool $skipConflicts = false): array
+    private function validate(array $data, ?int $excludeId = null): array
     {
         $required = ['employee_id', 'transportation_type', 'pickup_date', 'pickup_time', 'pickup_location', 'status'];
 
@@ -748,15 +748,6 @@ class TransportationRequest
             if ($existingTransportation) {
                 return ['success' => false, 'error' => 'Transportation has already been assigned to this trip leg.'];
             }
-        }
-
-        if ($skipConflicts) {
-            return ['success' => true];
-        }
-
-        $conflict = $this->checkAssignmentConflicts($data, $excludeId);
-        if ($conflict !== null) {
-            return ['success' => false, 'error' => $conflict];
         }
 
         return ['success' => true];
@@ -877,77 +868,4 @@ class TransportationRequest
         return $row && (int) $row['count'] > 0;
     }
 
-    private function checkAssignmentConflicts(array $data, ?int $excludeId = null)
-    {
-        $data = $this->normalizeInput($data);
-        $targetTripId = $this->resolveTripIdForTripLeg($data['trip_leg_id']);
-
-        if (!empty($data['driver_id'])) {
-            $conflict = $this->findConflict('driver_id', $data['driver_id'], $data['pickup_date'], $data['pickup_time'], $excludeId, $targetTripId);
-            if ($conflict) {
-                return 'Selected driver is already assigned to another pickup at the same date and time.';
-            }
-        }
-
-        if (!empty($data['vehicle_id'])) {
-            $conflict = $this->findConflict('vehicle_id', $data['vehicle_id'], $data['pickup_date'], $data['pickup_time'], $excludeId, $targetTripId);
-            if ($conflict) {
-                return 'Selected vehicle is already assigned to another pickup at the same date and time.';
-            }
-        }
-
-        return null;
-    }
-
-    private function findConflict(string $field, int $value, string $pickupDate, string $pickupTime, ?int $excludeId = null, ?int $targetTripId = null): bool
-    {
-        $sql = "SELECT tr.id, tr.pickup_time, t.id AS trip_id
-                FROM transportation_requests tr
-                JOIN trip_legs tl ON tl.id = tr.trip_leg_id
-                JOIN trips t ON t.id = tl.trip_id
-                WHERE tr.{$field} = ?
-                  AND tr.pickup_date = ?
-                  AND tr.status IN ('Pending', 'Scheduled', 'Picked Up')";
-        $params = [$value, $pickupDate];
-
-        if ($excludeId !== null) {
-            $sql .= ' AND tr.id != ?';
-            $params[] = $excludeId;
-        }
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        if (empty($rows)) {
-            return false;
-        }
-
-        $targetMinutes = $this->timeToMinutes($pickupTime);
-        foreach ($rows as $row) {
-            if ($targetTripId !== null && (int) $row['trip_id'] === $targetTripId) {
-                continue;
-            }
-
-            $existingMinutes = $this->timeToMinutes($row['pickup_time']);
-            if (abs($targetMinutes - $existingMinutes) < 60) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function timeToMinutes(string $time): int
-    {
-        $parts = explode(':', trim((string) $time));
-        if (count($parts) < 2) {
-            return 0;
-        }
-
-        $hour = (int) ($parts[0] ?? 0);
-        $minute = (int) ($parts[1] ?? 0);
-
-        return ($hour * 60) + $minute;
-    }
 }

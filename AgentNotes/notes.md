@@ -120,3 +120,10 @@ These notes will be appended for future reference whenever code affecting room a
 - Summary: Moved remaining inline <style> blocks from `header.php` and `sidebar.php` into `public/assets/css/style.css` and removed the inline tags so styles are centralized.
 - Tests run: Manual verification — pages still render with expected topbar and sidebar styles after the change.
 - Next steps: Run a full visual check across pages to ensure no style regressions.
+
+## 2026-09-30 — Allow driver and vehicle reuse across trips
+
+- Removed time-based driver and vehicle conflict validation for transportation create, update, and bulk assignment.
+- Preserved required-field, status, transportation-type, employee, trip-leg ownership, and one-transportation-per-leg validation.
+- No trip-status logic, API behavior, or database schema was changed.
+- Validation: `php -l app/models/TransportationRequest.php`.
