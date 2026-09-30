@@ -291,6 +291,8 @@ function initDashboard() {
     const title = document.getElementById("roomStatusDrawerTitle");
     if (title) title.textContent = `${status} Rooms`;
     showRoomStatusDrawerLoading();
+    drawer.classList.add("is-open");
+    drawer.setAttribute("aria-hidden", "false");
 
     fetchJSON(`api/rooms/by_status.php?status=${encodeURIComponent(status)}`)
       .then((data) => {
@@ -303,9 +305,6 @@ function initDashboard() {
 
         roomStatusDrawerCache = data;
         roomStatusDrawerCurrentType = data.type;
-
-        drawer.classList.add("drawer--open");
-        document.body.style.overflow = "hidden";
 
         const countBadge = document.getElementById("roomStatusDrawerCount");
         if (countBadge) countBadge.textContent = data.count;
@@ -351,6 +350,8 @@ function initDashboard() {
     const title = document.getElementById("roomStatusDrawerTitle");
     if (title) title.textContent = `${roomType} Rooms`;
     showRoomStatusDrawerLoading();
+    drawer.classList.add("is-open");
+    drawer.setAttribute("aria-hidden", "false");
 
     fetchJSON(`api/rooms/by_type.php?room_type=${encodeURIComponent(roomType)}`)
       .then((data) => {
@@ -363,9 +364,6 @@ function initDashboard() {
 
         roomStatusDrawerCache = data;
         roomStatusDrawerCurrentType = "room_type";
-
-        drawer.classList.add("drawer--open");
-        document.body.style.overflow = "hidden";
 
         const countBadge = document.getElementById("roomStatusDrawerCount");
         if (countBadge) countBadge.textContent = data.count;
@@ -600,8 +598,8 @@ function initDashboard() {
     const drawer = document.getElementById("roomStatusDrawer");
     if (!drawer) return;
 
-    drawer.classList.remove("drawer--open");
-    document.body.style.overflow = "";
+    drawer.classList.remove("is-open");
+    drawer.setAttribute("aria-hidden", "true");
 
     roomStatusDrawerCache = {};
     roomStatusDrawerCurrentType = null;
@@ -758,7 +756,7 @@ function initDashboard() {
     if (!drawer) {
       drawer = document.createElement("div");
       drawer.id = "transportationDetailsDrawer";
-      drawer.className = "transportation-details-drawer";
+      drawer.className = "drawer drawer--right transportation-details-drawer";
       drawer.setAttribute("aria-hidden", "true");
       document.body.appendChild(drawer);
     }
@@ -775,6 +773,24 @@ function initDashboard() {
     };
 
     return drawer;
+  }
+
+  function openTransportationDetailsDrawer(drawer) {
+    const generation = (drawer.transitionGeneration || 0) + 1;
+    drawer.transitionGeneration = generation;
+    drawer.setAttribute("aria-hidden", "false");
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (
+          drawer.isConnected &&
+          drawer.transitionGeneration === generation &&
+          drawer.getAttribute("aria-hidden") === "false"
+        ) {
+          drawer.classList.add("is-open");
+        }
+      });
+    });
   }
 
   function renderTransportationKpiDrawer({
@@ -803,8 +819,8 @@ function initDashboard() {
       .join("");
 
     drawer.innerHTML = `
-      <div class="transportation-details-backdrop" data-close-drawer="true"></div>
-      <aside class="transportation-details-panel" role="dialog" aria-modal="true">
+      <div class="drawer-backdrop transportation-details-backdrop" data-close-drawer="true"></div>
+      <aside class="drawer-panel transportation-details-panel" role="dialog" aria-modal="true">
         <div class="transportation-details-header">
           <div>
             <p class="transportation-details-kicker">Transportation</p>
@@ -844,8 +860,7 @@ function initDashboard() {
       });
     }
 
-    drawer.setAttribute("aria-hidden", "false");
-    document.body.style.overflow = "hidden";
+    openTransportationDetailsDrawer(drawer);
   }
 
   function bindTransportationKpiCardInteractions() {
@@ -1330,8 +1345,8 @@ function initDashboard() {
         if (!drawer) {
           drawer = document.createElement("div");
           drawer.id = "transportationDetailsDrawer";
-          drawer.className = "transportation-details-drawer";
-          drawer.setAttribute("aria-hidden", "false");
+          drawer.className = "drawer drawer--right transportation-details-drawer";
+          drawer.setAttribute("aria-hidden", "true");
 
           drawer.addEventListener("click", (e) => {
             if (e.target.dataset.closeDrawer) {
@@ -1365,8 +1380,8 @@ function initDashboard() {
                 .join("");
 
         drawer.innerHTML = `
-          <div class="transportation-details-backdrop" data-close-drawer="true"></div>
-          <aside class="transportation-details-panel" role="dialog" aria-modal="true">
+          <div class="drawer-backdrop transportation-details-backdrop" data-close-drawer="true"></div>
+          <aside class="drawer-panel transportation-details-panel" role="dialog" aria-modal="true">
             <div class="transportation-details-header">
               <div>
                 <p class="transportation-details-kicker">Transportation</p>
@@ -1397,7 +1412,7 @@ function initDashboard() {
           </aside>
         `;
 
-        drawer.setAttribute("aria-hidden", "false");
+        openTransportationDetailsDrawer(drawer);
       })
       .catch((error) => {
         console.error("Error loading transportation details:", error);
@@ -1413,8 +1428,8 @@ function initDashboard() {
         if (!drawer) {
           drawer = document.createElement("div");
           drawer.id = "transportationDetailsDrawer";
-          drawer.className = "transportation-details-drawer";
-          drawer.setAttribute("aria-hidden", "false");
+          drawer.className = "drawer drawer--right transportation-details-drawer";
+          drawer.setAttribute("aria-hidden", "true");
 
           drawer.addEventListener("click", (e) => {
             if (e.target.dataset.closeDrawer) {
@@ -1426,8 +1441,8 @@ function initDashboard() {
         }
 
         drawer.innerHTML = `
-          <div class="transportation-details-backdrop" data-close-drawer="true"></div>
-          <aside class="transportation-details-panel" role="dialog" aria-modal="true">
+          <div class="drawer-backdrop transportation-details-backdrop" data-close-drawer="true"></div>
+          <aside class="drawer-panel transportation-details-panel" role="dialog" aria-modal="true">
             <div class="transportation-details-header">
               <div>
                 <p class="transportation-details-kicker">Transportation</p>
@@ -1441,7 +1456,7 @@ function initDashboard() {
           </aside>
         `;
 
-        drawer.setAttribute("aria-hidden", "false");
+        openTransportationDetailsDrawer(drawer);
       });
   }
 
@@ -1449,9 +1464,9 @@ function initDashboard() {
     const drawer = document.getElementById("transportationDetailsDrawer");
     if (!drawer) return;
 
+    drawer.transitionGeneration = (drawer.transitionGeneration || 0) + 1;
     drawer.setAttribute("aria-hidden", "true");
-    drawer.remove();
-    document.body.style.overflow = "";
+    drawer.classList.remove("is-open");
   }
 
   //   END TRANSPORTATION OVERVIEW PANEL

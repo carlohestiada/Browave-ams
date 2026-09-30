@@ -6384,7 +6384,7 @@ body {
   transition: opacity 0.2s ease;
 }
 
-.drawer--open {
+.drawer.is-open {
   pointer-events: auto;
   opacity: 1;
 }
@@ -6411,7 +6411,7 @@ body {
   transition: transform 0.25s ease;
 }
 
-.drawer--open .drawer-panel {
+.drawer.is-open .drawer-panel {
   transform: translateX(0);
 }
 
@@ -7536,7 +7536,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.28);
   cursor: pointer;
 }
 
@@ -7551,6 +7551,12 @@ body {
   flex-direction: column;
   box-shadow: -4px 0 12px rgba(0, 0, 0, 0.15);
   z-index: 10001;
+}
+
+#transportationDetailsDrawer .transportation-details-panel {
+  width: 100%;
+  max-width: 500px;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.15);
 }
 
 .transportation-details-header {

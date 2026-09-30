@@ -376,7 +376,7 @@
 </div>
 
 <!-- Room Status Details Drawer -->
-<div id="roomStatusDrawer" class="drawer drawer--right">
+<div id="roomStatusDrawer" class="drawer drawer--right" aria-hidden="true">
     <div class="drawer-backdrop" id="roomStatusDrawerBackdrop"></div>
     <div class="drawer-panel">
         <div class="drawer-header">
