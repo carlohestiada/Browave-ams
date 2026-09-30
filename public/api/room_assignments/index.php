@@ -23,7 +23,9 @@ if (in_array($method, ['POST', 'PUT', 'DELETE'], true) && !in_array($role, ['Adm
 
 switch ($method) {
     case 'GET':
-        if ($id) {
+        if ($id === 'checkout') {
+            $controller->checkoutHistory();
+        } elseif ($id) {
             $controller->show($id);
         } else {
             $controller->index();
@@ -42,10 +44,13 @@ switch ($method) {
         }
 
         parse_str(file_get_contents('php://input'), $data);
+        $isCheckout = ($data['action'] ?? '') === 'checkout';
         $isTransfer = array_key_exists('new_room_id', $data) && array_key_exists('transfer_date', $data);
         $isAssignmentUpdate = array_key_exists('room_id', $data) || array_key_exists('checkin_date', $data) || array_key_exists('expected_checkout_date', $data);
 
-        if ($isTransfer) {
+        if ($isCheckout) {
+            $controller->checkout($id);
+        } elseif ($isTransfer) {
             $controller->transfer($id);
         } elseif ($isAssignmentUpdate) {
             $controller->update($id);

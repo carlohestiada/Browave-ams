@@ -2,8 +2,10 @@ const raApi = "api/room_assignments/index.php";
 let activeAssignedEmployees = new Set();
 let assignEmployees = [];
 let assignmentRows = [];
+let checkoutHistoryRows = [];
 let selectedAssignmentIds = new Set();
 let assignmentSearchTimer = null;
+let currentAssignmentView = "active";
 let assignmentCheckoutManuallyEdited = false;
 let transferRoomCardsData = [];
 let currentTransferRoomId = null;
@@ -172,11 +174,19 @@ function renderAssignmentRow(r, lookup) {
             <td>${displayValue(r.expected_checkout_date)}</td>
             <td>${displayValue(r.accommodation_name)}</td>
             <td>${displayValue(r.room_no)}</td>
+            <td>${renderAssignmentStatus(r.status)}</td>
             <td style="text-align:right; white-space:nowrap;">
                 <button type="button" class="btn btn-primary btn-sm" onclick="viewAssignmentDetails(${r.id})">View Details</button>
             </td>
         </tr>
     `;
+}
+
+function renderAssignmentStatus(status) {
+  const statusClass = String(status || "")
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+  return `<span class="status-badge assignment-status-badge status-${statusClass}">${displayValue(status)}</span>`;
 }
 
 function filterAssignmentRows(rows) {
@@ -212,18 +222,92 @@ function renderAssignments() {
     lookup[key] = r;
   });
 
+  const filteredRows = filterAssignmentRows(assignmentRows);
   renderPaginatedTable({
-    data: filterAssignmentRows(assignmentRows),
+    data: filteredRows,
     tableSelector: "#assignmentTable",
     currentPage: 1,
     perPage: 10,
+    footerSummarySelector: "#assignmentTableSummary",
+    footerPaginationSelector: "#assignmentPagination",
+    updateFooter: currentAssignmentView === "active",
     renderRow: function (room) {
       return renderAssignmentRow(room, lookup);
     },
     sortColumns: assignmentSortColumns,
   });
 
+  if (currentAssignmentView === "active") {
+    $("#assignmentCount").text(`${filteredRows.length} room assignments found`);
+    $("#assignmentViewSummary").text("Showing active assignments");
+  }
+
   updateAssignmentSelectionControls();
+}
+
+function filterCheckoutHistoryRows(rows) {
+  const search = ($("#assignmentSearchInput").val() || "").trim().toLowerCase();
+  if (!search) return rows.slice();
+
+  return rows.filter((row) => [
+    displayEmployeeCode(row.employee_code),
+    row.employee_id,
+    row.english_name,
+    row.accommodation_name,
+    row.building_name,
+    row.floor_name,
+    row.room_no,
+    row.checkin_date,
+    row.expected_checkout_date,
+    row.actual_checkout_date,
+    row.status,
+  ].some((value) => String(value ?? "").toLowerCase().includes(search)));
+}
+
+function renderCheckoutHistory(rows = checkoutHistoryRows) {
+  checkoutHistoryRows = rows;
+  const filteredRows = filterCheckoutHistoryRows(checkoutHistoryRows);
+  renderPaginatedTable({
+    data: filteredRows,
+    tableSelector: "#checkoutHistoryTable",
+    currentPage: 1,
+    perPage: 10,
+    footerSummarySelector: "#assignmentTableSummary",
+    footerPaginationSelector: "#assignmentPagination",
+    updateFooter: currentAssignmentView === "checkout",
+    renderRow: function (row) {
+      return `
+        <tr>
+          <td>${displayEmployeeCode(row.employee_code)} - ${displayValue(row.english_name)}</td>
+          <td>${displayValue(row.accommodation_name)}</td>
+          <td>${displayValue(row.building_name)}</td>
+          <td>${displayValue(row.floor_name)}</td>
+          <td>${displayValue(row.room_no)}</td>
+          <td>${displayValue(row.checkin_date)}</td>
+          <td>${displayValue(row.expected_checkout_date)}</td>
+          <td>${displayValue(row.actual_checkout_date)}</td>
+          <td>${renderAssignmentStatus(row.status)}</td>
+          <td style="text-align:right; white-space:nowrap;">
+            <button type="button" class="btn btn-primary btn-sm checkout-assignment-details" data-assignment-id="${row.id}">View Details</button>
+          </td>
+        </tr>
+      `;
+    },
+  });
+
+  if (currentAssignmentView === "checkout") {
+    $("#assignmentCount").text(`${filteredRows.length} checkouts found`);
+    $("#assignmentViewSummary").text("Showing checked-out assignments");
+  }
+}
+
+function loadCheckoutHistory() {
+  $.get(`${raApi}/checkout`, function (data) {
+    const rows = typeof data === "string" ? JSON.parse(data) : data;
+    renderCheckoutHistory(Array.isArray(rows) ? rows : []);
+  }).fail(function () {
+    $("#checkoutHistoryTable").html('<tr><td colspan="10" class="text-center text-danger">Unable to load checkout history.</td></tr>');
+  });
 }
 
 function loadAssignments(onLoaded) {
@@ -250,6 +334,26 @@ function resetAssignmentFilters() {
   $("#assignmentSearchInput").val("");
   selectedAssignmentIds.clear();
   renderAssignments();
+  renderCheckoutHistory();
+}
+
+function setAssignmentView(view) {
+  currentAssignmentView = view === "checkout" ? "checkout" : "active";
+  const isActive = currentAssignmentView === "active";
+
+  $(".assignment-view-tab").each(function () {
+    const active = $(this).data("view") === currentAssignmentView;
+    $(this).toggleClass("active", active).attr("aria-selected", active ? "true" : "false");
+  });
+  $("#activeAssignmentsPane").toggleClass("d-none", !isActive).prop("hidden", !isActive);
+  $("#checkoutHistoryPane").toggleClass("d-none", isActive).prop("hidden", isActive);
+  $("#assignmentSelectionBar").toggle(isActive);
+
+  if (isActive) {
+    renderAssignments();
+  } else {
+    renderCheckoutHistory();
+  }
 }
 
 function toggleAssignmentSelection(id, checked) {
@@ -356,6 +460,7 @@ function loadRoomsForAssign(selector = "#assign_room", onlyAvailable = true) {
 
 $(function () {
   loadAssignments();
+  loadCheckoutHistory();
   loadEmployeesForAssign();
   loadRoomsForAssign("#assign_room");
   loadRoomsForAssign("#transfer_room");
@@ -388,6 +493,60 @@ $(function () {
     }
   });
 
+  $(document).on("click", "#assignmentDetailsCheckoutBtn", function () {
+    const button = this;
+    const id = button.dataset.assignmentId;
+    const employeeName = button.dataset.employeeName;
+    const roomName = button.dataset.roomName;
+    if (!id || !employeeName || !roomName) return;
+
+    Swal.fire({
+      title: "Confirm Checkout",
+      text: `Are you sure you want to check out ${employeeName} from Room ${roomName}?`,
+      icon: "warning",
+      showCancelButton: true,
+      cancelButtonText: "Cancel",
+      confirmButtonText: "Confirm Checkout",
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+
+      $(button).prop("disabled", true);
+      $.ajax({
+        url: `${raApi}/${id}`,
+        type: "PUT",
+        data: { action: "checkout" },
+        success: function (response) {
+          const res = typeof response === "string" ? JSON.parse(response) : response;
+          if (!res.success) {
+            $(button).prop("disabled", false);
+            swalError(res.error || "Checkout failed.");
+            return;
+          }
+
+          swalSuccess("The employee has been checked out successfully.");
+          loadAssignments(function () {
+            loadCheckoutHistory();
+            loadRoomsForAssign("#assign_room");
+            loadRoomsForAssign("#transfer_room");
+            viewAssignmentDetails(id);
+          });
+        },
+        error: function (xhr) {
+          $(button).prop("disabled", false);
+          swalError(xhr.responseJSON?.error || "Checkout failed. The assignment was not changed.");
+        },
+      });
+    });
+  });
+
+  $(".assignment-view-tab").on("click", function () {
+    setAssignmentView($(this).data("view"));
+  });
+
+  $(document).on("click", ".checkout-assignment-details", function () {
+    viewAssignmentDetails(this.dataset.assignmentId, true);
+  });
+
   $("#assignModal").on("hidden.bs.modal", resetAssignForm);
   $("#assignModal").on("shown.bs.modal", function () {
     // Properly initialize Select2 when modal is shown
@@ -409,6 +568,7 @@ $(function () {
     assignmentSearchTimer = setTimeout(function () {
       selectedAssignmentIds.clear();
       renderAssignments();
+      renderCheckoutHistory();
     }, 250);
   });
 
@@ -588,10 +748,18 @@ function updateTransferPreview() {
   $("#transfer_preview").text(text ? `${text} on ${date}` : "--");
 }
 
-function viewAssignmentDetails(id) {
+function viewAssignmentDetails(id, readOnly = false) {
   const detailsBody = document.getElementById("assignmentDetailsBody");
   if (!detailsBody) return;
 
+  [
+    "assignmentDetailsCheckoutBtn",
+    "assignmentDetailsTransferBtn",
+    "assignmentDetailsEditBtn",
+    "assignmentDetailsDeleteBtn",
+  ].forEach((buttonId) => {
+    document.getElementById(buttonId).hidden = true;
+  });
   detailsBody.innerHTML = '<div class="text-center text-muted py-4">Loading...</div>';
   const detailsModal = new bootstrap.Modal(document.getElementById("assignmentDetailsModal"));
   detailsModal.show();
@@ -612,6 +780,10 @@ function viewAssignmentDetails(id) {
     const currentBuilding = assignment.building_name || '-';
     const currentFloor = assignment.floor_name || '-';
     const currentStatus = assignment.status || 'Active';
+    const isCurrentActive = !readOnly && currentStatus === 'Active' && Number(assignment.is_current_active) === 1;
+    const roomCapacity = Number(assignment.capacity || 0);
+    const roomOccupancy = Number(assignment.current_occupancy || 0);
+    const availableCapacity = roomCapacity > 0 ? Math.max(roomCapacity - roomOccupancy, 0) : '-';
     const transferRows = history
       .filter((row) => row.status === 'Transferred' && row.transferred_to_room_id)
       .map((row) => `
@@ -623,6 +795,14 @@ function viewAssignmentDetails(id) {
       `)
       .join('');
 
+    const checkoutButton = document.getElementById("assignmentDetailsCheckoutBtn");
+    checkoutButton.dataset.assignmentId = String(id);
+    checkoutButton.dataset.employeeName = employee.english_name || employee.employee_code || 'Employee';
+    checkoutButton.dataset.roomName = assignment.room_no || 'Unknown';
+    checkoutButton.hidden = !isCurrentActive;
+    document.getElementById("assignmentDetailsTransferBtn").hidden = !isCurrentActive;
+    document.getElementById("assignmentDetailsEditBtn").hidden = !isCurrentActive;
+    document.getElementById("assignmentDetailsDeleteBtn").hidden = !isCurrentActive;
     document.getElementById("assignmentDetailsTransferBtn").dataset.assignmentId = String(id);
     document.getElementById("assignmentDetailsEditBtn").dataset.assignmentId = String(id);
     document.getElementById("assignmentDetailsDeleteBtn").dataset.assignmentId = String(id);
@@ -638,18 +818,22 @@ function viewAssignmentDetails(id) {
               <div class="col-6"><strong>Department</strong></div><div class="col-6">${displayValue(assignment.department_name || employee.department_name)}</div>
               <div class="col-6"><strong>Gender</strong></div><div class="col-6">${displayValue(employee.gender || assignment.gender)}</div>
               <div class="col-6"><strong>Check-in Date</strong></div><div class="col-6">${displayValue(assignment.checkin_date)}</div>
-              <div class="col-6"><strong>Check-out Date</strong></div><div class="col-6">${displayValue(assignment.expected_checkout_date)}</div>
+              <div class="col-6"><strong>Expected Check-out</strong></div><div class="col-6">${displayValue(assignment.expected_checkout_date)}</div>
+              <div class="col-6"><strong>Actual Checkout</strong></div><div class="col-6">${displayValue(assignment.actual_checkout_date)}</div>
             </div>
           </div>
         </div>
         <div class="col-md-6">
           <div class="border rounded p-3 h-100">
-            <h6 class="text-uppercase small text-muted mb-3">Current Room Assignment</h6>
+            <h6 class="text-uppercase small text-muted mb-3">${readOnly ? "Room Assignment" : "Current Room Assignment"}</h6>
             <div class="row g-2">
               <div class="col-6"><strong>Accommodation</strong></div><div class="col-6">${displayValue(currentRoomName)}</div>
               <div class="col-6"><strong>Building</strong></div><div class="col-6">${displayValue(currentBuilding)}</div>
               <div class="col-6"><strong>Floor</strong></div><div class="col-6">${displayValue(currentFloor)}</div>
               <div class="col-6"><strong>Room Number</strong></div><div class="col-6">${displayValue(assignment.room_no)}</div>
+              <div class="col-6"><strong>Active Occupants</strong></div><div class="col-6">${displayValue(roomOccupancy)}</div>
+              <div class="col-6"><strong>Available Capacity</strong></div><div class="col-6">${displayValue(availableCapacity)}</div>
+              <div class="col-6"><strong>Room Status</strong></div><div class="col-6">${displayValue(assignment.room_status)}</div>
               <div class="col-6"><strong>Assignment Date</strong></div><div class="col-6">${displayValue(assignment.checkin_date)}</div>
               <div class="col-6"><strong>Current Status</strong></div><div class="col-6">${displayValue(currentStatus)}</div>
             </div>

@@ -16,6 +16,11 @@ class RoomAssignmentController
         echo json_encode($this->assignment->getAll());
     }
 
+    public function checkoutHistory()
+    {
+        echo json_encode($this->assignment->getCheckoutHistory());
+    }
+
     public function show($id)
     {
         $details = $this->assignment->getAssignmentDetails($id);
@@ -120,6 +125,19 @@ class RoomAssignmentController
         $result = $this->assignment->transfer($id, $data['new_room_id'], $data['transfer_date']);
 
         if (is_array($result) && !$result['success']) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => $result['error']]);
+            return;
+        }
+
+        echo json_encode(['success' => true]);
+    }
+
+    public function checkout($id)
+    {
+        $result = $this->assignment->checkout($id);
+
+        if (!$result['success']) {
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => $result['error']]);
             return;

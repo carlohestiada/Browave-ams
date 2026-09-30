@@ -178,7 +178,10 @@ function setupSortableHeaders(tableSelector, sortColumns, state) {
             currentPage: state.currentPage,
             perPage: state.perPage,
             renderRow: state.renderRow,
-            sortColumns: sortColumns
+            sortColumns: sortColumns,
+            footerSummarySelector: state.footerSummarySelector,
+            footerPaginationSelector: state.footerPaginationSelector,
+            updateFooter: state.updateFooter
         });
     });
 
@@ -218,10 +221,13 @@ function ensurePaginationContainer(tableSelector) {
     return container;
 }
 
-function renderPaginatedTable({ data, tableSelector, currentPage = 1, perPage = 10, renderRow, sortColumns = [] }) {
+function renderPaginatedTable({ data, tableSelector, currentPage = 1, perPage = 10, renderRow, sortColumns = [], footerSummarySelector = null, footerPaginationSelector = null, updateFooter = true }) {
     const state = getTableState(tableSelector, currentPage, perPage);
     state.data = data;
     state.renderRow = renderRow;
+    state.footerSummarySelector = footerSummarySelector;
+    state.footerPaginationSelector = footerPaginationSelector;
+    state.updateFooter = updateFooter;
 
     setupSortableHeaders(tableSelector, sortColumns, state);
 
@@ -240,6 +246,33 @@ function renderPaginatedTable({ data, tableSelector, currentPage = 1, perPage = 
     const startItem = pagination.totalItems === 0 ? 0 : ((pagination.currentPage - 1) * state.perPage) + 1;
     const endItem = Math.min(pagination.currentPage * state.perPage, pagination.totalItems);
     const paginationHtml = renderPaginationControls(pagination.currentPage, pagination.totalPages);
+
+    if (footerSummarySelector && footerPaginationSelector) {
+        if (updateFooter) {
+            $(footerSummarySelector).text(`Showing ${pagination.items.length} of ${pagination.totalItems} records`);
+            const footer = $(footerPaginationSelector);
+            footer.html(paginationHtml);
+            footer.find('.page-link').on('click', function(event) {
+                event.preventDefault();
+                const page = Number($(this).attr('data-page'));
+                if (!isNaN(page) && page >= 1 && page <= pagination.totalPages && page !== pagination.currentPage) {
+                    renderPaginatedTable({
+                        data: state.data,
+                        tableSelector: tableSelector,
+                        currentPage: page,
+                        perPage: state.perPage,
+                        renderRow: state.renderRow,
+                        sortColumns: sortColumns,
+                        footerSummarySelector: state.footerSummarySelector,
+                        footerPaginationSelector: state.footerPaginationSelector,
+                        updateFooter: state.updateFooter
+                    });
+                }
+            });
+        }
+        return;
+    }
+
     const container = ensurePaginationContainer(tableSelector);
     container.html(`
         <div class="table-controls">
@@ -262,7 +295,17 @@ function renderPaginatedTable({ data, tableSelector, currentPage = 1, perPage = 
     container.find('.table-entries-select').on('change', function() {
         state.perPage = Number(this.value) || 10;
         state.currentPage = 1;
-        renderPaginatedTable({ data, tableSelector, currentPage: state.currentPage, perPage: state.perPage, renderRow, sortColumns });
+        renderPaginatedTable({
+            data,
+            tableSelector,
+            currentPage: state.currentPage,
+            perPage: state.perPage,
+            renderRow,
+            sortColumns,
+            footerSummarySelector: state.footerSummarySelector,
+            footerPaginationSelector: state.footerPaginationSelector,
+            updateFooter: state.updateFooter
+        });
     });
 
     container.find('.page-link').on('click', function(event) {
@@ -270,7 +313,17 @@ function renderPaginatedTable({ data, tableSelector, currentPage = 1, perPage = 
         const page = Number($(this).attr('data-page'));
         if (!isNaN(page) && page >= 1 && page <= pagination.totalPages && page !== pagination.currentPage) {
             state.currentPage = page;
-            renderPaginatedTable({ data, tableSelector, currentPage: page, perPage: state.perPage, renderRow, sortColumns });
+            renderPaginatedTable({
+                data,
+                tableSelector,
+                currentPage: page,
+                perPage: state.perPage,
+                renderRow,
+                sortColumns,
+                footerSummarySelector: state.footerSummarySelector,
+                footerPaginationSelector: state.footerPaginationSelector,
+                updateFooter: state.updateFooter
+            });
         }
     });
 }

@@ -36,37 +36,77 @@
   </div>
 
   <!-- Room Assignments Table -->
-  <div class="ams-card" style="padding:0; overflow:hidden;">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; border-bottom:1px solid #e5e7eb;">
-      <div id="selectedAssignmentsText" style="font-size:13px; color:#434653;">0 selected</div>
-      <button
-        type="button"
-        class="btn btn-danger btn-sm"
-        id="bulkDeleteAssignmentsBtn"
-        onclick="deleteSelectedAssignments()"
-        disabled>
-        Delete Selected
-      </button>
+  <div class="ams-card dashboard-card-panel" id="roomAssignmentPanel">
+    <div class="dashboard-card-header">
+      <div class="dashboard-card-title"><i class="bi bi-door-open-fill"></i> Room Assignments</div>
+      <div id="assignmentCount" class="text-muted small">0 room assignments found</div>
     </div>
-    <div style="overflow-x:auto;">
-      <table class="table" data-export-title="Room Assignment Data">
-        <thead>
-          <tr>
-            <th style="width:44px; text-align:center;">
-              <input type="checkbox" id="selectAllAssignments" aria-label="Select all assignments">
-            </th>
-            <th>Employee</th>
-            <th>Department</th>
-            <th>Gender</th>
-            <th>Check In</th>
-            <th>Check Out</th>
-            <th>Accommodation</th>
-            <th>Room No.</th>
-            <th style="width:180px; text-align:right;">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="assignmentTable"></tbody>
-      </table>
+    <div class="dashboard-card-body">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <ul class="nav nav-tabs" id="assignmentViewTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link schedule-view-tab assignment-view-tab active" id="activeAssignmentsTab" type="button" data-view="active" role="tab" aria-controls="activeAssignmentsPane" aria-selected="true">Active</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link schedule-view-tab assignment-view-tab" id="checkoutHistoryTab" type="button" data-view="checkout" role="tab" aria-controls="checkoutHistoryPane" aria-selected="false">Checkout</button>
+          </li>
+        </ul>
+        <div id="assignmentViewSummary" class="text-muted small">Showing active assignments</div>
+      </div>
+      <div id="assignmentSelectionBar" class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div id="selectedAssignmentsText" class="text-muted small">0 selected</div>
+        <button type="button" class="btn btn-danger btn-sm" id="bulkDeleteAssignmentsBtn" onclick="deleteSelectedAssignments()" disabled>
+          Delete Selected
+        </button>
+      </div>
+      <section class="assignment-view-pane" id="activeAssignmentsPane" role="tabpanel" aria-labelledby="activeAssignmentsTab">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle" data-export-title="Room Assignment Data">
+            <thead class="table-light">
+              <tr>
+                <th style="width:44px; text-align:center;">
+                  <input type="checkbox" id="selectAllAssignments" aria-label="Select all assignments">
+                </th>
+                <th>Employee</th>
+                <th>Department</th>
+                <th>Gender</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Accommodation</th>
+                <th>Room No.</th>
+                <th>Status</th>
+                <th style="width:180px; text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="assignmentTable"></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="assignment-view-pane d-none" id="checkoutHistoryPane" role="tabpanel" aria-labelledby="checkoutHistoryTab" hidden>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle" data-export-title="Room Checkout History">
+            <thead class="table-light">
+              <tr>
+                <th>Employee</th>
+                <th>Accommodation</th>
+                <th>Building</th>
+                <th>Floor</th>
+                <th>Room</th>
+                <th>Check-in Date</th>
+                <th>Expected Check-out</th>
+                <th>Actual Checkout</th>
+                <th>Status</th>
+                <th style="width:180px; text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="checkoutHistoryTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 p-3 border-top">
+      <div id="assignmentTableSummary" class="text-muted small">Showing 0 of 0 records</div>
+      <div id="assignmentPagination"></div>
     </div>
   </div>
 </div>
@@ -204,15 +244,74 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-warning" id="assignmentDetailsTransferBtn">Transfer Room</button>
-        <button type="button" class="btn btn-primary" id="assignmentDetailsEditBtn">Edit Assignment</button>
-        <button type="button" class="btn btn-danger" id="assignmentDetailsDeleteBtn">Delete Assignment</button>
+        <button type="button" class="btn btn-success" id="assignmentDetailsCheckoutBtn" hidden>Check Out</button>
+        <button type="button" class="btn btn-warning" id="assignmentDetailsTransferBtn" hidden>Transfer Room</button>
+        <button type="button" class="btn btn-primary" id="assignmentDetailsEditBtn" hidden>Edit Assignment</button>
+        <button type="button" class="btn btn-danger" id="assignmentDetailsDeleteBtn" hidden>Delete Assignment</button>
       </div>
     </div>
   </div>
 </div>
 
 <style>
+#roomAssignmentPanel #assignmentViewTabs {
+  border-bottom: none;
+  gap: 6px;
+}
+
+#roomAssignmentPanel #assignmentViewTabs .nav-item {
+  margin: 0;
+}
+
+#roomAssignmentPanel #assignmentViewSummary,
+#roomAssignmentPanel #selectedAssignmentsText,
+#roomAssignmentPanel #assignmentTableSummary {
+  font-family: "Inter", sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--slate) !important;
+}
+
+#roomAssignmentPanel #assignmentPagination .page-link {
+  font-family: "Inter", sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--navy);
+  border: 1px solid var(--border-line);
+  border-radius: 6px;
+  margin: 0 3px;
+  padding: 6px 12px;
+}
+
+#roomAssignmentPanel #assignmentPagination .page-item.active .page-link {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+#roomAssignmentPanel #assignmentPagination .page-link:hover {
+  background: var(--surface-low);
+  color: var(--navy);
+}
+
+#roomAssignmentPanel .assignment-status-badge.status-active {
+  background: var(--surface-low);
+  color: #047c56;
+  border-color: var(--border-line);
+}
+
+#roomAssignmentPanel .assignment-status-badge.status-checked-out {
+  background: var(--surface-bright);
+  color: var(--navy);
+  border-color: var(--border-line);
+}
+
+#roomAssignmentPanel .assignment-status-badge.status-transferred {
+  background: var(--surface-low);
+  color: var(--navy);
+  border-color: var(--border-line);
+}
+
 .room-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));

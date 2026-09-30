@@ -43,10 +43,38 @@ class RoomAssignment
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getCheckoutHistory()
+    {
+        $stmt = $this->db->query(
+            "SELECT ra.*, r.room_no, r.capacity, r.current_occupancy, r.status AS room_status,
+                    COALESCE(r.accommodation_id, b.accommodation_id) AS accommodation_id,
+                    a.accommodation_name, e.employee_code, e.english_name, e.gender, d.department_name,
+                    f.floor_name, b.building_name
+             FROM room_assignments ra
+             JOIN employees e ON ra.employee_id = e.id
+             JOIN rooms r ON ra.room_id = r.id
+             LEFT JOIN floors f ON r.floor_id = f.id
+             LEFT JOIN buildings b ON COALESCE(r.building_id, f.building_id) = b.id
+             LEFT JOIN accommodations a ON COALESCE(r.accommodation_id, b.accommodation_id) = a.id
+             LEFT JOIN departments d ON e.department_id = d.id
+             WHERE ra.status = 'Checked Out'
+             ORDER BY ra.actual_checkout_date DESC NULLS LAST, ra.id DESC"
+        );
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function getById($assignmentId)
     {
         $stmt = $this->db->prepare(
-            "SELECT ra.*, r.room_no, COALESCE(r.accommodation_id, bf.accommodation_id) AS accommodation_id, e.employee_code, e.english_name, e.gender, d.department_name,
+            "SELECT ra.*, r.room_no, r.capacity, r.current_occupancy, r.status AS room_status,
+                    COALESCE(r.accommodation_id, bf.accommodation_id) AS accommodation_id,
+                    CASE WHEN ra.status = 'Active' AND ra.id = (
+                        SELECT ra2.id FROM room_assignments ra2
+                        WHERE ra2.employee_id = ra.employee_id AND ra2.status = 'Active'
+                        ORDER BY ra2.checkin_date DESC, ra2.id DESC LIMIT 1
+                    ) THEN 1 ELSE 0 END AS is_current_active,
+                    e.employee_code, e.english_name, e.gender, d.department_name,
                     f.floor_name AS floor_name, bf.building_name AS building_name, af.accommodation_name AS accommodation_name,
                     tr.room_no AS transferred_room_no, tf.floor_name AS transferred_floor_name,
                     tb.building_name AS transferred_building_name, ta.accommodation_name AS transferred_accommodation_name
@@ -262,6 +290,58 @@ class RoomAssignment
         return ['success' => true];
     }
 
+    public function checkout($assignmentId)
+    {
+        try {
+            $this->db->beginTransaction();
+
+            $stmt = $this->db->prepare(
+                "SELECT id, employee_id, room_id, status
+                 FROM room_assignments WHERE id = ? FOR UPDATE"
+            );
+            $stmt->execute([$assignmentId]);
+            $assignment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$assignment || $assignment['status'] !== 'Active') {
+                throw new DomainException('Only an active room assignment can be checked out.');
+            }
+
+            $currentStmt = $this->db->prepare(
+                "SELECT id FROM room_assignments
+                 WHERE employee_id = ? AND status = 'Active'
+                 ORDER BY checkin_date DESC, id DESC LIMIT 1 FOR UPDATE"
+            );
+            $currentStmt->execute([$assignment['employee_id']]);
+            if ((int) $currentStmt->fetchColumn() !== (int) $assignmentId) {
+                throw new DomainException('Only the employee\'s current room assignment can be checked out.');
+            }
+
+            $update = $this->db->prepare(
+                "UPDATE room_assignments
+                 SET status = 'Checked Out', actual_checkout_date = ?
+                 WHERE id = ? AND status = 'Active'"
+            );
+            if (!$update->execute([date('Y-m-d'), $assignmentId]) || $update->rowCount() !== 1) {
+                throw new Exception('Could not check out this room assignment.');
+            }
+
+            if (!$this->syncRoomStatuses([$assignment['room_id']])) {
+                throw new Exception('Could not update room occupancy and status.');
+            }
+
+            $this->db->commit();
+            return ['success' => true];
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            $error = $e instanceof DomainException
+                ? $e->getMessage()
+                : 'Checkout failed. No changes were made.';
+            return ['success' => false, 'error' => $error];
+        }
+    }
+
     public function transfer($assignmentId, $newRoomId, $transferDate)
     {
         $this->ensureTransferredToColumn();
@@ -317,9 +397,9 @@ class RoomAssignment
             $updateOld = $this->db->prepare(
                 "UPDATE room_assignments
                  SET status='Transferred', actual_checkout_date=?, transferred_to_room_id=?
-                 WHERE id=?"
+                 WHERE id=? AND status='Active'"
             );
-            if (!$updateOld->execute([$transferDate, $newRoomId, $assignmentId])) {
+            if (!$updateOld->execute([$transferDate, $newRoomId, $assignmentId]) || $updateOld->rowCount() !== 1) {
                 throw new Exception('Could not close the old assignment.');
             }
 
@@ -505,8 +585,12 @@ class RoomAssignment
             $statusToSet = in_array($roomStatus, ['Reserved', 'Maintenance'], true)
                 ? $roomStatus
                 : ($isOccupied ? 'Occupied' : 'Available');
-            $this->updateRoomStatus($roomId, $statusToSet, $occupancyCount);
+            if (!$this->updateRoomStatus($roomId, $statusToSet, $occupancyCount)) {
+                return false;
+            }
         }
+
+        return true;
     }
 
     private function ensureTransferredToColumn()
