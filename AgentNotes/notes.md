@@ -127,3 +127,12 @@ These notes will be appended for future reference whenever code affecting room a
 - Preserved required-field, status, transportation-type, employee, trip-leg ownership, and one-transportation-per-leg validation.
 - No trip-status logic, API behavior, or database schema was changed.
 - Validation: `php -l app/models/TransportationRequest.php`.
+
+## 2026-09-30 — Fix Trips transportation details loading
+
+- Root cause: Trips Details treated failed per-leg requests as missing transportation; the saved database rows and per-leg model query were valid. Switched Trips Details to the working whole-trip Company Car endpoint and map transport rows to legs by `trip_leg_id`.
+- Added visible transportation-load errors with HTTP status and console response-body logging, disabled cached detail reads, and displayed pickup date/time/location.
+- Fixed the Company Car edit query handoff and applied status-badge styles to the Trip Details modal.
+- Verified trip 22's arrival and departure records against PostgreSQL and the `getTripDetails()` model response.
+- Tests: JavaScript syntax checks, PHP lint for the unchanged transportation controller/API/model, editor diagnostics, and `git diff --check` passed. Browser Network inspection was unavailable because the local page redirected to login.
+- No database schema changes.

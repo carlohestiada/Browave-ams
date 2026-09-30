@@ -6977,34 +6977,40 @@ body {
 }
 
 /* Trip schedule status badges: keep each status readable on table rows. */
-#tripsTableBody .status-badge {
+#tripsTableBody .status-badge,
+#tripDetailsBody .status-badge {
   border: 1px solid transparent;
   color: inherit !important;
 }
 
-#tripsTableBody .status-badge::before {
+#tripsTableBody .status-badge::before,
+#tripDetailsBody .status-badge::before {
   background: currentColor;
 }
 
-#tripsTableBody .status-planned {
+#tripsTableBody .status-planned,
+#tripDetailsBody .status-planned {
   background: #dbeafe !important;
   border-color: #93c5fd !important;
   color: #1e3a8a !important;
 }
 
-#tripsTableBody .status-active {
+#tripsTableBody .status-active,
+#tripDetailsBody .status-active {
   background: #dcfce7 !important;
   border-color: #86efac !important;
   color: #166534 !important;
 }
 
-#tripsTableBody .status-completed {
+#tripsTableBody .status-completed,
+#tripDetailsBody .status-completed {
   background: #e2e8f0 !important;
   border-color: #94a3b8 !important;
   color: #334155 !important;
 }
 
-#tripsTableBody .status-cancelled {
+#tripsTableBody .status-cancelled,
+#tripDetailsBody .status-cancelled {
   background: #fee2e2 !important;
   border-color: #fca5a5 !important;
   color: #991b1b !important;

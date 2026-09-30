@@ -1483,7 +1483,11 @@ $(function () {
     },
   );
 
-  if (new URLSearchParams(window.location.search).get("trip_leg_id")) {
+  const pageParams = new URLSearchParams(window.location.search);
+  const editId = pageParams.get("edit");
+  if (editId) {
+    openModal("edit", editId);
+  } else if (pageParams.get("trip_leg_id")) {
     openModal("create");
   }
 });

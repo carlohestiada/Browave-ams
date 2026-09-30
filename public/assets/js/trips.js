@@ -584,19 +584,7 @@ function renderTripDetails(trip) {
   const tripDetailBody = $("#tripDetailsBody");
   tripDetailBody.data("trip-id", trip.id);
 
-  const transportationPromises = legs.map((leg) =>
-    $.get(tripApiUrl(`api/company-car/index.php/trip-leg/${leg.id}`))
-      .done((data) => {
-        leg.transportation = tripResponse(data)?.data || null;
-      })
-      .fail(() => {
-        leg.transportation = null;
-      })
-      .always(() => leg),
-  );
-
-  $.when.apply($, transportationPromises)
-    .always(() => {
+  const renderDetails = (transportationLoadError = null) => {
       const transportationAssigned = legs.filter((leg) => leg.transportation).length;
       const transportationPending = legs.length - transportationAssigned;
       const hasAccommodation = room.accommodation !== "—" && room.room !== "—";
@@ -609,14 +597,21 @@ function renderTripDetails(trip) {
           <td>${escapeTripHtml(leg.destination)}</td>
           <td>${escapeTripHtml(leg.arrival_airport || leg.departure_airport || "—")}</td>
           <td>
-            ${leg.transportation ? `
+            ${transportationLoadError ? `
+              <div class="text-danger">
+                <strong>Unable to load transportation details.</strong><br>
+                ${transportationLoadError.status ? `HTTP ${escapeTripHtml(transportationLoadError.status)}: ` : ""}${escapeTripHtml(transportationLoadError.message || "Request failed")}
+              </div>
+            ` : leg.transportation ? `
               <div class="text-sm">
                 <strong>${escapeTripHtml(leg.transportation.transportation_type)}</strong><br>
                 ${leg.transportation.driver_name ? `<span class="text-muted">Driver: ${escapeTripHtml(leg.transportation.driver_name)}</span><br>` : ''}
                 ${leg.transportation.vehicle_name ? `<span class="text-muted">Vehicle: ${escapeTripHtml(leg.transportation.vehicle_name)}</span><br>` : ''}
+                <span class="text-muted">Pickup: ${formatTripDate(leg.transportation.pickup_date)} ${escapeTripHtml(leg.transportation.pickup_time || "—")}</span><br>
+                <span class="text-muted">Location: ${escapeTripHtml(leg.transportation.pickup_location || "—")}</span><br>
                 <span class="badge bg-${getStatusColor(leg.transportation.status)}">${escapeTripHtml(leg.transportation.status)}</span>
                 <div class="mt-2">
-                  <a class="btn btn-sm btn-outline-primary" href="company-car.php?edit=${leg.transportation.id}">Edit</a>
+                  <a class="btn btn-sm btn-outline-primary" href="company-car.php?edit=${encodeURIComponent(leg.transportation.id)}">Edit</a>
                   <button type="button" class="btn btn-sm btn-outline-danger delete-transportation" data-id="${leg.transportation.id}">Delete</button>
                 </div>
               </div>
@@ -655,6 +650,12 @@ function renderTripDetails(trip) {
           <div class="col-12"><strong>Remarks</strong><br>${escapeTripHtml(trip.remarks || "—")}</div>
         </div>
         
+        ${transportationLoadError ? `
+        <div class="alert alert-danger" role="alert" style="margin-bottom:1rem;">
+          <strong>Transportation data could not be loaded.</strong>
+          ${transportationLoadError.status ? `HTTP ${escapeTripHtml(transportationLoadError.status)}: ` : ""}${escapeTripHtml(transportationLoadError.message || "Request failed")}
+        </div>
+        ` : `
         <div class="alert alert-info" style="margin-bottom:1rem;">
           <strong>Transportation Summary</strong>
           <div class="mt-2">
@@ -665,6 +666,7 @@ function renderTripDetails(trip) {
             </small>
           </div>
         </div>
+        `}
         
         <h6>Trip Legs & Transportation</h6>
         <div class="table-responsive">
@@ -701,6 +703,61 @@ function renderTripDetails(trip) {
         .on("click", "#deleteTripButton", () => deleteTrip(trip.id))
         .on("click", "#completeTripButton", () => completeTrip(trip.id))
         .on("click", "#cancelTripButton", () => cancelTrip(trip.id));
+  };
+
+  $.ajax({
+    url: tripApiUrl(`api/company-car/index.php/trip/${encodeURIComponent(trip.id)}`),
+    method: "GET",
+    cache: false,
+    dataType: "json",
+  })
+    .done((response) => {
+      if (String(tripDetailBody.data("trip-id")) !== String(trip.id)) return;
+
+      const result = tripResponse(response);
+      const detailLegs = result?.data?.legs;
+      if (!result?.success || !Array.isArray(detailLegs)) {
+        const body = JSON.stringify(response);
+        console.error("Unable to load trip transportation details", {
+          status: 200,
+          body,
+        });
+        renderDetails({
+          status: 200,
+          message: result?.error || "Invalid transportation response",
+        });
+        return;
+      }
+
+      const transportationByLegId = new Map(
+        detailLegs
+          .filter((leg) => leg.transportation_id != null)
+          .map((leg) => [String(leg.trip_leg_id), {
+            id: leg.transportation_id,
+            transportation_type: leg.transportation_type,
+            driver_name: leg.driver_name,
+            vehicle_name: leg.vehicle_name,
+            pickup_date: leg.pickup_date,
+            pickup_time: leg.pickup_time,
+            pickup_location: leg.pickup_location,
+            status: leg.status,
+          }]),
+      );
+
+      legs.forEach((leg) => {
+        leg.transportation = transportationByLegId.get(String(leg.id)) || null;
+      });
+      renderDetails();
+    })
+    .fail((xhr, textStatus, errorThrown) => {
+      if (String(tripDetailBody.data("trip-id")) !== String(trip.id)) return;
+
+      const message = xhr.statusText || errorThrown || textStatus || "Request failed";
+      console.error("Unable to load trip transportation details", {
+        status: xhr.status,
+        body: xhr.responseText,
+      });
+      renderDetails({ status: xhr.status, message });
     });
 }
 
