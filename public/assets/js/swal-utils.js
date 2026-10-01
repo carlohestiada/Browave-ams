@@ -8,7 +8,7 @@ function swalSuccess(message, title = 'Success') {
 }
 
 function swalError(message, title = 'Error') {
-    Swal.fire({
+    return Swal.fire({
         icon: 'error',
         title: title,
         text: message,

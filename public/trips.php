@@ -99,6 +99,7 @@
                         <div class="col-md-3"><label class="form-label" for="tripStatus">Status</label><select id="tripStatus" class="form-select" disabled><option value="PLANNED">Planned</option><option value="ACTIVE">Active</option><option value="COMPLETED">Completed</option><option value="CANCELLED">Cancelled</option></select><div class="form-text">Status updates automatically from the schedule.</div></div>
                     </div>
                     <div id="employeePreview" class="alert alert-light border d-none mb-4"></div>
+                    <div class="form-text mb-2">Enter an arrival, a departure, or both. You can add the missing one later by editing the trip.</div>
                     <div id="tripLegsForm" class="row g-3"></div>
                     <div class="mt-3"><label class="form-label" for="tripRemarks">Remarks</label><textarea id="tripRemarks" class="form-control" rows="2"></textarea></div>
                 </div>

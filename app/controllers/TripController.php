@@ -95,21 +95,15 @@ class TripController
 
             $tripId = $createTripResult['id'];
 
-            // Parse legs JSON array
-            $legs = json_decode($data['legs'] ?? '[]', true);
-            if (!is_array($legs) || empty($legs)) {
-                throw new Exception('No trip legs provided.');
-            }
-
             // Create legs
             $createdLegIds = [];
-            foreach ($legs as $legData) {
+            foreach ($legsResult['legs'] as $legData) {
                 $createLegResult = $this->tripLeg->create([
                     'trip_id' => $tripId,
                     'leg_type' => $legData['leg_type'],
                     'leg_date' => $legData['leg_date'],
-                    'origin' => $legData['origin'],
-                    'destination' => $legData['destination'],
+                    'origin' => $legData['origin'] ?? null,
+                    'destination' => $legData['destination'] ?? null,
                     'arrival_airport' => $legData['arrival_airport'] ?? null,
                     'departure_airport' => $legData['departure_airport'] ?? null,
                     'remarks' => $legData['remarks'] ?? ''
@@ -251,55 +245,65 @@ class TripController
     {
         $legs = json_decode($data['legs'] ?? '[]', true);
 
-        if (!is_array($legs) || empty($legs)) {
-            return ['success' => false, 'error' => 'Trip legs are required (send as JSON array).'];
+        if (!is_array($legs)) {
+            return ['success' => false, 'error' => 'Trip legs must be sent as a JSON array.'];
         }
 
-        if (count($legs) !== 2) {
-            return ['success' => false, 'error' => 'Trip must have exactly 2 legs.'];
+        if (count($legs) === 0) {
+            return ['success' => false, 'error' => 'Enter at least an arrival or a departure.'];
+        }
+        if (count($legs) > 2) {
+            return ['success' => false, 'error' => 'A trip may have at most one arrival and one departure.'];
         }
 
-        $tripType = $data['trip_type'];
-        $legTypes = array_map(fn($leg) => $leg['leg_type'] ?? null, $legs);
-        $legDates = array_map(fn($leg) => $leg['leg_date'] ?? null, $legs);
+        $normalizedLegs = [];
+        $legsByType = [];
+        foreach ($legs as $leg) {
+            if (!is_array($leg)) {
+                return ['success' => false, 'error' => 'Invalid trip leg data.'];
+            }
 
-        // Validate leg types
-        foreach ($legTypes as $type) {
-            if (!in_array($type, ['ARRIVAL', 'DEPARTURE'])) {
+            $type = strtoupper(trim((string) ($leg['leg_type'] ?? '')));
+            if (!in_array($type, ['ARRIVAL', 'DEPARTURE'], true)) {
                 return ['success' => false, 'error' => 'Invalid leg type. Allowed: ARRIVAL, DEPARTURE'];
             }
-        }
 
-        // Validate leg dates
-        foreach ($legDates as $date) {
+            if (isset($legsByType[$type])) {
+                return ['success' => false, 'error' => 'A trip may have at most one arrival and one departure.'];
+            }
+
+            $date = trim((string) ($leg['leg_date'] ?? ''));
             if (!$this->isValidDate($date)) {
                 return ['success' => false, 'error' => 'Invalid leg date format. Use YYYY-MM-DD.'];
             }
+
+            $normalizedLeg = [
+                'leg_type' => $type,
+                'leg_date' => $date,
+                'origin' => $leg['origin'] ?? null,
+                'destination' => $leg['destination'] ?? null,
+                'arrival_airport' => $leg['arrival_airport'] ?? null,
+                'departure_airport' => $leg['departure_airport'] ?? null,
+                'remarks' => $leg['remarks'] ?? '',
+            ];
+            $normalizedLegs[] = $normalizedLeg;
+            $legsByType[$type] = $normalizedLeg;
         }
 
-        if ($tripType === 'NORMAL_TRIP') {
-            // Must have ARRIVAL first, then DEPARTURE
-            if ($legTypes[0] !== 'ARRIVAL' || $legTypes[1] !== 'DEPARTURE') {
-                return ['success' => false, 'error' => 'NORMAL_TRIP must have ARRIVAL leg followed by DEPARTURE leg.'];
-            }
+        if (isset($legsByType['ARRIVAL'], $legsByType['DEPARTURE'])) {
+            $arrivalDate = $legsByType['ARRIVAL']['leg_date'];
+            $departureDate = $legsByType['DEPARTURE']['leg_date'];
+            $tripType = $data['trip_type'] ?? 'NORMAL_TRIP';
 
-            // Arrival date must be <= departure date
-            if ($legDates[0] > $legDates[1]) {
+            if ($tripType === 'NORMAL_TRIP' && $arrivalDate > $departureDate) {
                 return ['success' => false, 'error' => 'For NORMAL_TRIP, arrival date must be <= departure date.'];
             }
-        } elseif ($tripType === 'ROUND_TRIP') {
-            // Must have DEPARTURE first, then ARRIVAL
-            if ($legTypes[0] !== 'DEPARTURE' || $legTypes[1] !== 'ARRIVAL') {
-                return ['success' => false, 'error' => 'ROUND_TRIP must have DEPARTURE leg followed by ARRIVAL leg.'];
-            }
-
-            // Departure date must be <= arrival date
-            if ($legDates[0] > $legDates[1]) {
+            if ($tripType === 'ROUND_TRIP' && $departureDate > $arrivalDate) {
                 return ['success' => false, 'error' => 'For ROUND_TRIP, departure date must be <= arrival date.'];
             }
         }
 
-        return ['success' => true];
+        return ['success' => true, 'legs' => $normalizedLegs];
     }
 
     private function isValidDate($date)

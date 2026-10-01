@@ -22,10 +22,15 @@ class Trip
                     t.remarks,
                     t.created_at,
                     t.updated_at,
-                    (SELECT MIN(leg_date) FROM trip_legs start_leg WHERE start_leg.trip_id = t.id) AS start_date
+                    trip_leg_dates.start_date
                 FROM trips t
                 JOIN employees e ON t.employee_id = e.id
-                LEFT JOIN departments d ON e.department_id = d.id";
+                LEFT JOIN departments d ON e.department_id = d.id
+                LEFT JOIN (
+                    SELECT trip_id, MIN(leg_date) AS start_date
+                    FROM trip_legs
+                    GROUP BY trip_id
+                ) trip_leg_dates ON trip_leg_dates.trip_id = t.id";
 
         $conditions = [];
         $params = [];
@@ -41,12 +46,12 @@ class Trip
         }
 
         if (!empty($filters['date_from'])) {
-            $conditions[] = 'EXISTS (SELECT 1 FROM trip_legs date_from_leg WHERE date_from_leg.trip_id = t.id AND date_from_leg.leg_date >= ?)';
+            $conditions[] = '(trip_leg_dates.start_date IS NULL OR EXISTS (SELECT 1 FROM trip_legs date_from_leg WHERE date_from_leg.trip_id = t.id AND date_from_leg.leg_date >= ?))';
             $params[] = $filters['date_from'];
         }
 
         if (!empty($filters['date_to'])) {
-            $conditions[] = 'EXISTS (SELECT 1 FROM trip_legs date_to_leg WHERE date_to_leg.trip_id = t.id AND date_to_leg.leg_date <= ?)';
+            $conditions[] = '(trip_leg_dates.start_date IS NULL OR EXISTS (SELECT 1 FROM trip_legs date_to_leg WHERE date_to_leg.trip_id = t.id AND date_to_leg.leg_date <= ?))';
             $params[] = $filters['date_to'];
         }
 
@@ -205,28 +210,44 @@ class Trip
 
     public function effectiveStatus(?string $status, ?string $startDate): string
     {
-        if ($status === 'COMPLETED' || $status === 'CANCELLED') {
+        if ($status === 'CANCELLED') {
+            return 'CANCELLED';
+        }
+        if (!$startDate) {
+            return 'PLANNED';
+        }
+        if ($status === 'COMPLETED') {
             return $status;
         }
 
-        return $startDate && date('Y-m-d') >= $startDate ? 'ACTIVE' : 'PLANNED';
+        return date('Y-m-d') >= $startDate ? 'ACTIVE' : 'PLANNED';
     }
 
     public function recalculateStoredStatus($id): string
     {
-        $stmt = $this->db->prepare('SELECT status FROM trips WHERE id = ?');
+        $stmt = $this->db->prepare(
+            "SELECT t.status,
+                    (SELECT COUNT(*) FROM trip_legs WHERE trip_id = t.id) AS leg_count,
+                    (SELECT MIN(leg_date) FROM trip_legs WHERE trip_id = t.id) AS start_date
+             FROM trips t WHERE t.id = ?"
+        );
         $stmt->execute([$id]);
-        $storedStatus = $stmt->fetchColumn();
-        if (!$storedStatus || in_array($storedStatus, ['COMPLETED', 'CANCELLED'], true)) {
-            return $storedStatus ?: 'PLANNED';
+        $trip = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$trip) {
+            return 'PLANNED';
         }
 
-        $legStmt = $this->db->prepare('SELECT MIN(leg_date) FROM trip_legs WHERE trip_id = ?');
-        $legStmt->execute([$id]);
-        $status = $this->effectiveStatus($storedStatus, $legStmt->fetchColumn());
+        $storedStatus = $trip['status'];
+        if ($storedStatus === 'CANCELLED') {
+            return 'CANCELLED';
+        }
+
+        $status = (int) $trip['leg_count'] === 0
+            ? 'PLANNED'
+            : $this->effectiveStatus($storedStatus, $trip['start_date']);
         if ($status !== $storedStatus) {
-            $update = $this->db->prepare("UPDATE trips SET status = ?, updated_at = NOW() WHERE id = ? AND status IN ('PLANNED', 'ACTIVE')");
-            $update->execute([$status, $id]);
+            $update = $this->db->prepare("UPDATE trips SET status = ?, updated_at = NOW() WHERE id = ? AND status = ?");
+            $update->execute([$status, $id, $storedStatus]);
         }
 
         return $status;

@@ -189,12 +189,12 @@ function legSection(legType, leg = {}, index = 0) {
   const label = legType === "ARRIVAL" ? "Arrival" : "Departure";
   const airport =
     legType === "ARRIVAL" ? "arrival_airport" : "departure_airport";
-  return `<div class="col-lg-6"><div class="border rounded p-3 h-100"><div class="d-flex justify-content-between align-items-center mb-3"><h6 class="mb-0">${label}</h6><span class="badge bg-light text-dark">${legType}</span></div>
+  return `<div class="col-lg-6"><div class="border rounded p-3 h-100"><div class="d-flex justify-content-between align-items-center mb-3"><h6 class="mb-0">${label} (optional)</h6><span class="badge bg-light text-dark">${legType}</span></div>
         <input type="hidden" name="leg_id_${index}" value="${escapeTripHtml(leg.id || "")}">
         <input type="hidden" name="leg_type_${index}" value="${legType}">
-        <div class="mb-3"><label class="form-label" for="leg_date_${index}">${label} Date</label><input type="date" class="form-control trip-leg-date" id="leg_date_${index}" name="leg_date_${index}" value="${escapeTripHtml(leg.leg_date || "")}" required></div>
+        <div class="mb-3"><label class="form-label" for="leg_date_${index}">${label} Date (optional)</label><input type="date" class="form-control trip-leg-date" id="leg_date_${index}" name="leg_date_${index}" value="${escapeTripHtml(leg.leg_date || "")}"></div>
         <div class="mb-3"><label class="form-label" for="${airport}_${index}">${label} Airport</label><input type="text" class="form-control" id="${airport}_${index}" name="${airport}_${index}" value="${escapeTripHtml(leg[airport] || "")}"></div>
-        <div class="row g-2"><div class="col-md-6"><label class="form-label" for="origin_${index}">Origin</label><input type="text" class="form-control" id="origin_${index}" name="origin_${index}" value="${escapeTripHtml(leg.origin || "")}" required></div><div class="col-md-6"><label class="form-label" for="destination_${index}">Destination</label><input type="text" class="form-control" id="destination_${index}" name="destination_${index}" value="${escapeTripHtml(leg.destination || "")}" required></div></div>
+        <div class="row g-2"><div class="col-md-6"><label class="form-label" for="origin_${index}">Origin (optional)</label><input type="text" class="form-control" id="origin_${index}" name="origin_${index}" value="${escapeTripHtml(leg.origin || "")}"></div><div class="col-md-6"><label class="form-label" for="destination_${index}">Destination (optional)</label><input type="text" class="form-control" id="destination_${index}" name="destination_${index}" value="${escapeTripHtml(leg.destination || "")}"></div></div>
     </div></div>`;
 }
 
@@ -230,15 +230,36 @@ function showTripForm(trip = null) {
   tripModal.show();
 }
 
-function validateTripForm() {
-  const firstDate = $("#leg_date_0").val();
-  const secondDate = $("#leg_date_1").val();
-  if (!firstDate || !secondDate) return "Both trip dates are required.";
-  if (firstDate > secondDate) {
-    return $("#tripType").val() === "NORMAL_TRIP"
-      ? "Arrival date must be on or before departure date."
-      : "Departure date must be on or before arrival date.";
+function legHasData(leg) {
+  return [
+    "leg_date",
+    "origin",
+    "destination",
+    "arrival_airport",
+    "departure_airport",
+  ].some((field) => String(leg?.[field] ?? "").trim() !== "");
+}
+
+function validateTripForm(legs = collectTripData().legs) {
+  for (const leg of legs) {
+    if (legHasData(leg) && !leg.leg_date) {
+      const label = leg.leg_type === "ARRIVAL" ? "Arrival" : "Departure";
+      return `${label} date is required when other ${label.toLowerCase()} details are filled in.`;
+    }
   }
+
+  const arrivalDate = legs.find((leg) => leg.leg_type === "ARRIVAL" && leg.leg_date)?.leg_date;
+  const departureDate = legs.find((leg) => leg.leg_type === "DEPARTURE" && leg.leg_date)?.leg_date;
+
+  if (arrivalDate && departureDate) {
+    if ($("#tripType").val() === "NORMAL_TRIP" && arrivalDate > departureDate) {
+      return "Arrival date must be on or before departure date.";
+    }
+    if ($("#tripType").val() === "ROUND_TRIP" && departureDate > arrivalDate) {
+      return "Departure date must be on or before arrival date.";
+    }
+  }
+
   return null;
 }
 
@@ -270,67 +291,98 @@ function collectTripData() {
 }
 
 function saveTrip() {
-  const error = validateTripForm();
+  $("#tripFormError").addClass("d-none").empty();
+  const data = collectTripData();
+  const editId = $("#tripEditId").val();
+  const hasLegDate = data.legs.some((leg) => Boolean(leg.leg_date));
+  const hasUndatedDetails = data.legs.some((leg) => legHasData(leg) && !leg.leg_date);
+  if (!hasLegDate && (editId || !hasUndatedDetails)) {
+    const message = editId
+      ? "A trip must keep at least one arrival or departure."
+      : "Enter at least an arrival or a departure date.";
+    swalError(message).then(() => $("#leg_date_0").trigger("focus"));
+    return;
+  }
+
+  const error = validateTripForm(data.legs);
   if (error) {
     $("#tripFormError").removeClass("d-none").text(error);
     return;
   }
-  const data = collectTripData();
-  const editId = $("#tripEditId").val();
   const button = $("#saveTripButton")
     .prop("disabled", true)
     .html(
       '<span class="spinner-border spinner-border-sm me-1"></span> Saving...',
     );
-  const request = editId
-    ? $.ajax({
+  let saveRequest;
+  if (editId) {
+    const deletions = [];
+    const updates = [];
+    const creations = [];
+    data.legs.forEach((leg) => {
+      const legId = String(leg.id || "").trim();
+      const payload = {
+        leg_type: leg.leg_type,
+        leg_date: leg.leg_date,
+        origin: leg.origin,
+        destination: leg.destination,
+        arrival_airport: leg.arrival_airport,
+        departure_airport: leg.departure_airport,
+        remarks: "",
+      };
+
+      if (leg.leg_date && legId) {
+        updates.push(() => $.ajax({
+          url: tripApiUrl(`api/trip-legs/index.php/${encodeURIComponent(legId)}`),
+          method: "PUT",
+          data: payload,
+        }));
+      } else if (leg.leg_date) {
+        creations.push(() => $.ajax({
+          url: tripApiUrl(`api/trips/index.php/${encodeURIComponent(editId)}/legs`),
+          method: "POST",
+          data: payload,
+        }));
+      } else if (legId) {
+        deletions.push(() => $.ajax({
+          url: tripApiUrl(`api/trip-legs/index.php/${encodeURIComponent(legId)}`),
+          method: "DELETE",
+        }));
+      }
+    });
+
+    const legOperations = [...deletions, ...updates, ...creations];
+    saveRequest = $.ajax({
         url: tripApiUrl(`api/trips/index.php/${editId}`),
         method: "PUT",
         data: {
           trip_type: data.trip_type,
           remarks: data.remarks,
         },
-      })
-    : $.post(tripApiUrl("api/trips/index.php"), {
+      }).then(() => legOperations.reduce(
+        (operation, saveLeg) => operation.then(() => saveLeg()),
+        $.Deferred().resolve().promise(),
+      ));
+  } else {
+    saveRequest = $.post(tripApiUrl("api/trips/index.php"), {
         employee_id: data.employee_id,
         trip_type: data.trip_type,
         remarks: data.remarks,
-        legs: JSON.stringify(data.legs),
+        legs: JSON.stringify(data.legs.filter((leg) => leg.leg_date)),
       });
-  request
+  }
+
+  saveRequest
     .done(() => {
-      if (!editId) {
-        swalSuccess("Trip created successfully.");
-        tripModal.hide();
-        loadTrips();
-        return;
-      }
-      const updates = data.legs.map((leg) =>
-        $.ajax({
-          url: tripApiUrl(`api/trip-legs/index.php/${leg.id}`),
-          method: "PUT",
-          data: leg,
-        }),
-      );
-      $.when
-        .apply($, updates)
-        .done(() => {
-          swalSuccess("Trip updated successfully.");
-          tripModal.hide();
-          loadTrips();
-        })
-        .fail(() =>
-          swalError("Trip updated, but one or more legs could not be updated."),
-        );
+      swalSuccess(editId ? "Trip updated successfully." : "Trip created successfully.");
+      tripModal.hide();
+      loadTrips();
     })
-    .fail((xhr) =>
-      $("#tripFormError")
-        .removeClass("d-none")
-        .text(
-          xhr.responseJSON?.error ||
-            "Unable to save trip. Please check the entered information.",
-        ),
-    )
+    .fail((xhr) => {
+      const message = xhr.responseJSON?.error || xhr.statusText ||
+        "Unable to save trip. Please check the entered information.";
+      $("#tripFormError").removeClass("d-none").text(message);
+    })
     .always(() => button.prop("disabled", false).html("Save Trip"));
 }
 
@@ -589,7 +641,7 @@ function renderTripDetails(trip) {
       const transportationPending = legs.length - transportationAssigned;
       const hasAccommodation = room.accommodation !== "—" && room.room !== "—";
 
-      const legsHtml = legs.map((leg) => `
+      const legsHtml = legs.length ? legs.map((leg) => `
         <tr>
           <td>${escapeTripHtml(leg.leg_type)}</td>
           <td>${formatTripDate(leg.leg_date)}</td>
@@ -625,7 +677,7 @@ function renderTripDetails(trip) {
             `}
           </td>
         </tr>
-      `).join("");
+      `).join("") : '<tr><td colspan="6" class="text-center text-muted">No arrival or departure details provided.</td></tr>';
 
       tripDetailBody.html(
         `<div class="row g-3 mb-4">
@@ -860,7 +912,10 @@ $(function () {
   });
   $("#createTripButton").on("click", () => showTripForm());
   $("#tripEmployee").on("change", populateEmployeeInfo);
-  $("#tripType").on("change", () => handleTripTypeChange());
+  $("#tripType").on("change", () => {
+    const cur = $("#tripLegsForm").children().length ? collectTripData().legs : [];
+    handleTripTypeChange(cur);
+  });
   $("#tripForm").on("submit", (event) => {
     event.preventDefault();
     saveTrip();

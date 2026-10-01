@@ -124,8 +124,8 @@ class TripLeg
             $data['trip_id'],
             $data['leg_type'],
             $data['leg_date'],
-            $data['origin'],
-            $data['destination'],
+            $data['origin'] ?? null,
+            $data['destination'] ?? null,
             $data['arrival_airport'] ?? null,
             $data['departure_airport'] ?? null,
             $data['remarks'] ?? ''
@@ -149,6 +149,7 @@ class TripLeg
             return ['success' => false, 'error' => 'Trip leg not found.'];
         }
 
+        $providedFields = array_keys($data);
         $data = $this->normalizeInput($data);
 
         $updateFields = [];
@@ -170,12 +171,12 @@ class TripLeg
             $params[] = $data['leg_date'];
         }
 
-        if (isset($data['origin'])) {
+        if (in_array('origin', $providedFields, true)) {
             $updateFields[] = 'origin = ?';
             $params[] = $data['origin'];
         }
 
-        if (isset($data['destination'])) {
+        if (in_array('destination', $providedFields, true)) {
             $updateFields[] = 'destination = ?';
             $params[] = $data['destination'];
         }
@@ -267,14 +268,6 @@ class TripLeg
             return ['success' => false, 'error' => 'Invalid leg date format. Use YYYY-MM-DD.'];
         }
 
-        if (empty($data['origin'])) {
-            return ['success' => false, 'error' => 'Origin is required.'];
-        }
-
-        if (empty($data['destination'])) {
-            return ['success' => false, 'error' => 'Destination is required.'];
-        }
-
         return ['success' => true];
     }
 
@@ -284,8 +277,8 @@ class TripLeg
         $normalized['trip_id'] = isset($data['trip_id']) ? (int) $data['trip_id'] : null;
         $normalized['leg_type'] = isset($data['leg_type']) ? trim((string) $data['leg_type']) : null;
         $normalized['leg_date'] = isset($data['leg_date']) ? trim((string) $data['leg_date']) : null;
-        $normalized['origin'] = isset($data['origin']) ? trim((string) $data['origin']) : null;
-        $normalized['destination'] = isset($data['destination']) ? trim((string) $data['destination']) : null;
+        $normalized['origin'] = array_key_exists('origin', $data) && $data['origin'] !== null ? trim((string) $data['origin']) : null;
+        $normalized['destination'] = array_key_exists('destination', $data) && $data['destination'] !== null ? trim((string) $data['destination']) : null;
         $normalized['arrival_airport'] = isset($data['arrival_airport']) ? trim((string) $data['arrival_airport']) : null;
         $normalized['departure_airport'] = isset($data['departure_airport']) ? trim((string) $data['departure_airport']) : null;
         $normalized['remarks'] = isset($data['remarks']) ? trim((string) $data['remarks']) : '';
