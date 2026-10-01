@@ -179,12 +179,25 @@ class TransportationRequest
                 e.english_name,
                 e.chinese_name,
                 d.department_name,
+                r.room_no AS room_number,
+                a.accommodation_name AS accommodation_name,
                 t.trip_type,
                 t.status AS trip_status,
                 t.remarks
              FROM trips t
              JOIN employees e ON t.employee_id = e.id
              LEFT JOIN departments d ON e.department_id = d.id
+             LEFT JOIN LATERAL (
+                 SELECT ra.room_id
+                 FROM room_assignments ra
+                 WHERE ra.employee_id = e.id
+                 ORDER BY (ra.status = 'Active') DESC, ra.id DESC
+                 LIMIT 1
+             ) ra ON TRUE
+             LEFT JOIN rooms r ON ra.room_id = r.id
+             LEFT JOIN floors f ON r.floor_id = f.id
+             LEFT JOIN buildings b ON COALESCE(r.building_id, f.building_id) = b.id
+             LEFT JOIN accommodations a ON COALESCE(r.accommodation_id, b.accommodation_id) = a.id
              WHERE t.id = ?"
         );
         $trip->execute([$tripId]);
@@ -669,8 +682,8 @@ class TransportationRequest
              ) ra ON TRUE
              LEFT JOIN rooms r ON ra.room_id = r.id
              LEFT JOIN floors f ON r.floor_id = f.id
-             LEFT JOIN buildings b ON f.building_id = b.id
-             LEFT JOIN accommodations a ON b.accommodation_id = a.id
+             LEFT JOIN buildings b ON COALESCE(r.building_id, f.building_id) = b.id
+             LEFT JOIN accommodations a ON COALESCE(r.accommodation_id, b.accommodation_id) = a.id
              {$dateJoins}
              WHERE e.id = ?"
         );

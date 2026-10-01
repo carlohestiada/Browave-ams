@@ -1,5 +1,11 @@
 Change log (repo-scoped) — updated 2026-08-26
 
+- 2026-10-01: Company Car room labels resolve direct accommodation links
+  - Matched both transportation detail queries to the room-assignment accommodation joins and formatted room labels as `Accommodation - Room`.
+
+- 2026-10-01: Company Car trip details show employee room assignment
+  - Added the employee's Active room assignment or latest assignment fallback to `getTripDetails()` and displayed accommodation and room together in the modal.
+
 - 2026-10-01: Company Car Archive is read-only
   - Updated `public/company-car.php` and `public/assets/js/company-car.js` so Archive hides selection and mutation controls, keeps trip details read-only, and uses the correct empty-row colspan.
 

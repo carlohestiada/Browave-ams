@@ -488,7 +488,7 @@ function fetchEmployeeDetails(employeeId, tripLegId = "") {
       $("#companyCar_accommodation_room").val(
         [employee.accommodation_name, employee.room_number]
           .filter(Boolean)
-          .join(" / "),
+          .join(" - "),
       );
     },
   ).fail(function (xhr) {
@@ -899,7 +899,9 @@ function openTripDetailsModal(tripId, readOnly = false) {
       const legs = Array.isArray(trip.legs) ? trip.legs : [];
       const assigned = legs.filter((leg) => leg.transportation_id).length;
       const pending = Math.max(legs.length - assigned, 0);
-      const accommodation = trip.accommodation_name || trip.room_number || "—";
+      const accommodation =
+        [trip.accommodation_name, trip.room_number].filter(Boolean).join(" - ") ||
+        "—";
 
       const legRows = legs
         .map(

@@ -16,7 +16,7 @@
       <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assignModal">Assign Room</button>
       <button class="btn btn-secondary" onclick="openTransfer()">Transfer</button>
     </div>
-  </div>  
+  </div>
 
   <!-- Filters -->
   <div class="ams-card" style="padding:16px; margin-bottom:16px;">
@@ -42,7 +42,7 @@
       <div id="assignmentCount" class="text-muted small">0 room assignments found</div>
     </div>
     <div class="dashboard-card-body">
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2" style="border-bottom:1px solid var(--border-line); padding-bottom:8px;">
         <ul class="nav nav-tabs" id="assignmentViewTabs" role="tablist">
           <li class="nav-item" role="presentation">
             <button class="nav-link schedule-view-tab assignment-view-tab active" id="activeAssignmentsTab" type="button" data-view="active" role="tab" aria-controls="activeAssignmentsPane" aria-selected="true">Active</button>
@@ -51,13 +51,17 @@
             <button class="nav-link schedule-view-tab assignment-view-tab" id="checkoutHistoryTab" type="button" data-view="checkout" role="tab" aria-controls="checkoutHistoryPane" aria-selected="false">Checkout</button>
           </li>
         </ul>
-        <div id="assignmentViewSummary" class="text-muted small">Showing active assignments</div>
-      </div>
-      <div id="assignmentSelectionBar" class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <div id="selectedAssignmentsText" class="text-muted small">0 selected</div>
-        <button type="button" class="btn btn-danger btn-sm" id="bulkDeleteAssignmentsBtn" onclick="deleteSelectedAssignments()" disabled>
-          Delete Selected
-        </button>
+        <div id="assignmentSelectionBar" style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px;">
+          <div id="selectedAssignmentsText" class="text-muted small">0 selected</div>
+          <button
+            type="button"
+            class="btn btn-danger btn-sm" 
+            id="bulkDeleteAssignmentsBtn"
+            onclick="deleteSelectedAssignments()"
+            disabled>
+            Delete Selected
+          </button>
+        </div>
       </div>
       <section class="assignment-view-pane" id="activeAssignmentsPane" role="tabpanel" aria-labelledby="activeAssignmentsTab">
         <div class="table-responsive">
@@ -254,180 +258,180 @@
 </div>
 
 <style>
-#roomAssignmentPanel #assignmentViewTabs {
-  border-bottom: none;
-  gap: 6px;
-}
+  #roomAssignmentPanel #assignmentViewTabs {
+    border-bottom: none;
+    gap: 6px;
+  }
 
-#roomAssignmentPanel #assignmentViewTabs .nav-item {
-  margin: 0;
-}
+  #roomAssignmentPanel #assignmentViewTabs .nav-item {
+    margin: 0;
+  }
 
-#roomAssignmentPanel #assignmentViewSummary,
-#roomAssignmentPanel #selectedAssignmentsText,
-#roomAssignmentPanel #assignmentTableSummary {
-  font-family: "Inter", sans-serif;
-  font-size: 11.5px;
-  font-weight: 500;
-  color: var(--slate) !important;
-}
+  #roomAssignmentPanel #assignmentViewSummary,
+  #roomAssignmentPanel #selectedAssignmentsText,
+  #roomAssignmentPanel #assignmentTableSummary {
+    font-family: "Inter", sans-serif;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--slate) !important;
+  }
 
-#roomAssignmentPanel #assignmentPagination .page-link {
-  font-family: "Inter", sans-serif;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--navy);
-  border: 1px solid var(--border-line);
-  border-radius: 6px;
-  margin: 0 3px;
-  padding: 6px 12px;
-}
+  #roomAssignmentPanel #assignmentPagination .page-link {
+    font-family: "Inter", sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--navy);
+    border: 1px solid var(--border-line);
+    border-radius: 6px;
+    margin: 0 3px;
+    padding: 6px 12px;
+  }
 
-#roomAssignmentPanel #assignmentPagination .page-item.active .page-link {
-  background: var(--navy);
-  border-color: var(--navy);
-  color: #fff;
-}
+  #roomAssignmentPanel #assignmentPagination .page-item.active .page-link {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: #fff;
+  }
 
-#roomAssignmentPanel #assignmentPagination .page-link:hover {
-  background: var(--surface-low);
-  color: var(--navy);
-}
+  #roomAssignmentPanel #assignmentPagination .page-link:hover {
+    background: var(--surface-low);
+    color: var(--navy);
+  }
 
-#roomAssignmentPanel .assignment-status-badge.status-active {
-  background: var(--surface-low);
-  color: #047c56;
-  border-color: var(--border-line);
-}
+  #roomAssignmentPanel .assignment-status-badge.status-active {
+    background: var(--surface-low);
+    color: #047c56;
+    border-color: var(--border-line);
+  }
 
-#roomAssignmentPanel .assignment-status-badge.status-checked-out {
-  background: var(--surface-bright);
-  color: var(--navy);
-  border-color: var(--border-line);
-}
+  #roomAssignmentPanel .assignment-status-badge.status-checked-out {
+    background: var(--surface-bright);
+    color: var(--navy);
+    border-color: var(--border-line);
+  }
 
-#roomAssignmentPanel .assignment-status-badge.status-transferred {
-  background: var(--surface-low);
-  color: var(--navy);
-  border-color: var(--border-line);
-}
+  #roomAssignmentPanel .assignment-status-badge.status-transferred {
+    background: var(--surface-low);
+    color: var(--navy);
+    border-color: var(--border-line);
+  }
 
-.room-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 12px;
-  padding: 12px 0;
-}
+  .room-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+    padding: 12px 0;
+  }
 
-.room-empty-state {
-  grid-column: 1 / -1;
-  min-height: 170px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 24px 28px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: linear-gradient(180deg, #f8fafc 0%, #f3f4f6 100%);
-  color: #374151;
-  font-size: 15px;
-  line-height: 1.5;
-  font-weight: 500;
-  pointer-events: none;
-  user-select: none;
-}
+  .room-empty-state {
+    grid-column: 1 / -1;
+    min-height: 170px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px 28px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #f8fafc 0%, #f3f4f6 100%);
+    color: #374151;
+    font-size: 15px;
+    line-height: 1.5;
+    font-weight: 500;
+    pointer-events: none;
+    user-select: none;
+  }
 
-.room-card {
-  padding: 12px;
-  border: 2px solid #e5e7eb;
-  border-radius: 6px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: white;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 80px;
-}
+  .room-card {
+    padding: 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+  }
 
-.room-card:hover {
-  border-color: #d1d5db;
-  background-color: #f9fafb;
-}
+  .room-card:hover {
+    border-color: #d1d5db;
+    background-color: #f9fafb;
+  }
 
-.room-card.room-available {
-  border-color: #d1fae5;
-  background-color: #f0fdf4;
-}
+  .room-card.room-available {
+    border-color: #d1fae5;
+    background-color: #f0fdf4;
+  }
 
-.room-card.room-available:hover {
-  border-color: #6ee7b7;
-  background-color: #dcfce7;
-}
+  .room-card.room-available:hover {
+    border-color: #6ee7b7;
+    background-color: #dcfce7;
+  }
 
-.room-card.room-occupied {
-  border-color: #fee2e2;
-  background-color: #fef2f2;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
+  .room-card.room-occupied {
+    border-color: #fee2e2;
+    background-color: #fef2f2;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
 
-.room-card.room-current {
-  border-color: #fef3c7;
-  background-color: #fefce8;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
+  .room-card.room-current {
+    border-color: #fef3c7;
+    background-color: #fefce8;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
 
-.room-card.room-selected {
-  border-color: #003686;
-  background-color: #dbeafe;
-  border-width: 2px;
-  box-shadow: 0 0 0 3px rgba(0, 54, 134, 0.1);
-}
+  .room-card.room-selected {
+    border-color: #003686;
+    background-color: #dbeafe;
+    border-width: 2px;
+    box-shadow: 0 0 0 3px rgba(0, 54, 134, 0.1);
+  }
 
-.room-card-number {
-  font-size: 16px;
-  font-weight: 700;
-  color: #003686;
-  margin-bottom: 6px;
-}
+  .room-card-number {
+    font-size: 16px;
+    font-weight: 700;
+    color: #003686;
+    margin-bottom: 6px;
+  }
 
-.room-card.room-occupied .room-card-number,
-.room-card.room-current .room-card-number {
-  color: #6b7280;
-}
+  .room-card.room-occupied .room-card-number,
+  .room-card.room-current .room-card-number {
+    color: #6b7280;
+  }
 
-.room-card-status {
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 500;
-}
+  .room-card-status {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 500;
+  }
 
-.room-card.room-available .room-card-status {
-  color: #059669;
-}
+  .room-card.room-available .room-card-status {
+    color: #059669;
+  }
 
-.room-card.room-occupied .room-card-status {
-  color: #dc2626;
-}
+  .room-card.room-occupied .room-card-status {
+    color: #dc2626;
+  }
 
-.room-card.room-current .room-card-status {
-  color: #f59e0b;
-}
+  .room-card.room-current .room-card-status {
+    color: #f59e0b;
+  }
 
-.room-card.room-selected .room-card-status {
-  color: #0284c7;
-  font-weight: 700;
-}
+  .room-card.room-selected .room-card-status {
+    color: #0284c7;
+    font-weight: 700;
+  }
 
-.room-card:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
+  .room-card:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
 </style>
 
 <script src="assets/js/employee-utils.js?v=<?= filemtime(__DIR__ . '/assets/js/employee-utils.js') ?>"></script>
