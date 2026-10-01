@@ -9,6 +9,7 @@ let tripRooms = [];
 let tripRows = [];
 let tripModal;
 let detailsModal;
+let tripLoadRequestId = 0;
 const tripSortColumns = [
   { index: 0, key: (trip) => trip.employee_code || trip.employee_id },
   { index: 1, key: (trip) => trip.employee_name || "" },
@@ -72,13 +73,16 @@ function roomForEmployee(employeeId) {
   };
 }
 
-function renderEmployeeOptions(selector, includeAll = false) {
+function renderEmployeeOptions(selector, includeAll = false, allowedIds = null) {
   const options = includeAll
     ? '<option value="">All employees</option>'
     : '<option value="">Select employee</option>';
+  const employees = allowedIds
+    ? tripEmployees.filter((employee) => allowedIds.has(String(employee.id)))
+    : tripEmployees;
   $(selector).html(
     options +
-      tripEmployees
+      employees
         .map(
           (employee) =>
             `<option value="${escapeTripHtml(employee.id)}">${escapeTripHtml(employeeLabel(employee))}</option>`,
@@ -124,50 +128,91 @@ function renderTripRow(trip) {
         </tr>`;
 }
 
+function renderNoTripRow(employee) {
+  const roomData = roomForEmployee(employee.employee_id);
+  return `<tr>
+            <td>${escapeTripHtml(displayEmployeeCode(employee.employee_code))}</td>
+            <td>${escapeTripHtml(employee.employee_name || "—")}</td>
+            <td>${escapeTripHtml(employee.department_name || "—")}</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td><div style="white-space: normal; line-height: 1.4;">${escapeTripHtml(roomData.accommodation)}<br>${escapeTripHtml(roomData.room)}</div></td>
+            <td>—</td>
+            <td><span class="badge bg-secondary">No trip</span></td>
+            <td><button type="button" class="btn btn-primary create-trip-for-employee" data-employee-id="${escapeTripHtml(employee.employee_id)}">Create Trip</button></td>
+        </tr>`;
+}
+
 function renderTrips(rows) {
+  const noTripMode = $("#tripFilterAssignment").val() === "none";
   tripRows = Array.isArray(rows) ? rows : [];
-  $("#tripCount").text(
-    `${tripRows.length} trip${tripRows.length === 1 ? "" : "s"}`,
-  );
+  $("#tripCount").text(noTripMode
+    ? `${tripRows.length} employee${tripRows.length === 1 ? "" : "s"} without a trip`
+    : `${tripRows.length} trip${tripRows.length === 1 ? "" : "s"}`);
 
   renderPaginatedTable({
     data: tripRows,
     tableSelector: "#tripsTableBody",
     currentPage: 1,
     perPage: 10,
-    renderRow: renderTripRow,
-    sortColumns: tripSortColumns,
+    renderRow: noTripMode ? renderNoTripRow : renderTripRow,
+    sortColumns: noTripMode ? tripSortColumns.slice(0, 3) : tripSortColumns,
   });
 
   if (tripRows.length === 0) {
     $("#tripsTableBody").html(
-      '<tr><td colspan="11" class="text-center text-muted py-4">No trips found.</td></tr>',
+      `<tr><td colspan="11" class="text-center text-muted py-4">${noTripMode ? "All employees already have a trip." : "No trips found."}</td></tr>`,
     );
   }
 }
 
+function updateTripAssignmentFilters() {
+  const noTripMode = $("#tripFilterAssignment").val() === "none";
+  $("#tripFilterType, #tripFilterStatus, #tripFilterFrom, #tripFilterTo")
+    .prop("disabled", noTripMode);
+}
+
 function loadTrips() {
+  updateTripAssignmentFilters();
   $("#tripsTableBody").html(
     '<tr><td colspan="11" class="text-center text-muted py-4">Loading trips...</td></tr>',
   );
   const params = new URLSearchParams();
   const employeeId = $("#tripFilterEmployee").val();
+  const assignment = $("#tripFilterAssignment").val();
   const type = $("#tripFilterType").val();
   const status = $("#tripFilterStatus").val();
   const departmentId = $("#tripFilterDepartment").val();
   if (employeeId) params.set("employee_id", employeeId);
   if (departmentId) params.set("department_id", departmentId);
-  if (type) params.set("trip_type", type);
-  if (status) params.set("status", status);
-  if ($("#tripFilterFrom").val())
-    params.set("date_from", $("#tripFilterFrom").val());
-  if ($("#tripFilterTo").val()) params.set("date_to", $("#tripFilterTo").val());
+  if (assignment === "none") {
+    params.set("assignment", "none");
+  } else {
+    if (type) params.set("trip_type", type);
+    if (status) params.set("status", status);
+    if ($("#tripFilterFrom").val())
+      params.set("date_from", $("#tripFilterFrom").val());
+    if ($("#tripFilterTo").val())
+      params.set("date_to", $("#tripFilterTo").val());
+  }
 
-  $.get(
-    tripApiUrl(`api/trips/index.php${params.toString() ? `?${params}` : ""}`),
-  )
-    .done((data) => renderTrips(tripResponse(data)))
+  const requestId = ++tripLoadRequestId;
+  $.ajax({
+    url: tripApiUrl(
+      `api/trips/index.php${params.toString() ? `?${params}` : ""}`,
+    ),
+    method: "GET",
+    cache: false,
+    dataType: "json",
+  })
+    .done((data) => {
+      if (requestId !== tripLoadRequestId) return;
+      renderTrips(tripResponse(data));
+    })
     .fail(() => {
+      if (requestId !== tripLoadRequestId) return;
       $("#tripsTableBody").html(
         '<tr><td colspan="11" class="text-center text-danger py-4">Unable to load trips. Please try again.</td></tr>',
       );
@@ -222,7 +267,7 @@ function legSection(legType, leg = {}, index = 0) {
 function handleTripTypeChange(legs = []) {
   const type = $("#tripType").val();
   const order =
-    type === "ROUND TRIP" ? ["DEPARTURE", "ARRIVAL"] : ["ARRIVAL", "DEPARTURE"];
+    type === "ROUND_TRIP" ? ["DEPARTURE", "ARRIVAL"] : ["ARRIVAL", "DEPARTURE"];
   const byType = Object.fromEntries(
     (legs || []).map((leg) => [leg.leg_type, leg]),
   );
@@ -235,20 +280,61 @@ function handleTripTypeChange(legs = []) {
   );
 }
 
-function showTripForm(trip = null) {
+function showTripForm(trip = null, preselectEmployeeId = null) {
   $("#tripForm")[0].reset();
   $("#tripFormError").addClass("d-none").empty();
   $("#tripEditId").val(trip?.id || "");
-  $("#tripFormModalLabel").text(trip ? "Edit Trip" : "Create Trip");
-  $("#tripEmployee")
-    .val(trip?.employee_id || "")
-    .prop("disabled", Boolean(trip));
-  $("#tripType").val(trip?.trip_type || "NORMAL TRIP");
+  $("#tripFormModalLabel").text(trip ? "Edit Trip" : "CreateTrip");
+  $("#tripType").val(trip?.trip_type || "NORMAL_TRIP");
   $("#tripStatus").val(trip?.status || "PLANNED");
   $("#tripRemarks").val(trip?.remarks || "");
   handleTripTypeChange(trip?.legs || []);
-  populateEmployeeInfo();
-  tripModal.show();
+
+  if (trip) {
+    renderEmployeeOptions("#tripEmployee");
+    $("#tripEmployee").val(trip.employee_id).prop("disabled", true);
+    populateEmployeeInfo();
+    tripModal.show();
+    return;
+  }
+
+  $("#tripEmployee")
+    .html('<option value="">Loading employees...</option>')
+    .prop("disabled", true);
+  $.ajax({
+    url: tripApiUrl("api/trips/index.php?assignment=none"),
+    method: "GET",
+    cache: false,
+    dataType: "json",
+  })
+    .done((employeesWithoutTrip) => {
+      const allowedIds = new Set(
+        (Array.isArray(employeesWithoutTrip) ? employeesWithoutTrip : [])
+          .map((employee) => String(employee.employee_id)),
+      );
+      renderEmployeeOptions("#tripEmployee", false, allowedIds);
+      const preselectedId = String(preselectEmployeeId || "");
+      $("#tripEmployee")
+        .val(allowedIds.has(preselectedId) ? preselectedId : "")
+        .prop("disabled", false);
+      populateEmployeeInfo();
+      tripModal.show();
+    })
+    .fail(() => {
+      renderEmployeeOptions("#tripEmployee");
+      const preselectedId = String(preselectEmployeeId || "");
+      $("#tripEmployee")
+        .val(
+          $("#tripEmployee option").filter(function () {
+            return String(this.value) === preselectedId;
+          }).length
+            ? preselectedId
+            : "",
+        )
+        .prop("disabled", false);
+      populateEmployeeInfo();
+      tripModal.show();
+    });
 }
 
 function legHasData(leg) {
@@ -273,10 +359,10 @@ function validateTripForm(legs = collectTripData().legs) {
   const departureDate = legs.find((leg) => leg.leg_type === "DEPARTURE" && leg.leg_date)?.leg_date;
 
   if (arrivalDate && departureDate) {
-    if ($("#tripType").val() === "NORMAL TRIP" && arrivalDate > departureDate) {
+    if ($("#tripType").val() === "NORMAL_TRIP" && arrivalDate > departureDate) {
       return "Arrival date must be on or before departure date.";
     }
-    if ($("#tripType").val() === "ROUND TRIP" && departureDate > arrivalDate) {
+    if ($("#tripType").val() === "ROUND_TRIP" && departureDate > arrivalDate) {
       return "Departure date must be on or before arrival date.";
     }
   }
@@ -927,8 +1013,10 @@ $(function () {
     event.preventDefault();
     loadTrips();
   });
+  $("#tripFilterAssignment").on("change", updateTripAssignmentFilters);
   $("#resetTripFilters").on("click", () => {
     $("#tripFilterForm")[0].reset();
+    updateTripAssignmentFilters();
     loadTrips();
   });
   $("#createTripButton").on("click", () => showTripForm());
@@ -943,5 +1031,9 @@ $(function () {
   });
   $("#tripsTableBody").on("click", ".view-trip", function () {
     openTripDetails($(this).data("id"));
+  });
+  $("#tripsTableBody").on("click", ".create-trip-for-employee", function () {
+    const employeeId = $(this).data("employee-id");
+    showTripForm(null, employeeId);
   });
 });

@@ -94,6 +94,39 @@ class Trip
         return $trips;
     }
 
+    public function getEmployeesWithoutTrip(array $filters = []): array
+    {
+        $sql = "SELECT e.id AS employee_id,
+                       e.employee_code,
+                       e.english_name AS employee_name,
+                       e.department_id,
+                       d.department_name
+                FROM employees e
+                LEFT JOIN departments d ON e.department_id = d.id
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM trips t
+                    WHERE t.employee_id = e.id AND t.status IN ('PLANNED', 'ACTIVE')
+                )";
+        $params = [];
+
+        if (!empty($filters['department_id'])) {
+            $sql .= ' AND e.department_id = ?';
+            $params[] = $filters['department_id'];
+        }
+
+        if (!empty($filters['employee_id'])) {
+            $sql .= ' AND e.id = ?';
+            $params[] = $filters['employee_id'];
+        }
+
+        $sql .= ' ORDER BY e.employee_code ASC';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function getById($id)
     {
         $stmt = $this->db->prepare(

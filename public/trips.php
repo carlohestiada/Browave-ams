@@ -20,9 +20,16 @@
                 <label class="ams-label" for="tripFilterDepartment">Department</label>
                 <select id="tripFilterDepartment" class="ams-input"><option value="">All departments</option></select>
             </div>
-            <div class="col-lg-3 col-md-6">
+            <div class="col-lg-2 col-md-6">
                 <label class="ams-label" for="tripFilterEmployee">Employee</label>
                 <select id="tripFilterEmployee" class="ams-input"><option value="">All employees</option></select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="ams-label" for="tripFilterAssignment">Trip Assignment</label>
+                <select id="tripFilterAssignment" class="ams-input">
+                    <option value="">All trips</option>
+                    <option value="none">Employees without a trip</option>
+                </select>
             </div>
             <div class="col-lg-2 col-md-6">
                 <label class="ams-label" for="tripFilterType">Trip Type</label>
@@ -32,7 +39,7 @@
                     <option value="ROUND_TRIP">Round trip</option>
                 </select>
             </div>
-            <div class="col-lg-2 col-md-6">
+            <div class="col-lg-1 col-md-6">
                 <label class="ams-label" for="tripFilterStatus">Status</label>
                 <select id="tripFilterStatus" class="ams-input">
                     <option value="">All statuses</option>
@@ -50,9 +57,9 @@
                 <label class="ams-label" for="tripFilterTo">To</label>
                 <input id="tripFilterTo" type="date" class="ams-input">
             </div>
-            <div class="col-lg-1 col-md-6 d-flex gap-2">
+            <div class="col-lg-1 col-md-6 d-flex gap-1">
                 <button type="submit" class="btn btn-primary" title="Search"><i class="bi bi-search" aria-hidden="true"></i><span class="visually-hidden">Search</span></button>
-                <button type="button" class="btn btn-outline-secondary" id="resetTripFilters" title="Reset"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i><span class="visually-hidden">Reset</span></button>
+                <button type="button" class="btn btn-outline-secondary px-1" id="resetTripFilters" title="Reset"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i><span class="visually-hidden">Reset</span></button>
             </div>
         </form>
     </div>

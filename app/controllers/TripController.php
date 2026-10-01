@@ -34,6 +34,11 @@ class TripController
             'search' => $_GET['search'] ?? null,
         ];
 
+        if (($_GET['assignment'] ?? '') === 'none') {
+            echo json_encode($this->trip->getEmployeesWithoutTrip($filters));
+            return;
+        }
+
         $result = $this->trip->getAll($filters);
         foreach ($result as &$trip) {
             $trip['legs'] = $this->tripLeg->getByTripId($trip['id']);
