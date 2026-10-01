@@ -3,6 +3,7 @@ let activeAssignedEmployees = new Set();
 let assignEmployees = [];
 let assignmentRows = [];
 let checkoutHistoryRows = [];
+let assignableRoomsCache = [];
 let selectedAssignmentIds = new Set();
 let assignmentSearchTimer = null;
 let currentAssignmentView = "active";
@@ -123,6 +124,7 @@ function renderAssignEmployeeDropdown() {
 
 function resetAssignForm() {
   $("#assignForm")[0].reset();
+  $("#assignReservedHint").empty();
   assignmentCheckoutManuallyEdited = false;
   initializeAssignmentDateBounds();
   loadEmployeesForAssign();
@@ -171,6 +173,9 @@ function initializeAssignmentDateBounds() {
 function renderAssignmentRow(r, lookup) {
   const assignmentId = String(r.id);
   const checked = selectedAssignmentIds.has(assignmentId) ? "checked" : "";
+  const employeeName = escapeHtml(
+    `${displayEmployeeCode(r.employee_code)} - ${displayValue(r.english_name)}`,
+  );
 
   return `
         <tr>
@@ -183,7 +188,7 @@ function renderAssignmentRow(r, lookup) {
                     onchange="toggleAssignmentSelection(${assignmentId}, this.checked)"
                     ${checked}>
             </td>
-            <td>${displayEmployeeCode(r.employee_code)} - ${displayValue(r.english_name)}</td>
+            <td><a href="#" class="employee-room-link fw-semibold text-decoration-none" title="Click to see the reserved room" onclick="viewAssignmentDetails(${r.id}); return false;">${employeeName}</a></td>
             <td>${displayValue(r.department_name)}</td>
             <td>${displayValue(r.gender)}</td>
             <td>${displayValue(r.checkin_date)}</td>
@@ -430,9 +435,66 @@ function loadEmployeesForAssign() {
   });
 }
 
+function renderRoomOptions(selector = "#assign_room") {
+  const employeeId = String($("#assign_employee").val() || "");
+  let opts = '<option value="">Select room</option>';
+
+  assignableRoomsCache
+    .filter((room) => {
+      const isReservedForEmployee =
+        room.status === "Reserved" &&
+        employeeId &&
+        String(room.reserved_by_employee_id) === employeeId;
+      const capacityReached =
+        Number(room.capacity) > 0 &&
+        Number(room.current_occupancy || 0) >= Number(room.capacity);
+      const isAssignable =
+        !capacityReached &&
+        room.status !== "Reserved" &&
+        room.status !== "Maintenance";
+
+      return isAssignable || isReservedForEmployee;
+    })
+    .forEach((room) => {
+      const label = `${room.room_no || ""} (${room.accommodation_name || ""})`;
+      opts += `<option value="${escapeHtml(room.id)}">${escapeHtml(label)}</option>`;
+    });
+
+  $(selector).html(opts);
+}
+
+function refreshAssignRoomsForEmployee() {
+  $("#assignReservedHint").empty();
+
+  $.get("api/rooms.php", function (data) {
+    const rooms = typeof data === "string" ? JSON.parse(data) : data;
+    assignableRoomsCache = Array.isArray(rooms) ? rooms : [];
+    const employeeId = String($("#assign_employee").val() || "");
+    renderRoomOptions("#assign_room");
+
+    const reservedRoom = assignableRoomsCache.find(
+      (room) =>
+        room.status === "Reserved" &&
+        String(room.reserved_by_employee_id) === employeeId,
+    );
+    if (reservedRoom) {
+      $("#assign_room").val(String(reservedRoom.id));
+      $("#assignReservedHint").text(
+        `Reserved room: ${reservedRoom.room_no} (${reservedRoom.accommodation_name})`,
+      );
+    }
+  });
+}
+
 function loadRoomsForAssign(selector = "#assign_room", onlyAvailable = true) {
   $.get("api/rooms.php", function (data) {
     const rooms = typeof data === "string" ? JSON.parse(data) : data;
+    if (selector === "#assign_room") {
+      assignableRoomsCache = Array.isArray(rooms) ? rooms : [];
+      renderRoomOptions(selector);
+      return;
+    }
+
     const selectedRoom = String($(selector).data("selected-room") || "");
     let opts = '<option value="">Select room</option>';
     rooms
@@ -558,6 +620,7 @@ $(function () {
   });
 
   $("#assignModal").on("hidden.bs.modal", resetAssignForm);
+  $("#assign_employee").on("change", refreshAssignRoomsForEmployee);
   $("#assignModal").on("shown.bs.modal", function () {
     // Properly initialize Select2 when modal is shown
     setTimeout(function () {

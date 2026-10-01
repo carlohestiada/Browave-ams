@@ -130,6 +130,7 @@
           <div class="mb-3">
             <label>Room</label>
             <select id="assign_room" name="room_id" class="form-control"></select>
+            <div id="assignReservedHint" class="form-text text-primary fw-semibold"></div>
           </div>
           <div class="mb-3">
             <label>Start Date</label>

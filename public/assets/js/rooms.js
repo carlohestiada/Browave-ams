@@ -252,11 +252,11 @@ function renderRoomRow(room) {
     const checked = selectedRoomIds.has(roomId) ? 'checked' : '';
 
     const reservationNote = room.status === 'Reserved' && room.reserved_by_employee_name
-        ? `<div class="small text-muted mt-1">by ${displayValue(room.reserved_by_employee_name)}</div>`
+        ? `<div class="small text-muted mt-1">by <a href="#" class="employee-room-link text-decoration-none" data-room-id="${escapeHtml(roomId)}" data-employee-name="${escapeHtml(room.reserved_by_employee_name)}" data-type="reserved">${escapeHtml(room.reserved_by_employee_name)}</a></div>`
         : '';
 
     const assignedEmployeeNames = room.assigned_employee_names
-        ? room.assigned_employee_names.split('\n').filter(Boolean).map(name => `<div>${displayValue(name)} -</div>`).join('')
+        ? room.assigned_employee_names.split('\n').filter(Boolean).map(name => `<div><a href="#" class="employee-room-link text-decoration-none" data-room-id="${escapeHtml(roomId)}" data-employee-name="${escapeHtml(name)}" data-type="assigned">${escapeHtml(name)}</a> -</div>`).join('')
         : '<span class="text-muted">—</span>';
 
     return `
@@ -288,6 +288,43 @@ function renderRoomRow(room) {
             </td>
         </tr>
     `;
+}
+
+function showEmployeeRoom(roomId, employeeName, type) {
+    const room = roomRows.find(item => String(item.id) === String(roomId));
+    if (!room) {
+        swalError('Room details could not be found.');
+        return;
+    }
+
+    const title = type === 'reserved'
+        ? `${employeeName} reserved Room ${room.room_no}`
+        : `${employeeName} is assigned to Room ${room.room_no}`;
+    const roomDetails = [
+        ['Room No.', room.room_no],
+        ['Accommodation', room.accommodation_name],
+        ['Building', room.building_name],
+        ['Floor', room.floor_name],
+        ['Room Type', room.room_type],
+        ['Status', room.status]
+    ].map(([label, value]) => `
+        <tr>
+            <th scope="row">${escapeHtml(label)}</th>
+            <td>${escapeHtml(displayValue(value))}</td>
+        </tr>
+    `).join('');
+
+    Swal.fire({
+        title: escapeHtml(title),
+        html: `
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered mb-0">
+                    <tbody>${roomDetails}</tbody>
+                </table>
+            </div>
+        `
+    });
+
 }
 
 function getRoomPrefix(roomNo) {
@@ -712,6 +749,14 @@ $(function() {
     loadAccommodations();
     loadRooms();
     loadEmployeesForRoomReservation();
+    $(document).on('click', '.employee-room-link', function(event) {
+        event.preventDefault();
+        showEmployeeRoom(
+            $(this).data('room-id'),
+            $(this).data('employee-name'),
+            $(this).data('type')
+        );
+    });
     $('#selectAllRooms').on('change', function() {
         toggleAllRooms(this.checked);
     });
