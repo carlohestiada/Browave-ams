@@ -9,6 +9,22 @@ let tripRooms = [];
 let tripRows = [];
 let tripModal;
 let detailsModal;
+const tripSortColumns = [
+  { index: 0, key: (trip) => trip.employee_code || trip.employee_id },
+  { index: 1, key: (trip) => trip.employee_name || "" },
+  { index: 2, key: (trip) => trip.department_name || "" },
+  {
+    index: 3,
+    key: (trip) =>
+      trip.legs?.find((leg) => leg.leg_type === "ARRIVAL")?.leg_date || "",
+  },
+  {
+    index: 4,
+    key: (trip) =>
+      trip.legs?.find((leg) => leg.leg_type === "DEPARTURE")?.leg_date || "",
+  },
+  { index: 9, key: (trip) => trip.status || "" },
+];
 
 function escapeTripHtml(value) {
   return $("<div>")
@@ -88,26 +104,12 @@ function renderDepartmentOptions() {
   );
 }
 
-function renderTrips(rows) {
-  tripRows = Array.isArray(rows) ? rows : [];
-  $("#tripCount").text(
-    `${tripRows.length} trip${tripRows.length === 1 ? "" : "s"}`,
-  );
-  if (!tripRows.length) {
-    $("#tripsTableBody").html(
-      '<tr><td colspan="11" class="text-center text-muted py-4">No trips found.</td></tr>',
-    );
-    return;
-  }
-
-  $("#tripsTableBody").html(
-    tripRows
-      .map((trip) => {
-        const legs = trip.legs || [];
-        const arrival = legs.find((leg) => leg.leg_type === "ARRIVAL");
-        const departure = legs.find((leg) => leg.leg_type === "DEPARTURE");
-        const roomData = roomForEmployee(trip.employee_id);
-        return `<tr>
+function renderTripRow(trip) {
+  const legs = trip.legs || [];
+  const arrival = legs.find((leg) => leg.leg_type === "ARRIVAL");
+  const departure = legs.find((leg) => leg.leg_type === "DEPARTURE");
+  const roomData = roomForEmployee(trip.employee_id);
+  return `<tr>
             <td>${escapeTripHtml(trip.employee_code ? displayEmployeeCode(trip.employee_code) : trip.employee_id)}</td>
             <td>${escapeTripHtml(trip.employee_name || "—")}</td>
             <td>${escapeTripHtml(trip.department_name || "—")}</td>
@@ -120,9 +122,28 @@ function renderTrips(rows) {
             <td>${statusBadge(trip.status)}</td>
             <td><button type="button" class="btn btn-primary view-trip" data-id="${escapeTripHtml(trip.id)}">View</button></td>
         </tr>`;
-      })
-      .join(""),
+}
+
+function renderTrips(rows) {
+  tripRows = Array.isArray(rows) ? rows : [];
+  $("#tripCount").text(
+    `${tripRows.length} trip${tripRows.length === 1 ? "" : "s"}`,
   );
+
+  renderPaginatedTable({
+    data: tripRows,
+    tableSelector: "#tripsTableBody",
+    currentPage: 1,
+    perPage: 10,
+    renderRow: renderTripRow,
+    sortColumns: tripSortColumns,
+  });
+
+  if (tripRows.length === 0) {
+    $("#tripsTableBody").html(
+      '<tr><td colspan="11" class="text-center text-muted py-4">No trips found.</td></tr>',
+    );
+  }
 }
 
 function loadTrips() {
@@ -201,7 +222,7 @@ function legSection(legType, leg = {}, index = 0) {
 function handleTripTypeChange(legs = []) {
   const type = $("#tripType").val();
   const order =
-    type === "ROUND_TRIP" ? ["DEPARTURE", "ARRIVAL"] : ["ARRIVAL", "DEPARTURE"];
+    type === "ROUND TRIP" ? ["DEPARTURE", "ARRIVAL"] : ["ARRIVAL", "DEPARTURE"];
   const byType = Object.fromEntries(
     (legs || []).map((leg) => [leg.leg_type, leg]),
   );
@@ -222,7 +243,7 @@ function showTripForm(trip = null) {
   $("#tripEmployee")
     .val(trip?.employee_id || "")
     .prop("disabled", Boolean(trip));
-  $("#tripType").val(trip?.trip_type || "NORMAL_TRIP");
+  $("#tripType").val(trip?.trip_type || "NORMAL TRIP");
   $("#tripStatus").val(trip?.status || "PLANNED");
   $("#tripRemarks").val(trip?.remarks || "");
   handleTripTypeChange(trip?.legs || []);
@@ -252,10 +273,10 @@ function validateTripForm(legs = collectTripData().legs) {
   const departureDate = legs.find((leg) => leg.leg_type === "DEPARTURE" && leg.leg_date)?.leg_date;
 
   if (arrivalDate && departureDate) {
-    if ($("#tripType").val() === "NORMAL_TRIP" && arrivalDate > departureDate) {
+    if ($("#tripType").val() === "NORMAL TRIP" && arrivalDate > departureDate) {
       return "Arrival date must be on or before departure date.";
     }
-    if ($("#tripType").val() === "ROUND_TRIP" && departureDate > arrivalDate) {
+    if ($("#tripType").val() === "ROUND TRIP" && departureDate > arrivalDate) {
       return "Departure date must be on or before arrival date.";
     }
   }

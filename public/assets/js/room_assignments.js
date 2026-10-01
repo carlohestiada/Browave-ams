@@ -29,6 +29,22 @@ const assignmentSortColumns = [
   { index: 6, key: "accommodation_name" },
   { index: 7, key: "room_no" },
 ];
+const checkoutSortColumns = [
+  {
+    index: 0,
+    key: function (row) {
+      return `${displayEmployeeCode(row.employee_code)} ${row.english_name || ""}`;
+    },
+  },
+  { index: 1, key: "accommodation_name" },
+  { index: 2, key: "building_name" },
+  { index: 3, key: "floor_name" },
+  { index: 4, key: "room_no" },
+  { index: 5, key: "checkin_date" },
+  { index: 6, key: "expected_checkout_date" },
+  { index: 7, key: "actual_checkout_date" },
+  { index: 8, key: "status" },
+];
 
 function getTodayDate() {
   return new Date().toISOString().slice(0, 10);
@@ -215,7 +231,7 @@ function filterAssignmentRows(rows) {
   });
 }
 
-function renderAssignments() {
+function renderAssignments(currentPage = 1) {
   const lookup = {};
   assignmentRows.forEach((r) => {
     const key = `${r.employee_id}::${r.checkin_date}`;
@@ -226,23 +242,19 @@ function renderAssignments() {
   renderPaginatedTable({
     data: filteredRows,
     tableSelector: "#assignmentTable",
-    currentPage: 1,
+    currentPage: currentPage,
     perPage: 10,
-    footerSummarySelector: "#assignmentTableSummary",
-    footerPaginationSelector: "#assignmentPagination",
-    updateFooter: currentAssignmentView === "active",
     renderRow: function (room) {
       return renderAssignmentRow(room, lookup);
     },
     sortColumns: assignmentSortColumns,
+    onRender: updateAssignmentSelectionControls,
   });
 
   if (currentAssignmentView === "active") {
     $("#assignmentCount").text(`${filteredRows.length} room assignments found`);
     $("#assignmentViewSummary").text("Showing active assignments");
   }
-
-  updateAssignmentSelectionControls();
 }
 
 function filterCheckoutHistoryRows(rows) {
@@ -264,17 +276,14 @@ function filterCheckoutHistoryRows(rows) {
   ].some((value) => String(value ?? "").toLowerCase().includes(search)));
 }
 
-function renderCheckoutHistory(rows = checkoutHistoryRows) {
+function renderCheckoutHistory(rows = checkoutHistoryRows, currentPage = 1) {
   checkoutHistoryRows = rows;
   const filteredRows = filterCheckoutHistoryRows(checkoutHistoryRows);
   renderPaginatedTable({
     data: filteredRows,
     tableSelector: "#checkoutHistoryTable",
-    currentPage: 1,
+    currentPage: currentPage,
     perPage: 10,
-    footerSummarySelector: "#assignmentTableSummary",
-    footerPaginationSelector: "#assignmentPagination",
-    updateFooter: currentAssignmentView === "checkout",
     renderRow: function (row) {
       return `
         <tr>
@@ -293,6 +302,7 @@ function renderCheckoutHistory(rows = checkoutHistoryRows) {
         </tr>
       `;
     },
+    sortColumns: checkoutSortColumns,
   });
 
   if (currentAssignmentView === "checkout") {
@@ -350,9 +360,9 @@ function setAssignmentView(view) {
   $("#assignmentSelectionBar").toggle(isActive);
 
   if (isActive) {
-    renderAssignments();
+    renderAssignments(null);
   } else {
-    renderCheckoutHistory();
+    renderCheckoutHistory(checkoutHistoryRows, null);
   }
 }
 

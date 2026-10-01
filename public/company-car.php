@@ -158,9 +158,7 @@
         </div>
         <div class="d-flex justify-content-between align-items-center p-3 border-top">
             <div id="tableSummary" class="text-muted small">Showing 0 of 0 records</div>
-            <nav aria-label="Schedule pagination">
-                <ul class="pagination mb-0" id="schedulePagination"></ul>
-            </nav>
+            <div id="schedulePagination"></div>
         </div>
     </div>
 </div>

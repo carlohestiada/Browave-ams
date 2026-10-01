@@ -12,16 +12,30 @@ const requestStatuses = [
 ];
 const addTransportationTypeOption = "__add_new_transportation_type__";
 let transportationTypeRows = [];
-const pageSize = 12;
 let transportationRows = [];
 let allTransportationRows = [];
-let currentPage = 1;
 let currentScheduleView = "active";
 let employeeSearchTimer = null;
 let filterEmployeeData = [];
 let modalMode = "create";
 let selectedTransportationIds = new Set();
 let tripDetailsRestoreTripId = null;
+const transportationSortColumns = [
+  {
+    index: 1,
+    key: (row) =>
+      `${displayEmployeeCode(row.employee_code)} - ${row.english_name || ""}`,
+  },
+  { index: 2, key: (row) => row.department_name || "" },
+  { index: 3, key: (row) => row.trip_id || "" },
+  { index: 4, key: (row) => row.trip_type || "" },
+  { index: 5, key: (row) => row.arrival_date || "" },
+  { index: 6, key: (row) => row.departure_date || "" },
+  { index: 7, key: (row) => row.transportation_type || "" },
+  { index: 8, key: (row) => row.driver_name || "" },
+  { index: 9, key: (row) => row.vehicle_name || "" },
+  { index: 10, key: (row) => row.trip_status || row.status || "" },
+];
 
 function escapeTripHtml(value) {
   return String(value ?? "")
@@ -539,7 +553,6 @@ function setScheduleView(view) {
 
   transportationRows = applyScheduleViewFilter(allTransportationRows);
   selectedTransportationIds.clear();
-  currentPage = 1;
   renderTable();
   renderTimeline();
 
@@ -578,7 +591,6 @@ function loadTransportationSchedule() {
     allTransportationRows = rows || [];
     transportationRows = applyScheduleViewFilter(allTransportationRows);
     selectedTransportationIds.clear();
-    currentPage = 1;
     renderTable();
     renderTimeline();
     $("#scheduleCount").text(`${transportationRows.length} trips found`);
@@ -631,33 +643,25 @@ function toggleAllTransportation(checked) {
   updateTransportationSelectionControls();
 }
 
-function renderTable() {
+function renderTransportationRow(row) {
   const isArchive = currentScheduleView === "archive";
-  const start = (currentPage - 1) * pageSize;
-  const rows = transportationRows.slice(start, start + pageSize);
-  const body = $("#companyCarTableBody");
-  let html = "";
-
-  $("#transportationSelectionBar, #transportationSelectHeader").toggle(!isArchive);
-
-  rows.forEach((row) => {
-    const overdue = isRowOverdue(row) ? "overdue-row" : "";
-    const checked = selectedTransportationIds.has(String(row.id))
-      ? "checked"
-      : "";
-    const tripLabel = row.trip_id
-      ? `Trip #${row.trip_id}`
-      : '<span class="text-muted">Legacy / Unlinked</span>';
-    const overallStatus = String(row.trip_status || row.status || "SCHEDULED")
-      .toUpperCase()
-      .replace(/\s+/g, "_");
-    const arrivalDate = row.arrival_date || "";
-    const departureDate = row.departure_date || "";
-    const tripType = formatTripType(row.trip_type || "NORMAL_TRIP");
-    const transportId = row.id || row.transportation_id || row.trip_id;
-    const checkboxCell = isArchive
-      ? ""
-      : `<td style="text-align:center;">
+  const overdue = isRowOverdue(row) ? "overdue-row" : "";
+  const checked = selectedTransportationIds.has(String(row.id))
+    ? "checked"
+    : "";
+  const tripLabel = row.trip_id
+    ? `Trip #${row.trip_id}`
+    : '<span class="text-muted">Legacy / Unlinked</span>';
+  const overallStatus = String(row.trip_status || row.status || "SCHEDULED")
+    .toUpperCase()
+    .replace(/\s+/g, "_");
+  const arrivalDate = row.arrival_date || "";
+  const departureDate = row.departure_date || "";
+  const tripType = formatTripType(row.trip_type || "NORMAL_TRIP");
+  const transportId = row.id || row.transportation_id || row.trip_id;
+  const checkboxCell = isArchive
+    ? ""
+    : `<td style="text-align:center;">
             <input
               type="checkbox"
               class="transportation-select-checkbox"
@@ -666,13 +670,13 @@ function renderTable() {
               onchange="toggleTransportationSelection(${transportId}, this.checked)"
               ${checked}>
           </td>`;
-    const editDeleteButtons = isArchive
-      ? ""
-      : `
+  const editDeleteButtons = isArchive
+    ? ""
+    : `
             <button type="button" class="btn btn-sm btn-warning me-1" data-action="edit" data-id="${transportId}">Edit</button>
             <button type="button" class="btn btn-sm btn-danger me-1" data-action="delete" data-id="${transportId}">Delete</button>`;
 
-    html += `
+  return `
             <tr class="${overdue}">
           ${checkboxCell}
                 <td>${formatEmployeeName(row)}</td>
@@ -691,41 +695,35 @@ function renderTable() {
                 </td>
             </tr>
         `;
+}
+
+function renderTable() {
+  const isArchive = currentScheduleView === "archive";
+
+  renderPaginatedTable({
+    data: transportationRows,
+    tableSelector: "#companyCarTableBody",
+    currentPage: 1,
+    perPage: 10,
+    footerSummarySelector: "#tableSummary",
+    footerPaginationSelector: "#schedulePagination",
+    renderRow: renderTransportationRow,
+    sortColumns: transportationSortColumns,
+    onRender: updateTransportationSelectionControls,
   });
 
-  body.html(
-    html ||
+  if (transportationRows.length === 0) {
+    $("#companyCarTableBody").html(
       `<tr><td colspan="${isArchive ? 11 : 12}" class="text-center text-muted">No transportation requests found.</td></tr>`,
-  );
-  renderPagination();
-  $("#tableSummary").text(
-    `Showing ${rows.length} of ${transportationRows.length} records`,
-  );
-  bindRowActions();
+    );
+  }
+
+  $("#transportationSelectionBar, #transportationSelectHeader").toggle(!isArchive);
   updateTransportationSelectionControls();
 }
 
-function renderPagination() {
-  const totalPages = Math.max(
-    1,
-    Math.ceil(transportationRows.length / pageSize),
-  );
-  const nav = $("#schedulePagination");
-  let html = "";
-
-  for (let page = 1; page <= totalPages; page++) {
-    html += `<li class="page-item ${page === currentPage ? "active" : ""}"><button type="button" class="page-link" data-page="${page}">${page}</button></li>`;
-  }
-
-  nav.html(html);
-  nav.find("[data-page]").on("click", function () {
-    currentPage = Number($(this).data("page")) || 1;
-    renderTable();
-  });
-}
-
 function bindRowActions() {
-  $("#companyCarTableBody button[data-action]").on("click", function () {
+  $("#companyCarTableBody").on("click", "button[data-action]", function () {
     const action = $(this).data("action");
     const id = $(this).data("id");
 
@@ -1485,6 +1483,7 @@ $(function () {
     }
   });
 
+  bindRowActions();
   loadTransportationTypes().fail((error) => {
     console.error("Unable to load transportation types", error);
     swalError(error.responseJSON?.error || error.message || "Unable to load transportation types.");

@@ -181,7 +181,8 @@ function setupSortableHeaders(tableSelector, sortColumns, state) {
             sortColumns: sortColumns,
             footerSummarySelector: state.footerSummarySelector,
             footerPaginationSelector: state.footerPaginationSelector,
-            updateFooter: state.updateFooter
+            updateFooter: state.updateFooter,
+            onRender: state.onRender
         });
     });
 
@@ -221,13 +222,14 @@ function ensurePaginationContainer(tableSelector) {
     return container;
 }
 
-function renderPaginatedTable({ data, tableSelector, currentPage = 1, perPage = 10, renderRow, sortColumns = [], footerSummarySelector = null, footerPaginationSelector = null, updateFooter = true }) {
+function renderPaginatedTable({ data, tableSelector, currentPage = 1, perPage = 10, renderRow, sortColumns = [], footerSummarySelector = null, footerPaginationSelector = null, updateFooter = true, onRender = null }) {
     const state = getTableState(tableSelector, currentPage, perPage);
     state.data = data;
     state.renderRow = renderRow;
     state.footerSummarySelector = footerSummarySelector;
     state.footerPaginationSelector = footerPaginationSelector;
     state.updateFooter = updateFooter;
+    state.onRender = onRender;
 
     setupSortableHeaders(tableSelector, sortColumns, state);
 
@@ -265,10 +267,14 @@ function renderPaginatedTable({ data, tableSelector, currentPage = 1, perPage = 
                         sortColumns: sortColumns,
                         footerSummarySelector: state.footerSummarySelector,
                         footerPaginationSelector: state.footerPaginationSelector,
-                        updateFooter: state.updateFooter
+                        updateFooter: state.updateFooter,
+                        onRender: state.onRender
                     });
                 }
             });
+        }
+        if (typeof onRender === 'function') {
+            onRender();
         }
         return;
     }
@@ -304,7 +310,8 @@ function renderPaginatedTable({ data, tableSelector, currentPage = 1, perPage = 
             sortColumns,
             footerSummarySelector: state.footerSummarySelector,
             footerPaginationSelector: state.footerPaginationSelector,
-            updateFooter: state.updateFooter
+            updateFooter: state.updateFooter,
+            onRender: state.onRender
         });
     });
 
@@ -322,10 +329,15 @@ function renderPaginatedTable({ data, tableSelector, currentPage = 1, perPage = 
                 sortColumns,
                 footerSummarySelector: state.footerSummarySelector,
                 footerPaginationSelector: state.footerPaginationSelector,
-                updateFooter: state.updateFooter
+                updateFooter: state.updateFooter,
+                onRender: state.onRender
             });
         }
     });
+
+    if (typeof onRender === 'function') {
+        onRender();
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {

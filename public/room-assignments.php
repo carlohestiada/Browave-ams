@@ -63,7 +63,7 @@
           </button>
         </div>
       </div>
-      <section class="assignment-view-pane" id="activeAssignmentsPane" role="tabpanel" aria-labelledby="activeAssignmentsTab">
+      <section class="assignment-view-pane card assignment-table-card" id="activeAssignmentsPane" role="tabpanel" aria-labelledby="activeAssignmentsTab">
         <div class="table-responsive">
           <table class="table table-hover align-middle" data-export-title="Room Assignment Data">
             <thead class="table-light">
@@ -86,7 +86,7 @@
           </table>
         </div>
       </section>
-      <section class="assignment-view-pane d-none" id="checkoutHistoryPane" role="tabpanel" aria-labelledby="checkoutHistoryTab" hidden>
+      <section class="assignment-view-pane card assignment-table-card d-none" id="checkoutHistoryPane" role="tabpanel" aria-labelledby="checkoutHistoryTab" hidden>
         <div class="table-responsive">
           <table class="table table-hover align-middle" data-export-title="Room Checkout History">
             <thead class="table-light">
@@ -107,10 +107,6 @@
           </table>
         </div>
       </section>
-    </div>
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 p-3 border-top">
-      <div id="assignmentTableSummary" class="text-muted small">Showing 0 of 0 records</div>
-      <div id="assignmentPagination"></div>
     </div>
   </div>
 </div>
@@ -268,15 +264,45 @@
   }
 
   #roomAssignmentPanel #assignmentViewSummary,
-  #roomAssignmentPanel #selectedAssignmentsText,
-  #roomAssignmentPanel #assignmentTableSummary {
+  #roomAssignmentPanel #selectedAssignmentsText {
     font-family: "Inter", sans-serif;
     font-size: 11.5px;
     font-weight: 500;
     color: var(--slate) !important;
   }
 
-  #roomAssignmentPanel #assignmentPagination .page-link {
+  #roomAssignmentPanel .assignment-table-card {
+    display: block;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+  }
+
+  #roomAssignmentPanel .pagination-container {
+    border-top: 1px solid var(--border-line);
+  }
+
+  #roomAssignmentPanel .table-controls,
+  #roomAssignmentPanel .table-entries-label,
+  #roomAssignmentPanel .table-page-info,
+  #roomAssignmentPanel .table-entries-select {
+    font-family: "Inter", sans-serif;
+  }
+
+  #roomAssignmentPanel .table-entries-label,
+  #roomAssignmentPanel .table-page-info {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--slate);
+  }
+
+  #roomAssignmentPanel .table-entries-select {
+    color: var(--navy);
+    border-color: var(--border-line);
+  }
+
+  #roomAssignmentPanel .pagination-container .page-link {
     font-family: "Inter", sans-serif;
     font-size: 12.5px;
     font-weight: 600;
@@ -287,13 +313,13 @@
     padding: 6px 12px;
   }
 
-  #roomAssignmentPanel #assignmentPagination .page-item.active .page-link {
+  #roomAssignmentPanel .pagination-container .page-item.active .page-link {
     background: var(--navy);
     border-color: var(--navy);
     color: #fff;
   }
 
-  #roomAssignmentPanel #assignmentPagination .page-link:hover {
+  #roomAssignmentPanel .pagination-container .page-link:hover {
     background: var(--surface-low);
     color: var(--navy);
   }
