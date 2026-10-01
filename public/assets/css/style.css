@@ -6919,8 +6919,7 @@ body {
 }
 
 #scheduleViewSummary,
-#selectedTransportationText,
-#tableSummary {
+#selectedTransportationText {
   font-family: "Inter", sans-serif;
   font-size: 11.5px;
   font-weight: 500;
@@ -7095,9 +7094,9 @@ body {
   padding: 5px 10px;
 }
 
-/* ---- Pagination footer ---- */
+/* ---- Company Car pagination ---- */
 
-#schedulePagination .page-link {
+.company-car-schedule-panel .pagination-container .page-link {
   font-family: "Inter", sans-serif;
   font-size: 12.5px;
   font-weight: 600;
@@ -7108,13 +7107,13 @@ body {
   padding: 6px 12px;
 }
 
-#schedulePagination .page-item.active .page-link {
+.company-car-schedule-panel .pagination-container .page-item.active .page-link {
   background: var(--navy);
   border-color: var(--navy);
   color: #fff;
 }
 
-#schedulePagination .page-link:hover {
+.company-car-schedule-panel .pagination-container .page-link:hover {
   background: var(--surface-low);
   color: var(--navy);
 }

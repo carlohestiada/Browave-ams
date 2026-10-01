@@ -278,11 +278,7 @@
     border: 0;
     border-radius: 0;
   }
-
-  #roomAssignmentPanel .pagination-container {
-    border-top: 1px solid var(--border-line);
-  }
-
+  
   #roomAssignmentPanel .table-controls,
   #roomAssignmentPanel .table-entries-label,
   #roomAssignmentPanel .table-page-info,
@@ -292,14 +288,8 @@
 
   #roomAssignmentPanel .table-entries-label,
   #roomAssignmentPanel .table-page-info {
-    font-size: 11.5px;
-    font-weight: 500;
-    color: var(--slate);
-  }
-
-  #roomAssignmentPanel .table-entries-select {
-    color: var(--navy);
-    border-color: var(--border-line);
+    font-size: 13px;
+    color: #434653;
   }
 
   #roomAssignmentPanel .pagination-container .page-link {

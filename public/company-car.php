@@ -105,7 +105,7 @@
         </div>
     </div>
 
-    <div class="ams-card dashboard-card-panel">
+    <div class="ams-card dashboard-card-panel company-car-schedule-panel">
         <div class="dashboard-card-header">
             <div class="dashboard-card-title"><i class="bi bi-table"></i> Transportation Schedule</div>
             <div id="scheduleCount" class="text-muted small">0 trips found</div>
@@ -155,10 +155,6 @@
                     </tbody>
                 </table>
             </div>
-        </div>
-        <div class="d-flex justify-content-between align-items-center p-3 border-top">
-            <div id="tableSummary" class="text-muted small">Showing 0 of 0 records</div>
-            <div id="schedulePagination"></div>
         </div>
     </div>
 </div>

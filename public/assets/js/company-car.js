@@ -20,6 +20,7 @@ let filterEmployeeData = [];
 let modalMode = "create";
 let selectedTransportationIds = new Set();
 let tripDetailsRestoreTripId = null;
+let transportationSelectHeader = null;
 const transportationSortColumns = [
   {
     index: 1,
@@ -36,6 +37,27 @@ const transportationSortColumns = [
   { index: 9, key: (row) => row.vehicle_name || "" },
   { index: 10, key: (row) => row.trip_status || row.status || "" },
 ];
+
+function getTransportationRowId(row) {
+  return row.id || row.transportation_id || row.trip_id;
+}
+
+function getTransportationSortColumns() {
+  const indexOffset = currentScheduleView === "archive" ? -1 : 0;
+  return transportationSortColumns.map((column) => ({
+    ...column,
+    index: column.index + indexOffset,
+  }));
+}
+
+function updateTransportationSortHeaderIndexes(sortColumns) {
+  const headers = $("#companyCarTableBody").closest("table").find("thead th");
+  sortColumns.forEach(({ index }) => {
+    const button = headers.eq(index).find(".table-sort-btn");
+    button.attr("data-sort-index", index);
+    button.find(".table-sort-indicator").attr("data-sort-index", index);
+  });
+}
 
 function escapeTripHtml(value) {
   return String(value ?? "")
@@ -448,7 +470,7 @@ function loadEmployees(
         list.removeClass("show");
 
         if (hiddenId === "#filterEmployeeId") {
-          loadTransportationSchedule();
+          loadTransportationSchedule(true);
         } else {
           fetchEmployeeDetails(id);
         }
@@ -553,7 +575,7 @@ function setScheduleView(view) {
 
   transportationRows = applyScheduleViewFilter(allTransportationRows);
   selectedTransportationIds.clear();
-  renderTable();
+  renderTable(true);
   renderTimeline();
 
   $("#scheduleCount").text(`${transportationRows.length} trips found`);
@@ -564,7 +586,7 @@ function setScheduleView(view) {
   );
 }
 
-function loadTransportationSchedule() {
+function loadTransportationSchedule(resetPage = false) {
   const params = [];
   const employeeId = $("#filterEmployeeId").val();
   const pickupDate = $("#filterPickupDate").val();
@@ -588,10 +610,20 @@ function loadTransportationSchedule() {
 
   $.get(url, function (data) {
     const rows = typeof data === "string" ? JSON.parse(data) : data;
-    allTransportationRows = rows || [];
+    allTransportationRows = Array.isArray(rows) ? rows : [];
+    const existingTransportationIds = new Set(
+      allTransportationRows
+        .map(getTransportationRowId)
+        .filter(Boolean)
+        .map(String),
+    );
+    selectedTransportationIds.forEach((id) => {
+      if (!existingTransportationIds.has(id)) {
+        selectedTransportationIds.delete(id);
+      }
+    });
     transportationRows = applyScheduleViewFilter(allTransportationRows);
-    selectedTransportationIds.clear();
-    renderTable();
+    renderTable(resetPage);
     renderTimeline();
     $("#scheduleCount").text(`${transportationRows.length} trips found`);
     $("#scheduleViewSummary").text(
@@ -646,7 +678,8 @@ function toggleAllTransportation(checked) {
 function renderTransportationRow(row) {
   const isArchive = currentScheduleView === "archive";
   const overdue = isRowOverdue(row) ? "overdue-row" : "";
-  const checked = selectedTransportationIds.has(String(row.id))
+  const transportId = getTransportationRowId(row);
+  const checked = selectedTransportationIds.has(String(transportId))
     ? "checked"
     : "";
   const tripLabel = row.trip_id
@@ -658,7 +691,6 @@ function renderTransportationRow(row) {
   const arrivalDate = row.arrival_date || "";
   const departureDate = row.departure_date || "";
   const tripType = formatTripType(row.trip_type || "NORMAL_TRIP");
-  const transportId = row.id || row.transportation_id || row.trip_id;
   const checkboxCell = isArchive
     ? ""
     : `<td style="text-align:center;">
@@ -697,29 +729,33 @@ function renderTransportationRow(row) {
         `;
 }
 
-function renderTable() {
+function renderTable(resetPage = false) {
   const isArchive = currentScheduleView === "archive";
+  const table = $("#companyCarTableBody").closest("table");
+  if (!transportationSelectHeader || !transportationSelectHeader.length) {
+    transportationSelectHeader = $("#transportationSelectHeader");
+  }
+
+  if (isArchive) {
+    transportationSelectHeader.detach();
+  } else if (!transportationSelectHeader.parent().length) {
+    table.find("thead tr").first().prepend(transportationSelectHeader);
+    transportationSelectHeader.show();
+  }
+
+  const sortColumns = getTransportationSortColumns();
+  updateTransportationSortHeaderIndexes(sortColumns);
+  $("#transportationSelectionBar").toggle(!isArchive);
 
   renderPaginatedTable({
     data: transportationRows,
     tableSelector: "#companyCarTableBody",
-    currentPage: 1,
+    currentPage: resetPage ? 1 : null,
     perPage: 10,
-    footerSummarySelector: "#tableSummary",
-    footerPaginationSelector: "#schedulePagination",
     renderRow: renderTransportationRow,
-    sortColumns: transportationSortColumns,
+    sortColumns,
     onRender: updateTransportationSelectionControls,
   });
-
-  if (transportationRows.length === 0) {
-    $("#companyCarTableBody").html(
-      `<tr><td colspan="${isArchive ? 11 : 12}" class="text-center text-muted">No transportation requests found.</td></tr>`,
-    );
-  }
-
-  $("#transportationSelectionBar, #transportationSelectHeader").toggle(!isArchive);
-  updateTransportationSelectionControls();
 }
 
 function bindRowActions() {
@@ -1492,7 +1528,7 @@ $(function () {
   loadDrivers();
   loadVehicles();
   loadBulkAssignmentEmployees();
-  loadTransportationSchedule();
+  loadTransportationSchedule(true);
   submitDriverForm();
   submitVehicleForm();
   submitCompanyCarForm();
@@ -1535,7 +1571,9 @@ $(function () {
     openManageVehicles();
   });
 
-  $("#applyFilters").on("click", loadTransportationSchedule);
+  $("#applyFilters").on("click", function () {
+    loadTransportationSchedule(true);
+  });
   $(document).on(
     "change",
     "#companyCar_transportation_type, #bulkTransportationType",
@@ -1560,8 +1598,7 @@ $(function () {
     $("#filterVehicle").val("");
     $("#filterDriver").val("");
     $("#filterStatus").val("");
-    selectedTransportationIds.clear();
-    loadTransportationSchedule();
+    loadTransportationSchedule(true);
   });
 
   $(".schedule-view-tab").on("click", function () {
