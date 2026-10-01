@@ -538,6 +538,17 @@ $(function () {
   loadRoomsForAssign("#transfer_room");
   initializeAssignmentDateBounds();
 
+  $(document).on("hidden.bs.modal", ".modal", function () {
+    setTimeout(function () {
+      if (!$(".modal.show").length) {
+        $(".modal-backdrop").remove();
+        $("body")
+          .removeClass("modal-open")
+          .css({ overflow: "", "padding-right": "" });
+      }
+    }, 50);
+  });
+
   $(document).on("click", "#assignmentDetailsTransferBtn", function () {
     const id = $(this).data("assignmentId");
     const modal = bootstrap.Modal.getInstance(document.getElementById("assignmentDetailsModal"));
@@ -596,11 +607,14 @@ $(function () {
           }
 
           swalSuccess("The employee has been checked out successfully.");
+          const detailsModal = bootstrap.Modal.getInstance(
+            document.getElementById("assignmentDetailsModal"),
+          );
+          if (detailsModal) detailsModal.hide();
           loadAssignments(function () {
             loadCheckoutHistory();
             loadRoomsForAssign("#assign_room");
             loadRoomsForAssign("#transfer_room");
-            viewAssignmentDetails(id);
           });
         },
         error: function (xhr) {
@@ -834,7 +848,9 @@ function viewAssignmentDetails(id, readOnly = false) {
     document.getElementById(buttonId).hidden = true;
   });
   detailsBody.innerHTML = '<div class="text-center text-muted py-4">Loading...</div>';
-  const detailsModal = new bootstrap.Modal(document.getElementById("assignmentDetailsModal"));
+  const detailsModal = bootstrap.Modal.getOrCreateInstance(
+    document.getElementById("assignmentDetailsModal"),
+  );
   detailsModal.show();
 
   $.get(`${raApi}/${id}`, function (response) {
