@@ -1,5 +1,8 @@
 Change log (repo-scoped) — updated 2026-08-26
 
+- 2026-10-01: Company Car Archive is read-only
+  - Updated `public/company-car.php` and `public/assets/js/company-car.js` so Archive hides selection and mutation controls, keeps trip details read-only, and uses the correct empty-row colspan.
+
 - 2026-08-26: Phase 2 Backend — Trip Management System Implementation
   - Created `app/models/Trip.php`: CRUD operations for trips with employee/department joins, duplicate trip prevention for active/planned trips.
   - Created `app/models/TripLeg.php`: CRUD operations for trip legs with date validation (YYYY-MM-DD), leg type constraints (ARRIVAL/DEPARTURE).

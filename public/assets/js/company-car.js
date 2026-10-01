@@ -632,10 +632,13 @@ function toggleAllTransportation(checked) {
 }
 
 function renderTable() {
+  const isArchive = currentScheduleView === "archive";
   const start = (currentPage - 1) * pageSize;
   const rows = transportationRows.slice(start, start + pageSize);
   const body = $("#companyCarTableBody");
   let html = "";
+
+  $("#transportationSelectionBar, #transportationSelectHeader").toggle(!isArchive);
 
   rows.forEach((row) => {
     const overdue = isRowOverdue(row) ? "overdue-row" : "";
@@ -652,18 +655,26 @@ function renderTable() {
     const departureDate = row.departure_date || "";
     const tripType = formatTripType(row.trip_type || "NORMAL_TRIP");
     const transportId = row.id || row.transportation_id || row.trip_id;
+    const checkboxCell = isArchive
+      ? ""
+      : `<td style="text-align:center;">
+            <input
+              type="checkbox"
+              class="transportation-select-checkbox"
+              value="${transportId}"
+              aria-label="Select transportation request"
+              onchange="toggleTransportationSelection(${transportId}, this.checked)"
+              ${checked}>
+          </td>`;
+    const editDeleteButtons = isArchive
+      ? ""
+      : `
+            <button type="button" class="btn btn-sm btn-warning me-1" data-action="edit" data-id="${transportId}">Edit</button>
+            <button type="button" class="btn btn-sm btn-danger me-1" data-action="delete" data-id="${transportId}">Delete</button>`;
 
     html += `
             <tr class="${overdue}">
-                <td style="text-align:center;">
-                    <input
-                        type="checkbox"
-                        class="transportation-select-checkbox"
-                        value="${transportId}"
-                        aria-label="Select transportation request"
-                        onchange="toggleTransportationSelection(${transportId}, this.checked)"
-                        ${checked}>
-                </td>
+          ${checkboxCell}
                 <td>${formatEmployeeName(row)}</td>
                 <td>${row.department_name || ""}</td>
                 <td>${tripLabel}</td>
@@ -675,9 +686,8 @@ function renderTable() {
                 <td>${row.vehicle_name || ""}</td>
                 <td>${formatBadge(overallStatus)}</td>
                 <td style="white-space:nowrap;">
-                    <button type="button" class="btn btn-sm btn-secondary me-1" data-action="view" data-id="${row.trip_id}">View Details</button>
-                    <button type="button" class="btn btn-sm btn-warning me-1" data-action="edit" data-id="${transportId}">Edit</button>
-                    <button type="button" class="btn btn-sm btn-danger me-1" data-action="delete" data-id="${transportId}">Delete</button>
+                    <button type="button" class="btn btn-sm btn-primary me-1" data-action="view" data-id="${row.trip_id}">View Details</button>
+                  ${editDeleteButtons}
                 </td>
             </tr>
         `;
@@ -685,7 +695,7 @@ function renderTable() {
 
   body.html(
     html ||
-      '<tr><td colspan="12" class="text-center text-muted">No transportation requests found.</td></tr>',
+      `<tr><td colspan="${isArchive ? 11 : 12}" class="text-center text-muted">No transportation requests found.</td></tr>`,
   );
   renderPagination();
   $("#tableSummary").text(
@@ -720,7 +730,7 @@ function bindRowActions() {
     const id = $(this).data("id");
 
     if (action === "view") {
-      openTripDetailsModal(id);
+      openTripDetailsModal(id, currentScheduleView === "archive");
     } else if (action === "edit") {
       openModal("edit", id);
     } else if (action === "delete") {
@@ -871,8 +881,9 @@ function openModal(mode, id = null) {
   }
 }
 
-function openTripDetailsModal(tripId) {
+function openTripDetailsModal(tripId, readOnly = false) {
   if (!tripId) return;
+  $("#saveTripDetailsStatusBtn").toggle(!readOnly);
   tripDetailsRestoreTripId = Number(tripId) || null;
   $.get(
     apiUrl(`api/company-car/index.php/trip/${encodeURIComponent(tripId)}`),
@@ -908,11 +919,11 @@ function openTripDetailsModal(tripId) {
                             ${leg.driver_name ? `${escapeTripHtml(leg.driver_name)}<br>` : ""}
                             ${leg.vehicle_name ? `${escapeTripHtml(leg.vehicle_name)}<br>` : ""}
                             <span class="badge status-badge status-${String(leg.status || "").toLowerCase()}">${escapeTripHtml(leg.status || "Pending")}</span><br>
-                            <button type="button" class="btn btn-sm btn-outline-primary mt-2 btn-edit-transportation" data-transportation-id="${leg.transportation_id}">Edit</button>
-                            <button type="button" class="btn btn-sm btn-outline-danger mt-2 delete-transportation" data-id="${leg.transportation_id}">Delete</button>
+                            ${readOnly ? "" : `<button type="button" class="btn btn-sm btn-outline-primary mt-2 btn-edit-transportation" data-transportation-id="${leg.transportation_id}">Edit</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger mt-2 delete-transportation" data-id="${leg.transportation_id}">Delete</button>`}
                         </div>
                     `
-                        : `<div class="text-muted"><em>No transportation assigned</em><br><a class="btn btn-sm btn-outline-primary mt-2" href="company-car.php?trip_leg_id=${encodeURIComponent(leg.trip_leg_id)}&employee_id=${encodeURIComponent(trip.employee_id)}&pickup_date=${encodeURIComponent(leg.leg_date)}">+ Add Transportation</a></div>`
+                          : `<div class="text-muted"><em>No transportation assigned</em>${readOnly ? "" : `<br><a class="btn btn-sm btn-outline-primary mt-2" href="company-car.php?trip_leg_id=${encodeURIComponent(leg.trip_leg_id)}&employee_id=${encodeURIComponent(trip.employee_id)}&pickup_date=${encodeURIComponent(leg.leg_date)}">+ Add Transportation</a>`}</div>`
                     }
                 </td>
             </tr>`,

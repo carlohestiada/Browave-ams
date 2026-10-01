@@ -122,7 +122,7 @@
                 </ul>
                 <div id="scheduleViewSummary" class="text-muted small">Showing active requests</div>
             </div>
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 0 12px;">
+            <div id="transportationSelectionBar" style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 0 12px;">
                 <div id="selectedTransportationText" class="text-muted small">0 selected</div>
                 <button type="button" class="btn btn-danger btn-sm" id="bulkDeleteTransportationBtn" onclick="deleteSelectedTransportation()" disabled>
                     Delete Selected
@@ -132,7 +132,7 @@
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th style="width:44px; text-align:center;">
+                            <th id="transportationSelectHeader" style="width:44px; text-align:center;">
                                 <input type="checkbox" id="selectAllTransportation" aria-label="Select all transportation requests">
                             </th>
                             <th>Employee</th>
