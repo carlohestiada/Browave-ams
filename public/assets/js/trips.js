@@ -84,11 +84,55 @@ function renderEmployeeOptions(selector, includeAll = false, allowedIds = null) 
     options +
       employees
         .map(
-          (employee) =>
-            `<option value="${escapeTripHtml(employee.id)}">${escapeTripHtml(employeeLabel(employee))}</option>`,
+          (employee) => {
+            const searchText = [
+              employee.employee_code,
+              employee.english_name,
+              employee.full_name,
+              employee.chinese_name,
+              employee.department_name,
+            ]
+              .filter(Boolean)
+              .join(" ");
+            return `<option value="${escapeTripHtml(employee.id)}" data-search="${escapeTripHtml(searchText).replace(/"/g, "&quot;")}">${escapeTripHtml(employeeLabel(employee))}</option>`;
+          },
         )
         .join(""),
   );
+}
+
+function initTripEmployeeSelect() {
+  if (!$.fn.select2) {
+    return;
+  }
+
+  const employeeSelect = $("#tripEmployee");
+  if (
+    employeeSelect.hasClass("select2-hidden-accessible") ||
+    employeeSelect.data("select2")
+  ) {
+    employeeSelect.select2("destroy");
+  }
+
+  employeeSelect.select2({
+    theme: "bootstrap-5",
+    dropdownParent: $("#tripFormModal"),
+    width: "100%",
+    allowClear: false,
+    placeholder: "Search by employee ID, name or department",
+    matcher: function (params, data) {
+      const term = $.trim(params.term || "").toLowerCase();
+      if (!term) {
+        return data;
+      }
+
+      const searchText = data.element
+        ? $(data.element).attr("data-search") || ""
+        : "";
+      const text = `${searchText} ${data.text || ""}`.toLowerCase();
+      return text.indexOf(term) > -1 ? data : null;
+    },
+  });
 }
 
 function renderDepartmentOptions() {
@@ -1021,6 +1065,27 @@ $(function () {
   });
   $("#createTripButton").on("click", () => showTripForm());
   $("#tripEmployee").on("change", populateEmployeeInfo);
+  $("#tripFormModal").on("shown.bs.modal", function () {
+    initTripEmployeeSelect();
+    const employeeSelect = $("#tripEmployee");
+    if (
+      $.fn.select2 &&
+      !employeeSelect.prop("disabled") &&
+      !employeeSelect.val()
+    ) {
+      employeeSelect.select2("open");
+    }
+  });
+  $("#tripFormModal").on("hidden.bs.modal", function () {
+    const employeeSelect = $("#tripEmployee");
+    if (
+      $.fn.select2 &&
+      (employeeSelect.hasClass("select2-hidden-accessible") ||
+        employeeSelect.data("select2"))
+    ) {
+      employeeSelect.select2("destroy");
+    }
+  });
   $("#tripType").on("change", () => {
     const cur = $("#tripLegsForm").children().length ? collectTripData().legs : [];
     handleTripTypeChange(cur);
