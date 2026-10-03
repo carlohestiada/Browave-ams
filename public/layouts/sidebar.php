@@ -236,8 +236,11 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
                     <div>
                         <label class="sidebar-appearance-section-label">Preset Palettes</label>
                         <div class="sidebar-palette-grid">
-                            <button type="button" class="sidebar-palette-card" data-sidebar-color="#0B3B82" data-palette-name="Browave Blue">
+                            <button type="button" class="sidebar-palette-card is-selected" data-sidebar-color="#0B3B82" data-palette-name="Browave Blue">
                                 <span class="sidebar-palette-swatch" style="--palette-color:#0B3B82"></span><span>Browave Blue<small>#0B3B82</small></span>
+                            </button>
+                            <button type="button" class="sidebar-palette-card" data-sidebar-color="#F8F9FF" data-palette-name="Classic Light">
+                                <span class="sidebar-palette-swatch" style="--palette-color:#F8F9FF"></span><span>Classic Light<small>#F8F9FF</small></span>
                             </button>
                             <button type="button" class="sidebar-palette-card" data-sidebar-color="#075985" data-palette-name="Ocean">
                                 <span class="sidebar-palette-swatch" style="--palette-color:#075985"></span><span>Ocean<small>#075985</small></span>
@@ -261,8 +264,8 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
 
                         <label class="sidebar-appearance-section-label" for="sidebarCustomColor">Custom Color</label>
                         <div class="sidebar-custom-color-row">
-                            <input type="color" id="sidebarCustomColorPicker" value="#f8f9ff" aria-label="Choose sidebar color">
-                            <input type="text" id="sidebarCustomColor" class="form-control" value="#F8F9FF" maxlength="7" aria-describedby="sidebarColorHelp sidebarColorError">
+                            <input type="color" id="sidebarCustomColorPicker" value="#0B3B82" aria-label="Choose sidebar color">
+                            <input type="text" id="sidebarCustomColor" class="form-control" value="#0B3B82" maxlength="7" aria-describedby="sidebarColorHelp sidebarColorError">
                         </div>
                         <div id="sidebarColorHelp" class="form-text">Use a six-digit HEX color.</div>
                         <div id="sidebarColorError" class="invalid-feedback">Enter a valid HEX color, for example #0B3B82.</div>
@@ -296,7 +299,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
 <script>
     (function() {
         const sidebar = document.querySelector('.sidebar');
-        const defaultColor = '#F8F9FF';
+        const defaultColor = '#0B3B82';
         const storageKey = 'browaveSidebarColor:' + <?= json_encode((string) ($_SESSION['user_id'] ?? 'guest')) ?>;
         const colorPattern = /^#[0-9A-F]{6}$/i;
         const colorPicker = document.getElementById('sidebarCustomColorPicker');
@@ -304,6 +307,7 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
         const preview = document.getElementById('sidebarAppearancePreview');
         const contrastNote = document.getElementById('sidebarContrastNote');
         const errorInput = document.getElementById('sidebarColorError');
+        const hasSavedColor = localStorage.getItem(storageKey) !== null;
         let savedColor = localStorage.getItem(storageKey) || defaultColor;
 
         if (!colorPattern.test(savedColor)) savedColor = defaultColor;
@@ -317,36 +321,37 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
             return luminance > 0.179 ? '#121C28' : '#FFFFFF';
         }
 
-        function applySidebarColor(color) {
-            if (!sidebar || !colorPattern.test(color)) return;
+        function applySidebarColor(color, applyToSidebar = true) {
+            if (!colorPattern.test(color)) return;
             const textColor = getContrastText(color);
             const isLight = textColor === '#121C28';
-            const isDefault = color.toUpperCase() === defaultColor;
-            sidebar.style.setProperty('--ams-surface', color);
-            sidebar.style.setProperty('--ams-primary', isLight ? '#003686' : '#FFFFFF');
-            sidebar.style.setProperty('--ams-primary-container', isLight ? '#094CB2' : 'rgba(255, 255, 255, 0.2)');
-            sidebar.style.setProperty('--ams-on-surface', textColor);
-            sidebar.style.setProperty('--ams-on-surface-variant', isLight ? '#434653' : 'rgba(255, 255, 255, 0.78)');
-            sidebar.style.setProperty('--ams-surface-container', isDefault ? '#E5EEFF' : isLight ? 'rgba(0, 54, 134, 0.08)' : 'rgba(255, 255, 255, 0.12)');
-            sidebar.style.setProperty('--ams-surface-container-low', isDefault ? '#EEF4FF' : isLight ? 'rgba(0, 54, 134, 0.12)' : 'rgba(255, 255, 255, 0.18)');
-            sidebar.style.setProperty('--ams-outline-variant', isLight ? '#C3C6D5' : 'rgba(255, 255, 255, 0.24)');
-            sidebar.style.setProperty('--ams-brand-mark-bg', isDefault || isLight ? '#003686' : 'rgba(255, 255, 255, 0.2)');
-            sidebar.style.setProperty('--ams-status-surface', isDefault ? 'rgba(9, 76, 178, 0.06)' : isLight ? 'rgba(0, 54, 134, 0.08)' : 'rgba(255, 255, 255, 0.12)');
-            sidebar.style.setProperty('--ams-status-border', isDefault ? 'rgba(9, 76, 178, 0.15)' : isLight ? 'rgba(0, 54, 134, 0.18)' : 'rgba(255, 255, 255, 0.24)');
-            sidebar.style.setProperty('--sidebar-signout', isLight ? '#EF6461' : '#FFFFFF');
-            sidebar.style.setProperty('--sidebar-signout-hover', isLight ? 'rgba(239, 100, 97, 0.10)' : 'rgba(255, 255, 255, 0.12)');
+            if (sidebar && applyToSidebar) {
+                sidebar.style.setProperty('--ams-surface', color);
+                sidebar.style.setProperty('--ams-primary', isLight ? '#003686' : '#FFFFFF');
+                sidebar.style.setProperty('--ams-primary-container', isLight ? '#094CB2' : 'rgba(255, 255, 255, 0.2)');
+                sidebar.style.setProperty('--ams-on-surface', textColor);
+                sidebar.style.setProperty('--ams-on-surface-variant', isLight ? '#434653' : 'rgba(255, 255, 255, 0.78)');
+                sidebar.style.setProperty('--ams-surface-container', isLight ? 'rgba(0, 54, 134, 0.08)' : 'rgba(255, 255, 255, 0.12)');
+                sidebar.style.setProperty('--ams-surface-container-low', isLight ? 'rgba(0, 54, 134, 0.12)' : 'rgba(255, 255, 255, 0.18)');
+                sidebar.style.setProperty('--ams-outline-variant', isLight ? '#C3C6D5' : 'rgba(255, 255, 255, 0.24)');
+                sidebar.style.setProperty('--ams-brand-mark-bg', isLight ? '#003686' : 'rgba(255, 255, 255, 0.2)');
+                sidebar.style.setProperty('--ams-status-surface', isLight ? 'rgba(0, 54, 134, 0.08)' : 'rgba(255, 255, 255, 0.12)');
+                sidebar.style.setProperty('--ams-status-border', isLight ? 'rgba(0, 54, 134, 0.18)' : 'rgba(255, 255, 255, 0.24)');
+                sidebar.style.setProperty('--sidebar-signout', isLight ? '#EF6461' : '#FFFFFF');
+                sidebar.style.setProperty('--sidebar-signout-hover', isLight ? 'rgba(239, 100, 97, 0.10)' : 'rgba(255, 255, 255, 0.12)');
+            }
             if (preview) {
                 preview.style.backgroundColor = color;
                 preview.style.color = textColor;
                 preview.style.setProperty('--preview-accent', isLight ? '#003686' : '#FFFFFF');
-                preview.style.setProperty('--preview-active-bg', isDefault ? '#EEF4FF' : isLight ? 'rgba(0, 54, 134, 0.12)' : 'rgba(255, 255, 255, 0.18)');
+                preview.style.setProperty('--preview-active-bg', isLight ? 'rgba(0, 54, 134, 0.12)' : 'rgba(255, 255, 255, 0.18)');
                 preview.style.setProperty('--preview-signout', isLight ? '#EF6461' : '#FFFFFF');
                 preview.style.setProperty('--preview-signout-hover', isLight ? 'rgba(239, 100, 97, 0.10)' : 'rgba(255, 255, 255, 0.12)');
             }
             if (contrastNote) contrastNote.textContent = isLight ? 'Dark text applied for readability.' : 'Light text applied for readability.';
         }
 
-        function setDraftColor(color) {
+        function setDraftColor(color, applyToSidebar = true) {
             const normalizedColor = color.toUpperCase();
             if (!colorPattern.test(normalizedColor)) {
                 colorInput.classList.add('is-invalid');
@@ -360,15 +365,14 @@ $allowedPages = $allowedPages ?? (function_exists('getAllowedPagesForRole') ? ge
             document.querySelectorAll('.sidebar-palette-card').forEach(function(card) {
                 card.classList.toggle('is-selected', card.dataset.sidebarColor.toUpperCase() === normalizedColor);
             });
-            applySidebarColor(normalizedColor);
+            applySidebarColor(normalizedColor, applyToSidebar);
         }
 
-        function initializeAppearance() {
-            setDraftColor(savedColor);
+        function initializeAppearance(applyToSidebar = true) {
+            setDraftColor(savedColor, applyToSidebar);
         }
 
-        applySidebarColor(savedColor);
-        initializeAppearance();
+        initializeAppearance(hasSavedColor);
 
         colorPicker.addEventListener('input', function() {
             setDraftColor(colorPicker.value);

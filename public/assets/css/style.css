@@ -2490,7 +2490,7 @@ body {
 .sidebar-signout-wrap {
   padding: 10px 30px 8px;
   margin-top: auto;
-  border-top: 1px solid var(--border-line, #e4e9f2);
+  border-top: 1px solid var(--ams-outline-variant, var(--border-line, #e4e9f2));
 }
 
 .sidebar-signout-btn {
@@ -2505,15 +2505,15 @@ body {
   font-family: "Inter", sans-serif;
   font-size: 13.5px;
   font-weight: 500;
-  color: var(--sidebar-signout, #ef6461);
+  color: var(--sidebar-signout, #ffffff);
   cursor: pointer;
   text-decoration: none;
   transition: background 0.15s ease;
 }
 
 .sidebar-signout-btn:hover {
-  background: var(--sidebar-signout-hover, rgba(239, 100, 97, 0.1));
-  color: var(--sidebar-signout, #ef6461);
+  background: var(--sidebar-signout-hover, rgba(255, 255, 255, 0.12));
+  color: var(--sidebar-signout, #ffffff);
 }
 
 .sidebar-signout-btn .nav-icon {
@@ -3039,15 +3039,20 @@ body {
 
 /* Sidebar styles */
 .sidebar {
-  --ams-primary: #003686;
-  --ams-primary-container: #094cb2;
+  --ams-primary: #ffffff;
+  --ams-primary-container: rgba(255, 255, 255, 0.2);
   --ams-on-primary: #ffffff;
-  --ams-surface: #f8f9ff;
-  --ams-surface-container-low: #eef4ff;
-  --ams-surface-container: #e5eeff;
-  --ams-on-surface: #121c28;
-  --ams-on-surface-variant: #434653;
-  --ams-outline-variant: #c3c6d5;
+  --ams-surface: #0b3b82;
+  --ams-surface-container-low: rgba(255, 255, 255, 0.18);
+  --ams-surface-container: rgba(255, 255, 255, 0.12);
+  --ams-on-surface: #ffffff;
+  --ams-on-surface-variant: rgba(255, 255, 255, 0.86);
+  --ams-outline-variant: rgba(255, 255, 255, 0.24);
+  --ams-brand-mark-bg: rgba(255, 255, 255, 0.2);
+  --ams-status-surface: rgba(255, 255, 255, 0.12);
+  --ams-status-border: rgba(255, 255, 255, 0.24);
+  --sidebar-signout: #ffffff;
+  --sidebar-signout-hover: rgba(255, 255, 255, 0.12);
 
   position: fixed;
   left: 0;
