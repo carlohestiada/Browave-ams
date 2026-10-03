@@ -4,7 +4,8 @@ require_once __DIR__ . '/../models/WorkCalendar.php';
 
 class MealCalculationService
 {
-    private const DEPARTURE_LUNCH_CUTOFF_TIME = '15:00:00';
+    private const DEPARTURE_LUNCH_START_TIME = '15:00:00';
+    private const DEPARTURE_LUNCH_END_TIME = '20:00:00';
     private const ARRIVAL_LUNCH_START_TIME = '08:00:00';
     private const ARRIVAL_LUNCH_CUTOFF_TIME = '14:00:00';
 
@@ -122,7 +123,8 @@ class MealCalculationService
                         $pickupTime = strlen($pickupTime) === 5 ? $pickupTime . ':00' : $pickupTime;
 
                         if ($legType === 'DEPARTURE') {
-                            $getsLunch = $pickupTime >= self::DEPARTURE_LUNCH_CUTOFF_TIME;
+                            $getsLunch = $pickupTime >= self::DEPARTURE_LUNCH_START_TIME
+                                && $pickupTime <= self::DEPARTURE_LUNCH_END_TIME;
                         } elseif ($legType === 'ARRIVAL') {
                             $getsLunch = $pickupTime >= self::ARRIVAL_LUNCH_START_TIME
                                 && $pickupTime <= self::ARRIVAL_LUNCH_CUTOFF_TIME;
