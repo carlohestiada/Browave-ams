@@ -4,6 +4,9 @@ require_once __DIR__ . '/../models/WorkCalendar.php';
 
 class MealCalculationService
 {
+    private const DEPARTURE_LUNCH_CUTOFF_TIME = '15:00:00';
+    private const ARRIVAL_LUNCH_CUTOFF_TIME = '14:00:00';
+
     private $db;
     private $workCalendar;
 
@@ -102,7 +105,23 @@ class MealCalculationService
             $latestTripLeg = $this->getLatestTripLegForEmployee($employee['id'], $normalizedDate);
 
             if ($latestTripLeg) {
-                if (strtoupper((string) $latestTripLeg['leg_type']) === 'ARRIVAL') {
+                $legType = strtoupper((string) $latestTripLeg['leg_type']);
+                $getsLunch = $legType === 'ARRIVAL';
+
+                if ($latestTripLeg['leg_date'] === $normalizedDate) {
+                    $pickupTime = $this->getEarliestCompanyCarPickupTime($latestTripLeg['id']);
+                    if ($pickupTime !== null) {
+                        $pickupTime = strlen($pickupTime) === 5 ? $pickupTime . ':00' : $pickupTime;
+
+                        if ($legType === 'DEPARTURE') {
+                            $getsLunch = $pickupTime >= self::DEPARTURE_LUNCH_CUTOFF_TIME;
+                        } elseif ($legType === 'ARRIVAL') {
+                            $getsLunch = $pickupTime <= self::ARRIVAL_LUNCH_CUTOFF_TIME;
+                        }
+                    }
+                }
+
+                if ($getsLunch) {
                     $eligible[] = $employee;
                 }
                 continue;
@@ -225,7 +244,7 @@ class MealCalculationService
     private function getLatestTripLegForEmployee($employeeId, $date)
     {
         $stmt = $this->db->prepare(
-            "SELECT tl.leg_type, DATE(tl.leg_date) AS leg_date
+            "SELECT tl.id, tl.leg_type, DATE(tl.leg_date) AS leg_date
              FROM trip_legs tl
              JOIN trips t ON t.id = tl.trip_id
              WHERE t.employee_id = ? AND DATE(tl.leg_date) <= ?
@@ -235,6 +254,19 @@ class MealCalculationService
 
         $stmt->execute([$employeeId, $date]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function getEarliestCompanyCarPickupTime($tripLegId)
+    {
+        $stmt = $this->db->prepare(
+            "SELECT MIN(pickup_time) AS pickup_time
+             FROM transportation_requests
+             WHERE trip_leg_id = ? AND transportation_type = ? AND status <> ?"
+        );
+        $stmt->execute([$tripLegId, 'Company Car', 'Cancelled']);
+        $pickupTime = $stmt->fetchColumn();
+
+        return $pickupTime === false || $pickupTime === null ? null : substr((string) $pickupTime, 0, 8);
     }
 
     private function resolveOverrideValue($override)
