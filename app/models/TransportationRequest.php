@@ -28,24 +28,56 @@ class TransportationRequest
                     MIN(tr.id) AS id,
                     MIN(CASE WHEN tl.leg_type = 'ARRIVAL' THEN tl.leg_date END) AS arrival_date,
                     MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN tl.leg_date END) AS departure_date,
-                    COALESCE(
+                    CONCAT_WS(
+                        ' / ',
                         MIN(CASE WHEN tl.leg_type = 'ARRIVAL' THEN tr.transportation_type END),
-                        MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN tr.transportation_type END)
+                        CASE
+                            WHEN MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN tr.transportation_type END)
+                                IS DISTINCT FROM MIN(CASE WHEN tl.leg_type = 'ARRIVAL' THEN tr.transportation_type END)
+                            THEN MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN tr.transportation_type END)
+                        END
                     ) AS transportation_type,
-                    COALESCE(
+                    CONCAT_WS(
+                        ' / ',
                         MIN(CASE WHEN tl.leg_type = 'ARRIVAL' THEN dr.driver_name END),
-                        MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN dr.driver_name END)
+                        CASE
+                            WHEN MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN dr.driver_name END)
+                                IS DISTINCT FROM MIN(CASE WHEN tl.leg_type = 'ARRIVAL' THEN dr.driver_name END)
+                            THEN MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN dr.driver_name END)
+                        END
                     ) AS driver_name,
-                    COALESCE(
+                    CONCAT_WS(
+                        ' / ',
                         MIN(CASE WHEN tl.leg_type = 'ARRIVAL' THEN v.vehicle_name END),
-                        MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN v.vehicle_name END)
+                        CASE
+                            WHEN MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN v.vehicle_name END)
+                                IS DISTINCT FROM MIN(CASE WHEN tl.leg_type = 'ARRIVAL' THEN v.vehicle_name END)
+                            THEN MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN v.vehicle_name END)
+                        END
                     ) AS vehicle_name,
-                    COALESCE(
+                    CONCAT_WS(
+                        ' / ',
                         MIN(CASE WHEN tl.leg_type = 'ARRIVAL' THEN tr.pickup_location END),
-                        MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN tr.pickup_location END)
+                        CASE
+                            WHEN MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN tr.pickup_location END)
+                                IS DISTINCT FROM MIN(CASE WHEN tl.leg_type = 'ARRIVAL' THEN tr.pickup_location END)
+                            THEN MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN tr.pickup_location END)
+                        END
                     ) AS pickup_location,
-                    MIN(CASE WHEN tl.leg_type = 'ARRIVAL' THEN tr.status END) AS arrival_status,
-                    MIN(CASE WHEN tl.leg_type = 'DEPARTURE' THEN tr.status END) AS departure_status,
+                    (
+                        SELECT tr_arrival.status
+                        FROM trip_legs tl_arrival
+                        JOIN transportation_requests tr_arrival ON tr_arrival.trip_leg_id = tl_arrival.id
+                        WHERE tl_arrival.trip_id = t.id AND tl_arrival.leg_type = 'ARRIVAL'
+                        LIMIT 1
+                    ) AS arrival_status,
+                    (
+                        SELECT tr_departure.status
+                        FROM trip_legs tl_departure
+                        JOIN transportation_requests tr_departure ON tr_departure.trip_leg_id = tl_departure.id
+                        WHERE tl_departure.trip_id = t.id AND tl_departure.leg_type = 'DEPARTURE'
+                        LIMIT 1
+                    ) AS departure_status,
                     MIN(tr.remarks) AS remarks,
                     MIN(tl.id) AS arrival_trip_leg_id,
                     MAX(tl.id) AS departure_trip_leg_id,
@@ -99,8 +131,7 @@ class TransportationRequest
         }
 
         if (!empty($filters['leg_type'])) {
-            $conditions[] = 'tl1.leg_type = ? OR tl2.leg_type = ?';
-            $params[] = $filters['leg_type'];
+            $conditions[] = 'EXISTS (SELECT 1 FROM trip_legs tlf WHERE tlf.trip_id = t.id AND tlf.leg_type = ?)';
             $params[] = $filters['leg_type'];
         }
 
@@ -122,7 +153,7 @@ class TransportationRequest
             $sql .= ' AND ' . implode(' AND ', $conditions);
         }
 
-        $sql .= ' GROUP BY t.id, t.employee_id, e.employee_code, e.english_name, e.chinese_name, e.gender, d.department_name, dr.driver_name, v.vehicle_name, v.license_plate, t.trip_type, t.status
+        $sql .= ' GROUP BY t.id, t.employee_id, e.employee_code, e.english_name, e.chinese_name, e.gender, d.department_name, t.trip_type, t.status
                 ORDER BY MIN(tr.pickup_date) DESC, MIN(tr.pickup_time) ASC, t.id DESC';
 
         $stmt = $this->db->prepare($sql);
