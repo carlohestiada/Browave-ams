@@ -272,67 +272,83 @@ class Employee
         $date = $date ?: date('Y-m-d');
 
         $sql = "
-            WITH relevant_events AS (
-                SELECT
-                    t.employee_id,
-                    CAST(t.transaction_date AS DATE) AS event_date,
-                    CASE LOWER(CAST(t.transaction_type AS TEXT))
-                        WHEN 'arrival' THEN 'arrival'
-                        ELSE 'departure'
-                    END AS event_type,
-                    FALSE AS completed_departure,
-                    t.id AS event_id
-                FROM transactions t
-                WHERE CAST(t.transaction_date AS DATE) <= ?
-                    AND LOWER(CAST(t.transaction_type AS TEXT)) IN ('arrival', 'departure')
-
-                UNION ALL
-
+            WITH comparison AS (
+                SELECT CAST(? AS DATE) AS comparison_date
+            ),
+            trip_leg_events AS (
                 SELECT
                     trip.employee_id,
-                    CAST(tl.leg_date AS DATE) AS event_date,
-                    'arrival' AS event_type,
-                    FALSE AS completed_departure,
-                    tl.id AS event_id
-                FROM trip_legs tl
-                INNER JOIN trips trip ON trip.id = tl.trip_id
-                WHERE tl.leg_type = 'ARRIVAL'
-                    AND trip.status <> 'CANCELLED'
-                    AND CAST(tl.leg_date AS DATE) <= ?
-
-                UNION ALL
-
-                SELECT
-                    trip.employee_id,
-                    CAST(tl.leg_date AS DATE) AS event_date,
-                    'departure' AS event_type,
-                    COALESCE(transport.status = 'Completed', FALSE) AS completed_departure,
+                    trip.id AS trip_id,
+                    trip.trip_type,
+                    CASE WHEN tl.leg_type = 'ARRIVAL' THEN 'arrival' ELSE 'departure' END AS event_type,
+                    tl.leg_type,
+                    CASE
+                        WHEN transport.status = 'Completed'
+                            THEN LEAST(CAST(tl.leg_date AS DATE), comparison.comparison_date)
+                        ELSE CAST(tl.leg_date AS DATE)
+                    END AS event_date,
                     tl.id AS event_id
                 FROM trip_legs tl
                 INNER JOIN trips trip ON trip.id = tl.trip_id
                 LEFT JOIN transportation_requests transport ON transport.trip_leg_id = tl.id
-                WHERE tl.leg_type = 'DEPARTURE'
+                CROSS JOIN comparison
+                WHERE tl.leg_type IN ('ARRIVAL', 'DEPARTURE')
                     AND trip.status <> 'CANCELLED'
                     AND (
-                        CAST(tl.leg_date AS DATE) <= ?
+                        CAST(tl.leg_date AS DATE) <= comparison.comparison_date
                         OR transport.status = 'Completed'
                     )
+            ),
+            ranked_trip_legs AS (
+                SELECT
+                    employee_id,
+                    trip_id,
+                    event_type,
+                    event_date,
+                    event_id,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY trip_id
+                        ORDER BY
+                            event_date DESC,
+                            CASE
+                                WHEN trip_type = 'NORMAL_TRIP' AND leg_type = 'DEPARTURE' THEN 1
+                                WHEN trip_type = 'ROUND_TRIP' AND leg_type = 'ARRIVAL' THEN 1
+                                ELSE 0
+                            END DESC,
+                            event_id DESC
+                    ) AS trip_event_rank
+                FROM trip_leg_events
+            ),
+            relevant_events AS (
+                SELECT
+                    transaction.employee_id,
+                    CAST(transaction.transaction_date AS DATE) AS event_date,
+                    CASE LOWER(CAST(transaction.transaction_type AS TEXT))
+                        WHEN 'arrival' THEN 'arrival'
+                        ELSE 'departure'
+                    END AS event_type,
+                    transaction.id AS event_id
+                FROM transactions transaction
+                CROSS JOIN comparison
+                WHERE CAST(transaction.transaction_date AS DATE) <= comparison.comparison_date
+                    AND LOWER(CAST(transaction.transaction_type AS TEXT)) IN ('arrival', 'departure')
+
+                UNION ALL
+
+                SELECT employee_id, event_date, event_type, event_id
+                FROM ranked_trip_legs
+                WHERE trip_event_rank = 1
             ),
             ranked_events AS (
                 SELECT
                     employee_id,
                     event_date,
                     event_type,
-                    completed_departure,
                     ROW_NUMBER() OVER (
                         PARTITION BY employee_id
                         ORDER BY
                             event_date DESC,
-                            CASE
-                                WHEN event_type = 'departure' AND completed_departure THEN 2
-                                WHEN event_type = 'arrival' THEN 1
-                                ELSE 0
-                            END DESC,
+                            CASE WHEN event_type = 'arrival' THEN 1 ELSE 0 END DESC,
                             event_id DESC
                     ) AS rn
                 FROM relevant_events
@@ -355,7 +371,7 @@ class Employee
             )
         ";
 
-        $params = [$date, $date, $date];
+        $params = [$date];
 
         if (!empty($employeeId)) {
             $sql .= " AND e.id = ?";
