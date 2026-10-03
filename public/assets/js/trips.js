@@ -11,6 +11,8 @@ let tripRows = [];
 let tripModal;
 let detailsModal;
 let tripLoadRequestId = 0;
+let currentTripView = "active";
+let activeTripStatusFilter = "";
 const tripSortColumns = [
   { index: 0, key: (trip) => trip.employee_code || trip.employee_id },
   { index: 1, key: (trip) => trip.employee_name || "" },
@@ -182,7 +184,7 @@ function renderTripRow(trip) {
             <td><div style="white-space: normal; line-height: 1.4;">${escapeTripHtml(roomData.accommodation)}<br>${escapeTripHtml(roomData.room)}</div></td>
             <td>${escapeTripHtml(trip.trip_type || "—")}</td>
             <td>${statusBadge(trip.status)}</td>
-            <td><button type="button" class="btn btn-primary view-trip" data-id="${escapeTripHtml(trip.id)}">View</button></td>
+            <td><button type="button" class="btn btn-primary view-trip" data-id="${escapeTripHtml(trip.id)}">${String(trip.status).toUpperCase() === "COMPLETED" ? "View Details" : "View"}</button></td>
         </tr>`;
 }
 
@@ -207,8 +209,11 @@ function renderTrips(rows) {
   const noTripMode = $("#tripFilterAssignment").val() === "none";
   tripRows = Array.isArray(rows) ? rows : [];
   $("#tripCount").text(noTripMode
-    ? `${tripRows.length} employee${tripRows.length === 1 ? "" : "s"} without a trip`
-    : `${tripRows.length} trip${tripRows.length === 1 ? "" : "s"}`);
+    ? `${tripRows.length} employees without a trip`
+    : currentTripView === "completed"
+      ? `${tripRows.length} completed trips found`
+      : `${tripRows.length} trips found`);
+  updateTripViewSummary();
 
   renderPaginatedTable({
     data: tripRows,
@@ -221,15 +226,67 @@ function renderTrips(rows) {
 
   if (tripRows.length === 0) {
     $("#tripsTableBody").html(
-      `<tr><td colspan="11" class="text-center text-muted py-4">${noTripMode ? "All employees already have a trip." : "No trips found."}</td></tr>`,
+      `<tr><td colspan="11" class="text-center text-muted py-4">${noTripMode ? "All employees already have a trip." : currentTripView === "completed" ? "No completed trips found." : "No trips found."}</td></tr>`,
     );
   }
 }
 
+function updateTripViewSummary() {
+  const noTripMode =
+    currentTripView === "active" && $("#tripFilterAssignment").val() === "none";
+  $("#tripViewSummary").text(
+    noTripMode
+      ? "Showing employees without a trip"
+      : currentTripView === "completed"
+        ? "Showing completed trips"
+        : "Showing active trips",
+  );
+}
+
 function updateTripAssignmentFilters() {
-  const noTripMode = $("#tripFilterAssignment").val() === "none";
+  const noTripMode = currentTripView === "active" && $("#tripFilterAssignment").val() === "none";
+  $("#tripFilterAssignment option[value='none']").prop("disabled", currentTripView === "completed");
+  $("#completedTripsTab").prop("disabled", noTripMode);
   $("#tripFilterType, #tripFilterStatus, #tripFilterFrom, #tripFilterTo")
     .prop("disabled", noTripMode);
+  $("#tripFilterStatus option[value='COMPLETED'], #tripFilterStatus option[value='CANCELLED']")
+    .prop("hidden", currentTripView === "active");
+  if (currentTripView === "completed") {
+    $("#tripFilterStatus").val("COMPLETED").prop("disabled", true);
+  } else {
+    if ($("#tripFilterStatus").val() === "COMPLETED" || $("#tripFilterStatus").val() === "CANCELLED") {
+      $("#tripFilterStatus").val("");
+    }
+    $("#tripFilterStatus").prop("disabled", noTripMode);
+  }
+  updateTripViewSummary();
+}
+
+function setTripView(view) {
+  const nextView = view === "completed" ? "completed" : "active";
+  if (nextView === "completed" && $("#tripFilterAssignment").val() === "none") {
+    $("#tripFilterAssignment").val("");
+  }
+  if (currentTripView === "active") {
+    activeTripStatusFilter = $("#tripFilterStatus").val() || activeTripStatusFilter;
+  }
+  currentTripView = nextView;
+  if (currentTripView === "completed") {
+    $("#tripFilterStatus").val("COMPLETED");
+  } else {
+    $("#tripFilterStatus").val(activeTripStatusFilter);
+  }
+
+  $(".trip-view-tab").each(function () {
+    const active = $(this).data("view") === currentTripView;
+    $(this).toggleClass("active", active).attr("aria-selected", active ? "true" : "false");
+  });
+  $("#tripSchedulePane").attr(
+    "aria-labelledby",
+    currentTripView === "completed" ? "completedTripsTab" : "activeTripsTab",
+  );
+  updateTripAssignmentFilters();
+  loadTrips();
 }
 
 function loadTrips() {
@@ -239,9 +296,11 @@ function loadTrips() {
   );
   const params = new URLSearchParams();
   const employeeId = $("#tripFilterEmployee").val();
-  const assignment = $("#tripFilterAssignment").val();
+  const assignment = currentTripView === "active" ? $("#tripFilterAssignment").val() : "";
   const type = $("#tripFilterType").val();
-  const status = $("#tripFilterStatus").val();
+  const status = currentTripView === "completed"
+    ? "COMPLETED"
+    : $("#tripFilterStatus").val();
   const departmentId = $("#tripFilterDepartment").val();
   if (employeeId) params.set("employee_id", employeeId);
   if (departmentId) params.set("department_id", departmentId);
@@ -267,7 +326,15 @@ function loadTrips() {
   })
     .done((data) => {
       if (requestId !== tripLoadRequestId) return;
-      renderTrips(tripResponse(data));
+      const rows = tripResponse(data);
+      const filteredRows = assignment === "none"
+        ? rows
+        : (Array.isArray(rows) ? rows : []).filter((trip) =>
+            currentTripView === "completed"
+              ? String(trip.status).toUpperCase() === "COMPLETED"
+              : ["PLANNED", "ACTIVE"].includes(String(trip.status).toUpperCase()),
+          );
+      renderTrips(filteredRows);
     })
     .fail(() => {
       if (requestId !== tripLoadRequestId) return;
@@ -810,6 +877,10 @@ function openTripAccommodationEditor(trip) {
 function renderTripDetails(trip) {
   const room = roomForEmployee(trip.employee_id);
   const legs = Array.isArray(trip.legs) ? trip.legs : [];
+  const isCompleted = String(trip.status || "").toUpperCase() === "COMPLETED";
+  const canManageTrip =
+    $("#tripDetailsModal").attr("data-can-manage-trips") === "true" &&
+    !isCompleted;
   const tripDetailBody = $("#tripDetailsBody");
   tripDetailBody.data("trip-id", trip.id);
 
@@ -844,17 +915,17 @@ function renderTripDetails(trip) {
                 <span class="text-muted">Pickup: ${formatTripDate(leg.transportation.pickup_date)} ${escapeTripHtml(leg.transportation.pickup_time || "—")}</span><br>
                 <span class="text-muted">Location: ${escapeTripHtml(leg.transportation.pickup_location || "—")}</span><br>
                 <span class="badge bg-${getStatusColor(leg.transportation.status)}">${escapeTripHtml(leg.transportation.status)}</span>
-                <div class="mt-2">
+                ${canManageTrip ? `<div class="mt-2">
                   <a class="btn btn-sm btn-outline-primary" href="company-car.php?edit=${encodeURIComponent(leg.transportation.id)}">Edit</a>
                   <button type="button" class="btn btn-sm btn-outline-danger delete-transportation" data-id="${leg.transportation.id}">Delete</button>
-                </div>
+                </div>` : ""}
               </div>
             ` : `
               <div class="text-muted">
                 <em>No transportation assigned</em><br>
-                <a class="btn btn-sm btn-outline-primary mt-2" href="company-car.php?trip_leg_id=${encodeURIComponent(leg.id)}&employee_id=${encodeURIComponent(trip.employee_id)}&pickup_date=${encodeURIComponent(leg.leg_date)}">
+                ${canManageTrip ? `<a class="btn btn-sm btn-outline-primary mt-2" href="company-car.php?trip_leg_id=${encodeURIComponent(leg.id)}&employee_id=${encodeURIComponent(trip.employee_id)}&pickup_date=${encodeURIComponent(leg.leg_date)}">
                   + Add Transportation
-                </a>
+                </a>` : ""}
               </div>
             `}
           </td>
@@ -869,9 +940,9 @@ function renderTripDetails(trip) {
           <div class="col-md-3">
             <div class="d-flex justify-content-between align-items-center gap-2">
               <strong>Accommodation Room</strong>
-              ${hasAccommodation && !room.checkedOut ? '<button type="button" class="btn btn-outline-secondary btn-sm trip-accommodation-edit"><i class="bi bi-pencil-square me-1" aria-hidden="true"></i>Edit</button>' : ''}
+              ${hasAccommodation && !room.checkedOut && canManageTrip ? '<button type="button" class="btn btn-outline-secondary btn-sm trip-accommodation-edit"><i class="bi bi-pencil-square me-1" aria-hidden="true"></i>Edit</button>' : ''}
             </div>
-            ${hasAccommodation ? `${escapeTripHtml(room.accommodation || "—")}<br>${escapeTripHtml(room.room || "—")}${room.checkedOut ? '<div class="mt-2"><button type="button" class="btn btn-sm btn-outline-primary trip-accommodation-add">+ Add Accommodation</button></div>' : ''}` : '<div class="text-muted mt-2">No accommodation assigned</div><div class="mt-2"><button type="button" class="btn btn-sm btn-outline-primary trip-accommodation-add">+ Add Accommodation</button></div>'}
+            ${hasAccommodation ? `${escapeTripHtml(room.accommodation || "—")}<br>${escapeTripHtml(room.room || "—")}${room.checkedOut && canManageTrip ? '<div class="mt-2"><button type="button" class="btn btn-sm btn-outline-primary trip-accommodation-add">+ Add Accommodation</button></div>' : ''}` : `<div class="text-muted mt-2">No accommodation assigned</div>${canManageTrip ? '<div class="mt-2"><button type="button" class="btn btn-sm btn-outline-primary trip-accommodation-add">+ Add Accommodation</button></div>' : ""}`}
             ${hasAccommodation && activeRoomAssignment ? `
               <div class="mt-3 small">
                 <div><strong>Check-in:</strong> ${escapeTripHtml(activeRoomAssignment.checkin_date || "—")}</div>
@@ -924,10 +995,13 @@ function renderTripDetails(trip) {
         : trip.status === "PLANNED"
           ? `<button type="button" class="btn btn-outline-danger" id="cancelTripButton">Cancel Trip</button>`
           : "";
+      const footerActions = canManageTrip
+        ? `${lifecycleActions}<button type="button" class="btn btn-outline-primary" id="editTripButton">Edit Trip</button><button type="button" class="btn btn-outline-danger" id="deleteTripButton">Delete Trip</button>`
+        : "";
 
       $("#tripDetailsFooter")
         .html(
-          `${lifecycleActions}<button type="button" class="btn btn-outline-primary" id="editTripButton">Edit Trip</button><button type="button" class="btn btn-outline-danger" id="deleteTripButton">Delete Trip</button><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>`,
+          `${footerActions}<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>`,
         )
         .off("click")
         .on("click", "#editTripButton", () => {
@@ -1001,7 +1075,7 @@ function completeTrip(id) {
       .done(() => {
         swalSuccess("Trip marked as completed.");
         detailsModal.hide();
-        loadTrips();
+        setTripView("completed");
       })
       .fail((xhr) => swalError(xhr.responseJSON?.error || "Unable to complete trip."));
   });
@@ -1088,9 +1162,30 @@ $(function () {
     event.preventDefault();
     loadTrips();
   });
-  $("#tripFilterAssignment").on("change", updateTripAssignmentFilters);
+  $(".trip-view-tab").on("click", function () {
+    if (!$(this).prop("disabled")) {
+      setTripView($(this).data("view"));
+    }
+  });
+  $("#tripFilterAssignment").on("change", function () {
+    if (currentTripView === "completed" && $(this).val() === "none") {
+      $(this).val("");
+    }
+    updateTripAssignmentFilters();
+  });
+  $("#tripFilterStatus").on("change", function () {
+    if (currentTripView === "active") {
+      activeTripStatusFilter = $(this).val() || "";
+    }
+  });
   $("#resetTripFilters").on("click", () => {
     $("#tripFilterForm")[0].reset();
+    if (currentTripView === "active") {
+      activeTripStatusFilter = "";
+    }
+    if (currentTripView === "completed") {
+      $("#tripFilterAssignment").val("");
+    }
     updateTripAssignmentFilters();
     loadTrips();
   });

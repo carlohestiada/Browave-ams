@@ -69,30 +69,45 @@
         </form>
     </div>
 
-    <div class="ams-card p-0 overflow-hidden">
-        <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
-            <strong>Trip schedule</strong>
-            <span class="text-muted small" id="tripCount">0 trips</span>
+    <div class="ams-card dashboard-card-panel">
+        <div class="dashboard-card-header">
+            <div class="dashboard-card-title"><i class="bi bi-table"></i> Trips Schedule</div>
+            <div id="tripCount" class="text-muted small">0 trips found</div>
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Employee ID</th>
-                        <th>Employee Name</th>
-                        <th>Department</th>
-                        <th>Arrival</th>
-                        <th>Departure</th>
-                        <th>Arrival Airport</th>
-                        <th>Departure Airport</th>
-                        <th>Room No.</th>
-                        <th>Trip Type</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="tripsTableBody"><tr><td colspan="11" class="text-center text-muted py-4">Loading trips...</td></tr></tbody>
-            </table>
+        <div class="dashboard-card-body dashboard-card-table-body">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <ul class="nav nav-tabs" id="scheduleViewTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link schedule-view-tab trip-view-tab active" id="activeTripsTab" type="button" data-view="active" role="tab" aria-controls="tripSchedulePane" aria-selected="true">Active</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link schedule-view-tab trip-view-tab" id="completedTripsTab" type="button" data-view="completed" role="tab" aria-controls="tripSchedulePane" aria-selected="false">Completed</button>
+                    </li>
+                </ul>
+                <div id="tripViewSummary" class="text-muted small">Showing active trips</div>
+            </div>
+            <section id="tripSchedulePane" role="tabpanel" aria-labelledby="activeTripsTab">
+                <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Employee ID</th>
+                            <th>Employee Name</th>
+                            <th>Department</th>
+                            <th>Arrival</th>
+                            <th>Departure</th>
+                            <th>Arrival Airport</th>
+                            <th>Departure Airport</th>
+                            <th>Room No.</th>
+                            <th>Trip Type</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tripsTableBody"><tr><td colspan="11" class="text-center text-muted py-4">Loading trips...</td></tr></tbody>
+                </table>
+            </div>
+            </section>
         </div>
     </div>
 </div>
@@ -121,7 +136,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="tripDetailsModal" tabindex="-1" aria-labelledby="tripDetailsModalLabel" aria-hidden="true">
+<div class="modal fade" id="tripDetailsModal" data-can-manage-trips="<?= in_array(currentUserRole(), ['Admin', 'HR'], true) ? 'true' : 'false' ?>" tabindex="-1" aria-labelledby="tripDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
