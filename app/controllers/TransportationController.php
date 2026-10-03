@@ -1,14 +1,29 @@
 <?php
 
 require_once __DIR__ . '/../models/TransportationRequest.php';
+require_once __DIR__ . '/../models/Employee.php';
 
 class TransportationController
 {
     private $transportation;
+    private $employee;
+    private $db;
 
     public function __construct($db)
     {
+        $this->db = $db;
         $this->transportation = new TransportationRequest($db);
+        $this->employee = new Employee($db);
+    }
+
+    private function syncTripEmployeeStatus($tripId)
+    {
+        $stmt = $this->db->prepare("SELECT employee_id FROM trips WHERE id = ?");
+        $stmt->execute([$tripId]);
+        $employeeId = $stmt->fetchColumn();
+        if ($employeeId !== false) {
+            $this->employee->syncStatusesByTransactions(date('Y-m-d'), $employeeId);
+        }
     }
 
     public function index()
@@ -47,6 +62,7 @@ class TransportationController
             return;
         }
 
+        $this->employee->syncStatusesByTransactions(date('Y-m-d'), $data['employee_id']);
         echo json_encode(['success' => true, 'id' => $result['id']]);
     }
 
@@ -61,12 +77,20 @@ class TransportationController
             return;
         }
 
+        $employeeIds = $data['employee_ids'] ?? [];
+        if (!is_array($employeeIds)) {
+            $employeeIds = array_filter(array_map('trim', explode(',', (string) $employeeIds)));
+        }
+        foreach (array_unique($employeeIds) as $employeeId) {
+            $this->employee->syncStatusesByTransactions(date('Y-m-d'), $employeeId);
+        }
         echo json_encode(['success' => true, 'count' => $result['count'] ?? 0, 'ids' => $result['ids'] ?? []]);
     }
 
     public function update($id)
     {
         parse_str(file_get_contents('php://input'), $data);
+        $existing = $this->transportation->getById($id);
         $result = $this->transportation->update($id, $data);
 
         if (!isset($result['success']) || !$result['success']) {
@@ -75,11 +99,18 @@ class TransportationController
             return;
         }
 
+        if ($existing) {
+            $this->employee->syncStatusesByTransactions(date('Y-m-d'), $existing['employee_id']);
+        }
+        if (!empty($data['employee_id']) && (!$existing || (string) $data['employee_id'] !== (string) $existing['employee_id'])) {
+            $this->employee->syncStatusesByTransactions(date('Y-m-d'), $data['employee_id']);
+        }
         echo json_encode(['success' => true]);
     }
 
     public function destroy($id)
     {
+        $existing = $this->transportation->getById($id);
         $result = $this->transportation->delete($id);
 
         if (!isset($result['success']) || !$result['success']) {
@@ -88,6 +119,9 @@ class TransportationController
             return;
         }
 
+        if ($existing) {
+            $this->employee->syncStatusesByTransactions(date('Y-m-d'), $existing['employee_id']);
+        }
         echo json_encode(['success' => true]);
     }
 
@@ -127,6 +161,7 @@ class TransportationController
             return;
         }
 
+        $this->syncTripEmployeeStatus($tripId);
         echo json_encode(['success' => true]);
     }
 

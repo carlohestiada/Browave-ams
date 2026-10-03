@@ -187,6 +187,7 @@ class TripController
             return;
         }
 
+        $this->employee->syncStatusesByTransactions(date('Y-m-d'), $result['trip']['employee_id']);
         $this->auditLog->log($_SESSION['user_id'] ?? null, 'Trip Completed', 'trip', $id, ['status' => 'ACTIVE'], ['status' => 'COMPLETED']);
         echo json_encode($result);
     }
@@ -200,6 +201,7 @@ class TripController
             return;
         }
 
+        $this->employee->syncStatusesByTransactions(date('Y-m-d'), $result['trip']['employee_id']);
         $this->auditLog->log($_SESSION['user_id'] ?? null, 'Trip Cancelled', 'trip', $id, ['status' => 'PLANNED or ACTIVE'], ['status' => 'CANCELLED']);
         echo json_encode($result);
     }

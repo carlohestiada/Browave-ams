@@ -280,30 +280,60 @@ class Employee
                         WHEN 'arrival' THEN 'arrival'
                         ELSE 'departure'
                     END AS event_type,
+                    FALSE AS completed_departure,
                     t.id AS event_id
                 FROM transactions t
-                WHERE CAST(t.transaction_date AS DATE) <= :comparison_date
+                WHERE CAST(t.transaction_date AS DATE) <= ?
+                    AND LOWER(CAST(t.transaction_type AS TEXT)) IN ('arrival', 'departure')
 
                 UNION ALL
 
                 SELECT
-                    tr.employee_id,
+                    trip.employee_id,
                     CAST(tl.leg_date AS DATE) AS event_date,
                     'arrival' AS event_type,
+                    FALSE AS completed_departure,
                     tl.id AS event_id
                 FROM trip_legs tl
-                INNER JOIN trips tr ON tr.id = tl.trip_id
+                INNER JOIN trips trip ON trip.id = tl.trip_id
                 WHERE tl.leg_type = 'ARRIVAL'
-                    AND CAST(tl.leg_date AS DATE) <= :comparison_date
+                    AND trip.status <> 'CANCELLED'
+                    AND CAST(tl.leg_date AS DATE) <= ?
+
+                UNION ALL
+
+                SELECT
+                    trip.employee_id,
+                    CAST(tl.leg_date AS DATE) AS event_date,
+                    'departure' AS event_type,
+                    COALESCE(transport.status = 'Completed', FALSE) AS completed_departure,
+                    tl.id AS event_id
+                FROM trip_legs tl
+                INNER JOIN trips trip ON trip.id = tl.trip_id
+                LEFT JOIN transportation_requests transport ON transport.trip_leg_id = tl.id
+                WHERE tl.leg_type = 'DEPARTURE'
+                    AND trip.status <> 'CANCELLED'
+                    AND (
+                        CAST(tl.leg_date AS DATE) <= ?
+                        OR transport.status = 'Completed'
+                    )
             ),
             ranked_events AS (
                 SELECT
                     employee_id,
                     event_date,
                     event_type,
+                    completed_departure,
                     ROW_NUMBER() OVER (
                         PARTITION BY employee_id
-                        ORDER BY event_date DESC, CASE event_type WHEN 'arrival' THEN 1 ELSE 0 END DESC, event_id DESC
+                        ORDER BY
+                            event_date DESC,
+                            CASE
+                                WHEN event_type = 'departure' AND completed_departure THEN 2
+                                WHEN event_type = 'arrival' THEN 1
+                                ELSE 0
+                            END DESC,
+                            event_id DESC
                     ) AS rn
                 FROM relevant_events
             )
@@ -325,11 +355,11 @@ class Employee
             )
         ";
 
-        $params = [':comparison_date' => $date];
+        $params = [$date, $date, $date];
 
         if (!empty($employeeId)) {
-            $sql .= " AND e.id = :employee_id";
-            $params[':employee_id'] = $employeeId;
+            $sql .= " AND e.id = ?";
+            $params[] = $employeeId;
         }
 
         $stmt = $this->db->prepare($sql);

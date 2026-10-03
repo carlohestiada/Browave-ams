@@ -14,25 +14,6 @@ class TransactionController
         $this->employee = new Employee($db);
     }
 
-    private function refreshEmployeeStatusAfterTransaction($employeeId, $type, $transactionDate)
-    {
-        $today = date('Y-m-d');
-
-        if ($transactionDate <= $today) {
-            $this->employee->updateStatus($employeeId, $type === 'arrival' ? 'Active' : 'Inactive');
-            return;
-        }
-
-        $this->employee->syncStatusesByTransactions($today, $employeeId);
-
-        if ($type === 'arrival') {
-            $employee = $this->employee->getById($employeeId);
-            if ($employee && $employee['status'] === 'Active') {
-                $this->employee->updateStatus($employeeId, 'Inactive');
-            }
-        }
-    }
-
     private function validateTransactionRequest($data, $type, $excludeId = null)
     {
         if (empty($data['employee_id']) || empty($data['transaction_date'])) {
@@ -75,7 +56,7 @@ class TransactionController
             'remarks' => $data['remarks'] ?? ''
         ]);
 
-        $this->refreshEmployeeStatusAfterTransaction($data['employee_id'], 'arrival', $validation['transactionDate']);
+        $this->employee->syncStatusesByTransactions(date('Y-m-d'), $data['employee_id']);
 
         echo json_encode(['success' => true]);
     }
@@ -98,7 +79,7 @@ class TransactionController
             'remarks' => $data['remarks'] ?? ''
         ]);
 
-        $this->refreshEmployeeStatusAfterTransaction($data['employee_id'], 'departure', $validation['transactionDate']);
+        $this->employee->syncStatusesByTransactions(date('Y-m-d'), $data['employee_id']);
 
         echo json_encode(['success' => true]);
     }
@@ -148,11 +129,7 @@ class TransactionController
         ]);
 
         $this->employee->syncStatusesByTransactions(date('Y-m-d'), $existingTx['employee_id']);
-        $this->refreshEmployeeStatusAfterTransaction(
-            $data['employee_id'],
-            $existingTx['transaction_type'],
-            $validation['transactionDate']
-        );
+        $this->employee->syncStatusesByTransactions(date('Y-m-d'), $data['employee_id']);
 
         echo json_encode(['success' => true]);
     }
@@ -175,10 +152,6 @@ class TransactionController
 
         $today = date('Y-m-d');
         $this->employee->syncStatusesByTransactions($today, $transaction['employee_id']);
-
-        if (!$this->transaction->hasTransactionOnOrBefore($transaction['employee_id'], $today)) {
-            $this->employee->updateStatus($transaction['employee_id'], 'Active');
-        }
 
         echo json_encode(['success' => true]);
     }
