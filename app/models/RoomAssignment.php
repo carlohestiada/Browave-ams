@@ -316,6 +316,10 @@ class RoomAssignment
                 throw new DomainException('Only the employee\'s current room assignment can be checked out.');
             }
 
+            if ($this->hasUnfinishedDeparture($assignment['employee_id'])) {
+                throw new DomainException('Cannot check out yet: this employee has a trip whose departure transportation (company car) is not completed. Complete the departure first (the room is then released automatically), or cancel the trip.');
+            }
+
             $update = $this->db->prepare(
                 "UPDATE room_assignments
                  SET status = 'Checked Out', actual_checkout_date = ?
@@ -340,6 +344,29 @@ class RoomAssignment
                 : 'Checkout failed. No changes were made.';
             return ['success' => false, 'error' => $error];
         }
+    }
+
+    private function hasUnfinishedDeparture($employeeId): bool
+    {
+        $stmt = $this->db->prepare(
+            "SELECT EXISTS (
+                SELECT 1
+                FROM trips t
+                WHERE t.employee_id = ?
+                    AND t.status IN ('PLANNED', 'ACTIVE')
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM trip_legs tl
+                        JOIN transportation_requests tr ON tr.trip_leg_id = tl.id
+                        WHERE tl.trip_id = t.id
+                            AND tl.leg_type = 'DEPARTURE'
+                            AND tr.status = 'Completed'
+                    )
+            )"
+        );
+        $stmt->execute([$employeeId]);
+
+        return (bool) $stmt->fetchColumn();
     }
 
     public function transfer($assignmentId, $newRoomId, $transferDate)

@@ -583,6 +583,19 @@ $(function () {
     const roomName = button.dataset.roomName;
     if (!id || !employeeName || !roomName) return;
 
+    const showCheckoutFailure = (message, fallback) => {
+      $(button).prop("disabled", false);
+      if (String(message || "").startsWith("Cannot check out yet")) {
+        Swal.fire({
+          title: "Departure Not Completed",
+          text: "This employee's departure transportation (company car) is not completed yet. Complete the departure first and the room will be released automatically, or cancel the trip.",
+          icon: "warning",
+        });
+        return;
+      }
+      swalError(message || fallback);
+    };
+
     Swal.fire({
       title: "Confirm Checkout",
       text: `Are you sure you want to check out ${employeeName} from Room ${roomName}?`,
@@ -601,8 +614,7 @@ $(function () {
         success: function (response) {
           const res = typeof response === "string" ? JSON.parse(response) : response;
           if (!res.success) {
-            $(button).prop("disabled", false);
-            swalError(res.error || "Checkout failed.");
+            showCheckoutFailure(res.error, "Checkout failed.");
             return;
           }
 
@@ -618,8 +630,7 @@ $(function () {
           });
         },
         error: function (xhr) {
-          $(button).prop("disabled", false);
-          swalError(xhr.responseJSON?.error || "Checkout failed. The assignment was not changed.");
+          showCheckoutFailure(xhr.responseJSON?.error, "Checkout failed. The assignment was not changed.");
         },
       });
     });
@@ -1268,4 +1279,3 @@ $(document).on("input", "#roomSearchInput", function () {
 $(document).on("shown.bs.tab", "#roomsTab", function () {
   loadRoomCardsForTransfer();
 });
-

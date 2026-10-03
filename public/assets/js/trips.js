@@ -6,6 +6,7 @@ function tripApiUrl(path) {
 const tripStatuses = ["PLANNED", "ACTIVE", "COMPLETED", "CANCELLED"];
 let tripEmployees = [];
 let tripRooms = [];
+let tripRoomHistory = [];
 let tripRows = [];
 let tripModal;
 let detailsModal;
@@ -64,12 +65,25 @@ function roomForEmployee(employeeId) {
       String(room.employee_id) === String(employeeId) &&
       ["Active", "Transferred"].includes(room.status),
   );
-  if (!assignment) {
-    return { accommodation: "—", room: "—" };
+  if (assignment) {
+    return {
+      accommodation: assignment.accommodation_name || "—",
+      room: assignment.room_no || "—",
+      checkedOut: false,
+    };
   }
+
+  const checkedOutAssignment = tripRoomHistory.find(
+    (room) => String(room.employee_id) === String(employeeId),
+  );
+  if (!checkedOutAssignment) {
+    return { accommodation: "—", room: "—", checkedOut: false };
+  }
+
   return {
-    accommodation: assignment.accommodation_name || "—",
-    room: assignment.room_no || "—"
+    accommodation: checkedOutAssignment.accommodation_name || "—",
+    room: `${checkedOutAssignment.room_no || "—"} (checked out)`,
+    checkedOut: true,
   };
 }
 
@@ -273,9 +287,21 @@ function loadTripEmployees() {
 }
 
 function loadTripRooms() {
-  return $.get(tripApiUrl("api/room_assignments/index.php")).done((data) => {
+  const activeRequest = $.get(tripApiUrl("api/room_assignments/index.php")).done((data) => {
     tripRooms = tripResponse(data) || [];
   });
+  const historyRequest = $.get(
+    tripApiUrl("api/room_assignments/index.php/checkout"),
+  ).then(
+    (data) => {
+      tripRoomHistory = tripResponse(data) || [];
+    },
+    () => {
+      tripRoomHistory = [];
+      return [];
+    },
+  );
+  return $.when(activeRequest, historyRequest);
 }
 
 function populateEmployeeInfo() {
@@ -791,6 +817,11 @@ function renderTripDetails(trip) {
       const transportationAssigned = legs.filter((leg) => leg.transportation).length;
       const transportationPending = legs.length - transportationAssigned;
       const hasAccommodation = room.accommodation !== "—" && room.room !== "—";
+      const activeRoomAssignment = tripRooms.find(
+        (row) =>
+          String(row.employee_id) === String(trip.employee_id) &&
+          ["Active", "Transferred"].includes(row.status),
+      );
 
       const legsHtml = legs.length ? legs.map((leg) => `
         <tr>
@@ -838,13 +869,13 @@ function renderTripDetails(trip) {
           <div class="col-md-3">
             <div class="d-flex justify-content-between align-items-center gap-2">
               <strong>Accommodation Room</strong>
-              ${hasAccommodation ? '<button type="button" class="btn btn-outline-secondary btn-sm trip-accommodation-edit"><i class="bi bi-pencil-square me-1" aria-hidden="true"></i>Edit</button>' : ''}
+              ${hasAccommodation && !room.checkedOut ? '<button type="button" class="btn btn-outline-secondary btn-sm trip-accommodation-edit"><i class="bi bi-pencil-square me-1" aria-hidden="true"></i>Edit</button>' : ''}
             </div>
-            ${hasAccommodation ? `${escapeTripHtml(room.accommodation || "—")}<br>${escapeTripHtml(room.room || "—")}` : '<div class="text-muted mt-2">No accommodation assigned</div><div class="mt-2"><button type="button" class="btn btn-sm btn-outline-primary trip-accommodation-add">+ Add Accommodation</button></div>'}
-            ${hasAccommodation && tripRooms.find((row) => String(row.employee_id) === String(trip.employee_id) && ["Active", "Transferred"].includes(row.status)) ? `
+            ${hasAccommodation ? `${escapeTripHtml(room.accommodation || "—")}<br>${escapeTripHtml(room.room || "—")}${room.checkedOut ? '<div class="mt-2"><button type="button" class="btn btn-sm btn-outline-primary trip-accommodation-add">+ Add Accommodation</button></div>' : ''}` : '<div class="text-muted mt-2">No accommodation assigned</div><div class="mt-2"><button type="button" class="btn btn-sm btn-outline-primary trip-accommodation-add">+ Add Accommodation</button></div>'}
+            ${hasAccommodation && activeRoomAssignment ? `
               <div class="mt-3 small">
-                <div><strong>Check-in:</strong> ${escapeTripHtml((tripRooms.find((row) => String(row.employee_id) === String(trip.employee_id) && ["Active", "Transferred"].includes(row.status))?.checkin_date) || "—")}</div>
-                <div><strong>Check-out:</strong> ${escapeTripHtml((tripRooms.find((row) => String(row.employee_id) === String(trip.employee_id) && ["Active", "Transferred"].includes(row.status))?.expected_checkout_date) || "—")}</div>
+                <div><strong>Check-in:</strong> ${escapeTripHtml(activeRoomAssignment.checkin_date || "—")}</div>
+                <div><strong>Check-out:</strong> ${escapeTripHtml(activeRoomAssignment.expected_checkout_date || "—")}</div>
               </div>
             ` : ""}
           </div>

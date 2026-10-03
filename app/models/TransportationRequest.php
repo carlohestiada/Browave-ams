@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/TransportationType.php';
+require_once __DIR__ . '/RoomAssignment.php';
 
 class TransportationRequest
 {
@@ -210,7 +211,7 @@ class TransportationRequest
                 e.english_name,
                 e.chinese_name,
                 d.department_name,
-                r.room_no AS room_number,
+                CASE WHEN ra.status = 'Checked Out' THEN r.room_no || ' (checked out)' ELSE r.room_no END AS room_number,
                 a.accommodation_name AS accommodation_name,
                 t.trip_type,
                 t.status AS trip_status,
@@ -219,7 +220,7 @@ class TransportationRequest
              JOIN employees e ON t.employee_id = e.id
              LEFT JOIN departments d ON e.department_id = d.id
              LEFT JOIN LATERAL (
-                 SELECT ra.room_id
+                 SELECT ra.room_id, ra.status
                  FROM room_assignments ra
                  WHERE ra.employee_id = e.id
                  ORDER BY (ra.status = 'Active') DESC, ra.id DESC
@@ -319,6 +320,50 @@ class TransportationRequest
         $update->execute([$status, $tripId]);
     }
 
+    private function isDepartureLeg(int $tripLegId): bool
+    {
+        $stmt = $this->db->prepare("SELECT leg_type FROM trip_legs WHERE id = ?");
+        $stmt->execute([$tripLegId]);
+
+        return $stmt->fetchColumn() === 'DEPARTURE';
+    }
+
+    private function releaseRoomAfterDeparture(int $tripId): void
+    {
+        try {
+            $tripStmt = $this->db->prepare(
+                "SELECT employee_id
+                 FROM trips
+                 WHERE id = ? AND status <> 'CANCELLED'"
+            );
+            $tripStmt->execute([$tripId]);
+            $employeeId = $tripStmt->fetchColumn();
+            if ($employeeId === false) {
+                return;
+            }
+
+            $assignmentStmt = $this->db->prepare(
+                "SELECT id
+                 FROM room_assignments
+                 WHERE employee_id = ? AND status = 'Active'
+                 ORDER BY checkin_date DESC, id DESC
+                 LIMIT 1"
+            );
+            $assignmentStmt->execute([$employeeId]);
+            $assignmentId = $assignmentStmt->fetchColumn();
+            if ($assignmentId === false) {
+                return;
+            }
+
+            $result = (new RoomAssignment($this->db))->checkout($assignmentId);
+            if (empty($result['success'])) {
+                error_log('Unable to release room after completed trip departure: ' . ($result['error'] ?? 'Checkout failed.'));
+            }
+        } catch (Throwable $e) {
+            error_log('Unable to release room after completed trip departure: ' . $e->getMessage());
+        }
+    }
+
     public function updateTripLegStatuses(int $tripId, array $data): array
     {
         $allowed = ['Pending', 'Scheduled', 'Picked Up', 'Completed', 'Cancelled'];
@@ -343,6 +388,15 @@ class TransportationRequest
             return ['success' => false, 'error' => 'Trip has no legs'];
         }
 
+        $previousDepartureStatus = null;
+        if ($departureLegId) {
+            $previousStatusStmt = $this->db->prepare(
+                "SELECT status FROM transportation_requests WHERE trip_leg_id = ? LIMIT 1"
+            );
+            $previousStatusStmt->execute([$departureLegId]);
+            $previousDepartureStatus = $previousStatusStmt->fetchColumn();
+        }
+
         $this->db->beginTransaction();
         try {
             if ($arrivalLegId && $arrivalStatus !== '') {
@@ -353,6 +407,14 @@ class TransportationRequest
             }
             $this->db->commit();
             $this->recalculateTripStatusFromLegs($tripId);
+            if (
+                $departureLegId &&
+                $departureStatus === 'Completed' &&
+                $previousDepartureStatus !== 'Completed' &&
+                $this->isDepartureLeg((int) $departureLegId)
+            ) {
+                $this->releaseRoomAfterDeparture($tripId);
+            }
             return ['success' => true];
         } catch (Exception $e) {
             $this->db->rollBack();
@@ -429,6 +491,13 @@ class TransportationRequest
             $this->db->commit();
             if ($tripId) {
                 $this->recalculateTripStatusFromLegs($tripId);
+                if (
+                    $data['status'] === 'Completed' &&
+                    !empty($data['trip_leg_id']) &&
+                    $this->isDepartureLeg((int) $data['trip_leg_id'])
+                ) {
+                    $this->releaseRoomAfterDeparture($tripId);
+                }
             }
             return ['success' => true, 'id' => (int) $this->db->lastInsertId()];
         } catch (Exception $e) {
@@ -508,6 +577,9 @@ class TransportationRequest
 
         $data = $this->normalizeInput($data);
         $data['transportation_type'] = $validation['transportation_name'];
+        $previousStatusStmt = $this->db->prepare("SELECT status FROM transportation_requests WHERE id = ?");
+        $previousStatusStmt->execute([$id]);
+        $previousStatus = $previousStatusStmt->fetchColumn();
 
         $this->db->beginTransaction();
         try {
@@ -553,6 +625,14 @@ class TransportationRequest
             $this->db->commit();
             if ($tripId) {
                 $this->recalculateTripStatusFromLegs($tripId);
+                if (
+                    $previousStatus !== 'Completed' &&
+                    $data['status'] === 'Completed' &&
+                    !empty($data['trip_leg_id']) &&
+                    $this->isDepartureLeg((int) $data['trip_leg_id'])
+                ) {
+                    $this->releaseRoomAfterDeparture($tripId);
+                }
             }
             return ['success' => true];
         } catch (Exception $e) {
@@ -700,15 +780,15 @@ class TransportationRequest
                 d.department_name,
                 {$arrivalDate} AS last_arrival_date,
                 {$departureDate} AS last_departure_date,
-                r.room_no AS room_number,
+                CASE WHEN ra.status = 'Checked Out' THEN r.room_no || ' (checked out)' ELSE r.room_no END AS room_number,
                 a.accommodation_name AS accommodation_name
              FROM employees e
              LEFT JOIN departments d ON e.department_id = d.id
              LEFT JOIN LATERAL (
-                 SELECT ra.room_id
+                 SELECT ra.room_id, ra.status
                  FROM room_assignments ra
-                 WHERE ra.employee_id = e.id AND ra.status = 'Active'
-                 ORDER BY ra.id DESC
+                 WHERE ra.employee_id = e.id
+                 ORDER BY (ra.status = 'Active') DESC, ra.id DESC
                  LIMIT 1
              ) ra ON TRUE
              LEFT JOIN rooms r ON ra.room_id = r.id
