@@ -5,6 +5,7 @@ require_once __DIR__ . '/../models/WorkCalendar.php';
 class MealCalculationService
 {
     private const DEPARTURE_LUNCH_CUTOFF_TIME = '15:00:00';
+    private const ARRIVAL_LUNCH_START_TIME = '08:00:00';
     private const ARRIVAL_LUNCH_CUTOFF_TIME = '14:00:00';
 
     private $db;
@@ -95,9 +96,16 @@ class MealCalculationService
              FROM employees e
              LEFT JOIN departments d ON d.id = e.department_id
              WHERE DATE(e.created_at) <= ?
+                OR EXISTS (
+                    SELECT 1
+                    FROM trip_legs employee_leg
+                    JOIN trips employee_trip ON employee_trip.id = employee_leg.trip_id
+                    WHERE employee_trip.employee_id = e.id
+                      AND DATE(employee_leg.leg_date) <= ?
+                )
              ORDER BY e.id ASC"
         );
-        $stmt->execute([$normalizedDate]);
+        $stmt->execute([$normalizedDate, $normalizedDate]);
         $employees = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $eligible = [];
@@ -116,7 +124,8 @@ class MealCalculationService
                         if ($legType === 'DEPARTURE') {
                             $getsLunch = $pickupTime >= self::DEPARTURE_LUNCH_CUTOFF_TIME;
                         } elseif ($legType === 'ARRIVAL') {
-                            $getsLunch = $pickupTime <= self::ARRIVAL_LUNCH_CUTOFF_TIME;
+                            $getsLunch = $pickupTime >= self::ARRIVAL_LUNCH_START_TIME
+                                && $pickupTime <= self::ARRIVAL_LUNCH_CUTOFF_TIME;
                         }
                     }
                 }
