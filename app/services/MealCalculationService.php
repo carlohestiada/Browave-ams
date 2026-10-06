@@ -5,8 +5,8 @@ require_once __DIR__ . '/../models/WorkCalendar.php';
 class MealCalculationService
 {
     private const DEPARTURE_LUNCH_START_TIME = '15:00:00';
-    private const DEPARTURE_LUNCH_END_TIME = '20:00:00';
-    private const ARRIVAL_LUNCH_START_TIME = '08:00:00';
+    private const DEPARTURE_LUNCH_END_TIME = '23:59:00';
+    private const ARRIVAL_LUNCH_START_TIME = '00:00:00';
     private const ARRIVAL_LUNCH_CUTOFF_TIME = '14:00:00';
 
     private $db;
