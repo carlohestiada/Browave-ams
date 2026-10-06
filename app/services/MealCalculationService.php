@@ -22,7 +22,7 @@ class MealCalculationService
      * Calculate active employee count for a specific date.
      * The trip/leg flow is the source of truth for arrival/departure movement.
      * Employees are active if their latest leg on or before the date is an ARRIVAL.
-     * If they have no recorded trip legs, fall back to the employee's Active status.
+     * Employees without a non-cancelled trip leg are not included.
      */
     public function calculateActiveCount($date)
     {
@@ -93,53 +93,96 @@ class MealCalculationService
         }
 
         $stmt = $this->db->prepare(
-            "SELECT e.id, e.employee_code, e.english_name, e.chinese_name, e.gender, e.status, e.department_id, d.department_name, e.created_at
+            "SELECT e.id, e.employee_code, e.english_name, e.chinese_name, e.gender, e.department_id, d.department_name, e.created_at
              FROM employees e
              LEFT JOIN departments d ON d.id = e.department_id
-             WHERE DATE(e.created_at) <= ?
-                OR EXISTS (
-                    SELECT 1
-                    FROM trip_legs employee_leg
-                    JOIN trips employee_trip ON employee_trip.id = employee_leg.trip_id
-                    WHERE employee_trip.employee_id = e.id
-                      AND DATE(employee_leg.leg_date) <= ?
-                )
+             WHERE EXISTS (
+                SELECT 1
+                FROM trip_legs employee_leg
+                JOIN trips employee_trip ON employee_trip.id = employee_leg.trip_id
+                WHERE employee_trip.employee_id = e.id
+                    AND employee_trip.status <> 'CANCELLED'
+                    AND DATE(employee_leg.leg_date) <= ?
+             )
              ORDER BY e.id ASC"
         );
-        $stmt->execute([$normalizedDate, $normalizedDate]);
+        $stmt->execute([$normalizedDate]);
         $employees = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $eligible = [];
         foreach ($employees as $employee) {
-            $latestTripLeg = $this->getLatestTripLegForEmployee($employee['id'], $normalizedDate);
+            $latestTripLegs = $this->getLatestTripLegsForEmployee($employee['id'], $normalizedDate);
 
-            if ($latestTripLeg) {
-                $legType = strtoupper((string) $latestTripLeg['leg_type']);
-                $getsLunch = $legType === 'ARRIVAL';
+            if ($latestTripLegs) {
+                if ($latestTripLegs[0]['leg_date'] === $normalizedDate) {
+                    $getsLunch = false;
+                    foreach ($latestTripLegs as $tripLeg) {
+                        $legType = strtoupper((string) $tripLeg['leg_type']);
+                        $pickupTime = $tripLeg['pickup_time'];
+                        if ($pickupTime !== null) {
+                            $pickupTime = substr((string) $pickupTime, 0, 8);
+                        }
 
-                if ($latestTripLeg['leg_date'] === $normalizedDate) {
-                    $pickupTime = $this->getEarliestCompanyCarPickupTime($latestTripLeg['id']);
-                    if ($pickupTime !== null) {
-                        $pickupTime = strlen($pickupTime) === 5 ? $pickupTime . ':00' : $pickupTime;
-
-                        if ($legType === 'DEPARTURE') {
-                            $getsLunch = $pickupTime >= self::DEPARTURE_LUNCH_START_TIME
+                        if ($legType === 'ARRIVAL') {
+                            $legGetsLunch = $pickupTime === null
+                                || (
+                                    $pickupTime >= self::ARRIVAL_LUNCH_START_TIME
+                                    && $pickupTime <= self::ARRIVAL_LUNCH_CUTOFF_TIME
+                                );
+                        } else {
+                            $legGetsLunch = $pickupTime !== null
+                                && $pickupTime >= self::DEPARTURE_LUNCH_START_TIME
                                 && $pickupTime <= self::DEPARTURE_LUNCH_END_TIME;
-                        } elseif ($legType === 'ARRIVAL') {
-                            $getsLunch = $pickupTime >= self::ARRIVAL_LUNCH_START_TIME
-                                && $pickupTime <= self::ARRIVAL_LUNCH_CUTOFF_TIME;
+                        }
+
+                        if ($legGetsLunch) {
+                            $getsLunch = true;
+                            break;
                         }
                     }
+                } else {
+                    $latestStatusLeg = null;
+                    $latestLegByTrip = [];
+                    foreach ($latestTripLegs as $tripLeg) {
+                        $tripType = strtoupper((string) $tripLeg['trip_type']);
+                        $legType = strtoupper((string) $tripLeg['leg_type']);
+                        $isFinalLeg = ($tripType === 'NORMAL_TRIP' && $legType === 'DEPARTURE')
+                            || ($tripType === 'ROUND_TRIP' && $legType === 'ARRIVAL');
+                        $tripRank = $isFinalLeg ? 1 : 0;
+                        $currentTripLeg = $latestLegByTrip[$tripLeg['trip_id']] ?? null;
+
+                        if (
+                            $currentTripLeg === null
+                            || $tripRank > $currentTripLeg['trip_rank']
+                            || ($tripRank === $currentTripLeg['trip_rank'] && (int) $tripLeg['id'] > (int) $currentTripLeg['id'])
+                        ) {
+                            $tripLeg['trip_rank'] = $tripRank;
+                            $latestLegByTrip[$tripLeg['trip_id']] = $tripLeg;
+                        }
+                    }
+
+                    foreach ($latestLegByTrip as $tripLeg) {
+                        if (
+                            $latestStatusLeg === null
+                            || (
+                                strtoupper((string) $tripLeg['leg_type']) === 'ARRIVAL'
+                                && strtoupper((string) $latestStatusLeg['leg_type']) !== 'ARRIVAL'
+                            )
+                            || (
+                                strtoupper((string) $tripLeg['leg_type']) === strtoupper((string) $latestStatusLeg['leg_type'])
+                                && (int) $tripLeg['id'] > (int) $latestStatusLeg['id']
+                            )
+                        ) {
+                            $latestStatusLeg = $tripLeg;
+                        }
+                    }
+
+                    $getsLunch = strtoupper((string) $latestStatusLeg['leg_type']) === 'ARRIVAL';
                 }
 
                 if ($getsLunch) {
                     $eligible[] = $employee;
                 }
-                continue;
-            }
-
-            if (($employee['status'] ?? '') === 'Active') {
-                $eligible[] = $employee;
             }
         }
 
@@ -158,7 +201,8 @@ class MealCalculationService
              FROM trip_legs tl
              JOIN trips t ON t.id = tl.trip_id
              JOIN employees e ON e.id = t.employee_id
-             WHERE DATE(tl.leg_date) BETWEEN ? AND ?
+             WHERE t.status <> 'CANCELLED'
+                AND DATE(tl.leg_date) BETWEEN ? AND ?
              ORDER BY DATE(tl.leg_date) ASC, e.english_name ASC, tl.id ASC"
         );
 
@@ -252,32 +296,31 @@ class MealCalculationService
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    private function getLatestTripLegForEmployee($employeeId, $date)
+    private function getLatestTripLegsForEmployee($employeeId, $date)
     {
         $stmt = $this->db->prepare(
-            "SELECT tl.id, tl.leg_type, DATE(tl.leg_date) AS leg_date
+            "SELECT tl.id, tl.trip_id, t.trip_type, tl.leg_type, DATE(tl.leg_date) AS leg_date, MIN(tr.pickup_time) AS pickup_time
              FROM trip_legs tl
              JOIN trips t ON t.id = tl.trip_id
-             WHERE t.employee_id = ? AND DATE(tl.leg_date) <= ?
-             ORDER BY DATE(tl.leg_date) DESC, tl.id DESC
-             LIMIT 1"
+             LEFT JOIN transportation_requests tr
+                ON tr.trip_leg_id = tl.id
+                AND tr.status <> ?
+             WHERE t.employee_id = ?
+                AND t.status <> ?
+                AND DATE(tl.leg_date) = (
+                    SELECT MAX(DATE(latest_leg.leg_date))
+                    FROM trip_legs latest_leg
+                    JOIN trips latest_trip ON latest_trip.id = latest_leg.trip_id
+                    WHERE latest_trip.employee_id = ?
+                        AND latest_trip.status <> ?
+                        AND DATE(latest_leg.leg_date) <= ?
+                )
+             GROUP BY tl.id, tl.trip_id, t.trip_type, tl.leg_type, DATE(tl.leg_date)
+             ORDER BY tl.id DESC"
         );
 
-        $stmt->execute([$employeeId, $date]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-
-    private function getEarliestCompanyCarPickupTime($tripLegId)
-    {
-        $stmt = $this->db->prepare(
-            "SELECT MIN(pickup_time) AS pickup_time
-             FROM transportation_requests
-             WHERE trip_leg_id = ? AND transportation_type = ? AND status <> ?"
-        );
-        $stmt->execute([$tripLegId, 'Company Car', 'Cancelled']);
-        $pickupTime = $stmt->fetchColumn();
-
-        return $pickupTime === false || $pickupTime === null ? null : substr((string) $pickupTime, 0, 8);
+        $stmt->execute(['Cancelled', $employeeId, 'CANCELLED', $employeeId, 'CANCELLED', $date]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     private function resolveOverrideValue($override)

@@ -87,45 +87,6 @@ class DailyHeadcount
         return $stmt->execute([$id]);
     }
 
-    public function calculateActiveCount($date)
-    {
-        $targetDate = date('Y-m-d', strtotime($date));
-        $stmt = $this->db->prepare(
-            "SELECT id, status, created_at FROM employees WHERE DATE(created_at) <= ?"
-        );
-
-        $stmt->execute([$targetDate]);
-        $employees = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $activeCount = 0;
-
-        foreach ($employees as $employee) {
-            $latestStmt = $this->db->prepare(
-                "SELECT transaction_type, DATE(transaction_date) AS transaction_date
-                 FROM transactions
-                 WHERE employee_id = ?
-                   AND DATE(transaction_date) <= ?
-                 ORDER BY DATE(transaction_date) DESC, id DESC
-                 LIMIT 1"
-            );
-            $latestStmt->execute([$employee['id'], $targetDate]);
-            $latestTransaction = $latestStmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($latestTransaction) {
-                if ($latestTransaction['transaction_type'] === 'arrival') {
-                    $activeCount++;
-                }
-                continue;
-            }
-
-            if ($employee['status'] === 'Active') {
-                $activeCount++;
-            }
-        }
-
-        return $activeCount;
-    }
-
     public function updateHeadcount($date, $activeCount, $mealCount)
     {
         $existing = $this->getByDate($date);
