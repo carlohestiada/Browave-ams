@@ -541,7 +541,80 @@ function resetRoomForm()
     $('#floor_id').html('<option value="">No floor</option>');
     $('#capacity').val('');
     $('#reservedEmployeeGroup').hide();
-    $('#reserved_by_employee_id').html('<option value="">Select employee</option>');
+    const reservedBySelect = $('#reserved_by_employee_id');
+    if (reservedBySelect.hasClass('select2-hidden-accessible')) {
+        reservedBySelect.select2('destroy');
+    }
+    reservedBySelect.html('<option value="">Select employee</option>').val('').trigger('change.select2');
+}
+
+function initializeReservedBySelect() {
+    const select = $('#reserved_by_employee_id');
+    const modal = $('#roomModal');
+    if (
+        !select.length ||
+        !$.fn.select2 ||
+        !select.is(':visible') ||
+        !modal.hasClass('show')
+    ) {
+        return;
+    }
+
+    if (select.data('select2')) {
+        return;
+    }
+
+    select.select2({
+        dropdownParent: modal.find('.modal-content'),
+        theme: 'bootstrap-5',
+        placeholder: 'Select employee',
+        allowClear: true,
+        width: '100%',
+        language: {
+            noResults: function() {
+                return 'No employees found';
+            }
+        },
+        matcher: function(params, data) {
+            const term = $.trim(params.term || '').toLowerCase();
+            if (!term) {
+                return data;
+            }
+
+            return data.text && data.text.toLowerCase().includes(term) ? data : null;
+        }
+    });
+    select
+        .off('select2:open.reservedByFocus')
+        .on('select2:open.reservedByFocus', function() {
+            setTimeout(function() {
+                const searchField = $('.select2-container--open .select2-search__field')[0];
+                if (searchField) {
+                    searchField.focus();
+                }
+            }, 0);
+        });
+}
+
+function repositionReservedByDropdown() {
+        const select = $('#reserved_by_employee_id');
+        const instance = select.data('select2');
+        if (!instance || !instance.isOpen()) {
+            return;
+        }
+
+        requestAnimationFrame(function() {
+            if (select.data('select2') !== instance || !instance.isOpen()) {
+                return;
+            }
+
+            if (typeof instance.dropdown._positionDropdown === 'function') {
+                instance.dropdown._positionDropdown();
+            }
+            if (typeof instance.dropdown._resizeDropdown === 'function') {
+                instance.dropdown._resizeDropdown();
+            }
+        });
 }
 
 function loadEmployeesForRoomReservation(selectedEmployeeId = '') {
@@ -558,6 +631,8 @@ function loadEmployeesForRoomReservation(selectedEmployeeId = '') {
             .join('');
 
         select.html(options).val(selectedEmployeeId ? String(selectedEmployeeId) : '');
+        initializeReservedBySelect();
+        select.trigger('change.select2');
         toggleReservedEmployeeField();
     });
 }
@@ -565,8 +640,12 @@ function loadEmployeesForRoomReservation(selectedEmployeeId = '') {
 function toggleReservedEmployeeField() {
     const status = $('#status').val();
     const group = $('#reservedEmployeeGroup');
-    if (status === 'Reserved' || $('#reserved_by_employee_id').val()) {
+    const select = $('#reserved_by_employee_id');
+    if (status === 'Reserved' || select.val()) {
         group.show();
+        if (!select.data('select2')) {
+            initializeReservedBySelect();
+        }
     } else {
         group.hide();
     }
@@ -604,7 +683,7 @@ function openRoomModal(room)
                         $('#room_type').val(room.room_type);
                         $('#capacity').val(room.capacity);
                         $('#status').val(room.status);
-                        $('#reserved_by_employee_id').val(room.reserved_by_employee_id || '');
+                        $('#reserved_by_employee_id').val(room.reserved_by_employee_id || '').trigger('change.select2');
                         toggleReservedEmployeeField();
                         $('#gender_restriction').val(room.gender_restriction || '');
                         $('#remarks').val(room.remarks || '');
@@ -742,9 +821,11 @@ function getReservationChange() {
         const newEmployee = roomEmployees.find(
             employee => String(employee.id) === employeeId
         );
-        const newEmployeeName = newEmployee
-            ? newEmployee.english_name || 'Unnamed Employee'
-            : $('#reserved_by_employee_id option:selected').text();
+        const selectedEmployeeText = $('#reserved_by_employee_id option:selected').text();
+        const employeeCode = newEmployee ? String(newEmployee.employee_code || '') : '';
+        const newEmployeeName = employeeCode && selectedEmployeeText.startsWith(`${employeeCode} - `)
+            ? selectedEmployeeText.slice(employeeCode.length + 3)
+            : selectedEmployeeText;
         const occupantLine = roomReservationOriginal.occupantName
             ? `<p>Currently occupied by ${escapeHtml(roomReservationOriginal.occupantName)}.</p>`
             : '';
@@ -767,7 +848,7 @@ function restoreOriginalReservationFields() {
     }
 
     $('#status').val(roomReservationOriginal.status);
-    $('#reserved_by_employee_id').val(roomReservationOriginal.employeeId);
+    $('#reserved_by_employee_id').val(roomReservationOriginal.employeeId).trigger('change.select2');
     toggleReservedEmployeeField();
 }
 
@@ -778,7 +859,7 @@ function saveRoomRequest(removeReservation) {
     const method = id ? 'PUT' : 'POST';
 
     if (removeReservation) {
-        $('#reserved_by_employee_id').val('');
+        $('#reserved_by_employee_id').val('').trigger('change.select2');
     }
 
     $.ajax({
@@ -895,15 +976,22 @@ $(function() {
     });
     $('#roomForm').on('submit', saveRoom);
     $('#roomModal').on('hidden.bs.modal', function() {
+        const select = $('#reserved_by_employee_id');
+        if (select.data('select2')) {
+            select.select2('destroy');
+        }
         roomReservationOriginal = null;
         roomSavePending = false;
     });
+    $('#roomModal').on('shown.bs.modal', initializeReservedBySelect);
+    $('#roomModal .modal-body').on('scroll.reservedBySelect2', repositionReservedByDropdown);
+    $(window).on('resize.reservedBySelect2', repositionReservedByDropdown);
     $('#accommodation_id').on('change', loadBuildingsForModal);
     $('#building_id').on('change', loadFloorsForModal);
     $('#status').on('change', function() {
         const status = $(this).val();
-        if ((!roomReservationOriginal || !roomReservationOriginal.employeeId) && status !== 'Reserved') {
-            $('#reserved_by_employee_id').val('');
+        if (status !== 'Reserved') {
+            $('#reserved_by_employee_id').val('').trigger('change.select2');
         }
         toggleReservedEmployeeField();
     });

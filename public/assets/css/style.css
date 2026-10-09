@@ -7656,3 +7656,42 @@ body {
   font-size: 11px;
   font-weight: 600;
 }
+
+#roomModal #reservedEmployeeGroup .select2-container {
+  width: 100% !important;
+}
+
+#roomModal .modal-dialog-scrollable {
+  height: calc(100% - 1rem);
+}
+
+#roomModal .modal-dialog-scrollable .modal-content {
+  max-height: 100%;
+  overflow: visible;
+}
+
+#roomModal #roomForm {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#roomModal .modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+#roomModal #reservedEmployeeGroup .select2-selection--single {
+  cursor: pointer;
+}
+
+#roomModal .select2-dropdown {
+  z-index: 2055;
+}
+
+#roomModal .select2-results__options {
+  max-height: min(40vh, 360px) !important;
+}

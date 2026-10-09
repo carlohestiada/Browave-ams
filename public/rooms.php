@@ -1,6 +1,8 @@
 <?php include 'layouts/header.php'; ?>
 <?php include 'layouts/sidebar.php'; ?>
 
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 
 <div class="content-wrapper">
 
@@ -140,7 +142,7 @@
 
 <!-- Room Modal -->
 <div class="modal fade" id="roomModal" tabindex="-1" aria-labelledby="roomModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="roomModalLabel">Add Room</h5>
@@ -216,7 +218,7 @@
                     </div>
                     <div class="mb-3" id="reservedEmployeeGroup" style="display:none;">
                         <label class="form-label">Reserved By</label>
-                        <select class="form-select" id="reserved_by_employee_id" name="reserved_by_employee_id">
+                        <select id="reserved_by_employee_id" name="reserved_by_employee_id">
                             <option value="">Select employee</option>
                         </select>
                     </div>
@@ -242,6 +244,7 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="assets/js/rooms.js?v=<?= filemtime(__DIR__ . '/assets/js/rooms.js') ?>"></script>
 
 <?php include 'layouts/footer.php'; ?>
