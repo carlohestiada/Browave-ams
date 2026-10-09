@@ -245,6 +245,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="assets/js/employee-utils.js?v=<?= filemtime(__DIR__ . '/assets/js/employee-utils.js') ?>"></script>
 <script src="assets/js/rooms.js?v=<?= filemtime(__DIR__ . '/assets/js/rooms.js') ?>"></script>
 
 <?php include 'layouts/footer.php'; ?>

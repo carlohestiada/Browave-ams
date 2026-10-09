@@ -627,7 +627,7 @@ function loadEmployeesForRoomReservation(selectedEmployeeId = '') {
         }
 
         const options = ['<option value="">Select employee</option>']
-            .concat((roomEmployees || []).map(emp => `<option value="${escapeHtml(emp.id)}">${emp.employee_code ? `${escapeHtml(emp.employee_code)} - ` : ''}${escapeHtml(emp.english_name || 'Unnamed Employee')}</option>`))
+            .concat((roomEmployees || []).map(emp => `<option value="${escapeHtml(emp.id)}">${escapeHtml(displayEmployeeCode(emp.employee_code))} - ${escapeHtml(emp.english_name || 'Unnamed Employee')}</option>`))
             .join('');
 
         select.html(options).val(selectedEmployeeId ? String(selectedEmployeeId) : '');
@@ -822,7 +822,7 @@ function getReservationChange() {
             employee => String(employee.id) === employeeId
         );
         const selectedEmployeeText = $('#reserved_by_employee_id option:selected').text();
-        const employeeCode = newEmployee ? String(newEmployee.employee_code || '') : '';
+        const employeeCode = newEmployee ? displayEmployeeCode(newEmployee.employee_code) : '';
         const newEmployeeName = employeeCode && selectedEmployeeText.startsWith(`${employeeCode} - `)
             ? selectedEmployeeText.slice(employeeCode.length + 3)
             : selectedEmployeeText;
