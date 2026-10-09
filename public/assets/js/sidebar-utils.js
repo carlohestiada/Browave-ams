@@ -4,11 +4,12 @@ function displayValue(value) {
 
 function escapeHtml(unsafe) {
     if (unsafe === undefined || unsafe === null) return '';
-    return String(unsafe).replace(/[&<>"]+/g, function (s) {
+    return String(unsafe).replace(/[&<>'"]/g, function (s) {
         switch (s) {
             case '&': return '&amp;';
             case '<': return '&lt;';
             case '>': return '&gt;';
+            case "'": return '&#039;';
             case '"': return '&quot;';
             default: return s;
         }

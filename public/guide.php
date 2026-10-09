@@ -295,7 +295,7 @@
                         <div class="mt-4 p-4 rounded-lg border border-outline-variant bg-white">
                             <h4 class="font-bold text-primary mb-2">Persistent Room Reservations</h4>
                             <p class="text-body-md text-on-surface-variant">
-                                A room reservation stays with its selected employee until you remove it in the room's Edit Room form. Only that employee can be assigned to the room. While the employee is checked in, the room shows as Occupied and displays who it is reserved for; after checkout, it returns to Reserved for that employee. To release the room for others, clear Reserved By (or change a Reserved room's status) and save.
+                                A room reservation stays with its selected employee until you remove it in the room's Edit Room form. Only that employee can be assigned to the room. While the employee is checked in, the room shows as Occupied and displays who it is reserved for; after checkout, it returns to Reserved for that employee. Removing or reassigning an existing reservation requires confirmation before the room is saved.
                             </p>
                         </div>
                     </div>

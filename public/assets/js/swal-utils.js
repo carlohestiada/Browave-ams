@@ -39,3 +39,14 @@ function swalConfirm(message, onConfirm, title = 'Are you sure?') {
         }
     });
 }
+
+function swalConfirmReservationChange({ title, html, confirmText }) {
+    return Swal.fire({
+        title: title,
+        html: html,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: confirmText,
+        cancelButtonText: 'Keep reservation'
+    });
+}
