@@ -10,7 +10,7 @@
             <p class="ams-page-subtitle">Manage and organize company rooms.</p>
         </div>
         <div class="d-flex align-items-start">
-            <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#roomModal">
+            <button type="button" class="btn btn-primary btn-lg" onclick="openRoomModal()">
                 Add Room
             </button>
         </div>
@@ -37,6 +37,12 @@
             <div class="card p-3 h-100 shadow-sm">
                 <p class="text-uppercase text-muted small mb-2"><i class="bi bi-check-circle-fill me-2 text-success"></i>Available</p>
                 <h3 id="roomSummaryAvailable" class="mb-0">—</h3>
+            </div>
+        </div>
+        <div class="col-xl col-lg-4 col-md-6 col-sm-6">
+            <div class="card p-3 h-100 shadow-sm">
+                <p class="text-uppercase text-muted small mb-2"><i class="bi bi-bookmark-fill me-2 text-info"></i>Reserved</p>
+                <h3 id="roomSummaryReserved" class="mb-0">—</h3>
             </div>
         </div>
         <div class="col-xl col-lg-4 col-md-6 col-sm-6">

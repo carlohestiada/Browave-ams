@@ -7,6 +7,7 @@ let roomSearchTimer = null;
 let currentRoomTab = 'all';
 let availableRoomPrefixes = [];
 let preselectedAccommodationId = null;
+let roomFormInitialStatus = 'Available';
 
 function getUrlParameter(name) {
     const params = new URLSearchParams(window.location.search);
@@ -47,10 +48,7 @@ function loadAccommodations()
             const url = new URL(window.location.href);
             url.searchParams.delete('accommodation_id');
             window.history.replaceState({}, '', url.toString());
-            loadBuildingsForModal();
-            setTimeout(function() {
-                $('#roomModal').modal('show');
-            }, 120);
+            openRoomModal();
         }
     });
 }
@@ -200,11 +198,13 @@ function updateRoomStatusSummary(rooms) {
     const total = rooms.length;
     const occupied = rooms.filter(r => r.status === 'Occupied').length;
     const available = rooms.filter(r => r.status === 'Available').length;
+    const reserved = rooms.filter(r => r.status === 'Reserved').length;
     const maintenance = rooms.filter(r => r.status === 'Maintenance').length;
 
     document.getElementById('roomSummaryTotal').textContent = total;
     document.getElementById('roomSummaryOccupied').textContent = occupied;
     document.getElementById('roomSummaryAvailable').textContent = available;
+    document.getElementById('roomSummaryReserved').textContent = reserved;
     document.getElementById('roomSummaryMaintenance').textContent = maintenance;
 }
 
@@ -251,8 +251,8 @@ function renderRoomRow(room) {
     const roomId = String(room.id);
     const checked = selectedRoomIds.has(roomId) ? 'checked' : '';
 
-    const reservationNote = room.status === 'Reserved' && room.reserved_by_employee_name
-        ? `<div class="small text-muted mt-1">by <a href="#" class="employee-room-link text-decoration-none" data-room-id="${escapeHtml(roomId)}" data-employee-name="${escapeHtml(room.reserved_by_employee_name)}" data-type="reserved">${escapeHtml(room.reserved_by_employee_name)}</a></div>`
+    const reservationNote = room.reserved_by_employee_id && room.reserved_by_employee_name
+        ? `<div class="small text-muted mt-1">Reserved for <a href="#" class="employee-room-link text-decoration-none" data-room-id="${escapeHtml(roomId)}" data-employee-name="${escapeHtml(room.reserved_by_employee_name)}" data-type="reserved">${escapeHtml(room.reserved_by_employee_name)}</a></div>`
         : '';
 
     const assignedEmployeeNames = room.assigned_employee_names
@@ -532,6 +532,7 @@ function resetRoomForm()
 {
     $('#roomForm')[0].reset();
     $('#roomId').val('');
+    roomFormInitialStatus = 'Available';
     $('#roomModalLabel').text('Add Room');
     $('#accommodation_id').val('');
     $('#building_id').html('<option value="">No building</option>');
@@ -541,8 +542,8 @@ function resetRoomForm()
     $('#reserved_by_employee_id').html('<option value="">Select employee</option>');
 }
 
-function loadEmployeesForRoomReservation() {
-    $.get('api/employees.php', function(data) {
+function loadEmployeesForRoomReservation(selectedEmployeeId = '') {
+    return $.get('api/employees.php', function(data) {
         const employees = typeof data === 'string' ? JSON.parse(data) : data;
         const select = $('#reserved_by_employee_id');
         if (!select.length) {
@@ -553,54 +554,61 @@ function loadEmployeesForRoomReservation() {
             .concat((employees || []).map(emp => `<option value="${emp.id}">${emp.employee_code ? `${emp.employee_code} - ` : ''}${emp.english_name || 'Unnamed Employee'}</option>`))
             .join('');
 
-        select.html(options);
+        select.html(options).val(selectedEmployeeId ? String(selectedEmployeeId) : '');
+        toggleReservedEmployeeField();
     });
 }
 
 function toggleReservedEmployeeField() {
     const status = $('#status').val();
     const group = $('#reservedEmployeeGroup');
-    if (status === 'Reserved') {
+    if (status === 'Reserved' || $('#reserved_by_employee_id').val()) {
         group.show();
     } else {
         group.hide();
-        $('#reserved_by_employee_id').val('');
     }
 }
 
 function openRoomModal(room)
 {
     resetRoomForm();
-    loadEmployeesForRoomReservation();
+    loadEmployeesForRoomReservation(room ? room.reserved_by_employee_id : '')
+        .done(function() {
+            if (room) {
+                $('#roomId').val(room.id);
+                $('#roomModalLabel').text('Edit Room');
+                $('#accommodation_id').val(room.accommodation_id || '');
 
-    if (room) {
-        $('#roomId').val(room.id);
-        $('#roomModalLabel').text('Edit Room');
-        $('#accommodation_id').val(room.accommodation_id || '');
+                loadBuildingsForModal(room.building_id || '', function() {
+                    loadFloorsForModal(room.floor_id || '', function() {
+                        $('#room_no').val(room.room_no);
+                        $('#room_type').val(room.room_type);
+                        $('#capacity').val(room.capacity);
+                        $('#status').val(room.status);
+                        roomFormInitialStatus = room.status;
+                        $('#reserved_by_employee_id').val(room.reserved_by_employee_id || '');
+                        toggleReservedEmployeeField();
+                        $('#gender_restriction').val(room.gender_restriction || '');
+                        $('#remarks').val(room.remarks || '');
+                        $('#roomModal').modal('show');
+                    });
+                });
 
-        loadBuildingsForModal(room.building_id || '', function() {
-            loadFloorsForModal(room.floor_id || '', function() {
-                $('#room_no').val(room.room_no);
-                $('#room_type').val(room.room_type);
-                $('#capacity').val(room.capacity);
-                $('#status').val(room.status);
-                $('#reserved_by_employee_id').val(room.reserved_by_employee_id || '');
-                toggleReservedEmployeeField();
-                $('#gender_restriction').val(room.gender_restriction || '');
-                $('#remarks').val(room.remarks || '');
+                return;
+            }
+
+            if (preselectedAccommodationId) {
+                $('#accommodation_id').val(preselectedAccommodationId);
+                loadBuildingsForModal(null, function() {
+                    $('#roomModal').modal('show');
+                });
+            } else {
                 $('#roomModal').modal('show');
-            });
+            }
+        })
+        .fail(function() {
+            swalError('Unable to load employees for room reservations.');
         });
-
-        return;
-    }
-
-    if (preselectedAccommodationId) {
-        $('#accommodation_id').val(preselectedAccommodationId);
-        loadBuildingsForModal();
-    }
-
-    $('#roomModal').modal('show');
 }
 
 function editRoom(id)
@@ -748,7 +756,6 @@ $(function() {
     preselectedAccommodationId = getUrlParameter('accommodation_id');
     loadAccommodations();
     loadRooms();
-    loadEmployeesForRoomReservation();
     $(document).on('click', '.employee-room-link', function(event) {
         event.preventDefault();
         showEmployeeRoom(
@@ -770,7 +777,15 @@ $(function() {
     $('#roomForm').on('submit', saveRoom);
     $('#accommodation_id').on('change', loadBuildingsForModal);
     $('#building_id').on('change', loadFloorsForModal);
-    $('#status').on('change', toggleReservedEmployeeField);
+    $('#status').on('change', function() {
+        const status = $(this).val();
+        if (roomFormInitialStatus === 'Reserved' && status !== 'Reserved') {
+            $('#reserved_by_employee_id').val('');
+        }
+        roomFormInitialStatus = status;
+        toggleReservedEmployeeField();
+    });
+    $('#reserved_by_employee_id').on('change', toggleReservedEmployeeField);
     $('#room_type').on('change', function() {
         applyRoomTypeCapacity($(this).val());
     });

@@ -321,11 +321,24 @@ class Room
         }
 
         $reservedByEmployeeId = null;
-        if ($status === 'Reserved') {
-            $reservedByEmployeeId = isset($data['reserved_by_employee_id']) ? trim((string) $data['reserved_by_employee_id']) : '';
-            if ($reservedByEmployeeId === '') {
-                return ['valid' => false, 'error' => 'Please select the employee who reserved this room.'];
+        if ($excludeId !== null) {
+            $reservationStmt = $this->db->prepare(
+                "SELECT reserved_by_employee_id FROM rooms WHERE id = ?"
+            );
+            $reservationStmt->execute([$excludeId]);
+            $reservedByEmployeeId = $reservationStmt->fetchColumn();
+            if ($reservedByEmployeeId === false) {
+                $reservedByEmployeeId = null;
             }
+        }
+
+        if (array_key_exists('reserved_by_employee_id', $data)) {
+            $submittedReservation = trim((string) $data['reserved_by_employee_id']);
+            $reservedByEmployeeId = $submittedReservation !== '' ? $submittedReservation : null;
+        }
+
+        if ($status === 'Reserved' && $reservedByEmployeeId === null) {
+            return ['valid' => false, 'error' => 'Please select the employee who reserved this room.'];
         }
 
         $roomType = trim((string) ($data['room_type'] ?? ''));
@@ -348,7 +361,7 @@ class Room
             'capacity' => (int) $capacity,
             'current_occupancy' => isset($data['current_occupancy']) ? (int) $data['current_occupancy'] : 0,
             'status' => $status,
-            'reserved_by_employee_id' => $reservedByEmployeeId !== null && $reservedByEmployeeId !== '' ? (int) $reservedByEmployeeId : null,
+            'reserved_by_employee_id' => $reservedByEmployeeId !== null ? (int) $reservedByEmployeeId : null,
             'gender_restriction' => $this->normalizeGenderRestriction($data['gender_restriction'] ?? ''),
             'remarks' => $data['remarks'] ?? ''
         ]];

@@ -53,6 +53,7 @@ BROWAVE AMS is a web-based workforce, accommodation, and meal management system 
 - Capacity (maximum occupants)
 - Current Occupancy (live count of active room assignments)
 - Room Status (Available, Occupied, Reserved, Maintenance, Inactive)
+- Reserved By Employee (persistent reservation owner, independent of occupancy status)
 - Gender Restriction (Male, Female, Mixed, None)
 - Remarks / Notes for housekeeping or special conditions
 - Room Category (Standard, Deluxe, Executive, Shared)
@@ -67,14 +68,16 @@ BROWAVE AMS is a web-based workforce, accommodation, and meal management system 
 - Support valid transfers:
   - Room transfer within the same accommodation/building/floor.
   - Accommodation transfer to a different accommodation property.
-- Allow room reservation logic for planned arrivals with reserved status.
+- Allow room reservations for planned arrivals. A reservation remains attached to its employee until manually removed in Edit Room; the reservation is independent of the room's occupancy status.
+- Permit only the reservation owner to be assigned to a reserved room. While that employee is checked in, show Occupied and retain the reservation owner; after checkout, show Reserved for that employee.
+- Derive room status from Maintenance, active occupancy, and reservation ownership, in that order. A room with no occupant or reservation becomes Available unless it is under Maintenance.
 - Provide warnings for near-capacity rooms and over-capacity assignment attempts.
 
 ### Room Assignment and Transfer Workflow
 
-- Assign employee to an available room during arrival or later.
+- Assign employee to an available room or to a room reserved for that employee during arrival or later.
 - Record assignment details, including check-in date, expected checkout date, and status.
-- Release room on departure and update occupancy counts immediately.
+- Release occupancy on departure and update status immediately; retain any reservation for its owner.
 - Support transfer actions with audit trail for source and destination rooms.
 - Preserve employee assignment history for room utilization tracking.
 
@@ -156,6 +159,7 @@ BROWAVE AMS is a web-based workforce, accommodation, and meal management system 
 - capacity
 - current_occupancy
 - status
+- reserved_by_employee_id
 
 ### room_assignments
 

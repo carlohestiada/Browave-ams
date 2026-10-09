@@ -8,28 +8,28 @@ try {
     $db = (new Database())->connect();
 
     $summaryStmt = $db->query(
-        "WITH room_summary AS (
+        "WITH room_state AS (
+            SELECT
+                r.id,
+                CASE
+                    WHEN r.status = 'Maintenance' THEN 'Maintenance'
+                    WHEN EXISTS (
+                        SELECT 1 FROM room_assignments ra
+                        WHERE ra.room_id = r.id AND ra.status = 'Active'
+                    ) THEN 'Occupied'
+                    WHEN r.reserved_by_employee_id IS NOT NULL THEN 'Reserved'
+                    ELSE 'Available'
+                END AS effective_status
+            FROM rooms r
+        ),
+        room_summary AS (
             SELECT
                 COUNT(*) AS total_rooms,
-                COUNT(*) FILTER (
-                    WHERE r.status <> 'Maintenance'
-                      AND EXISTS (
-                          SELECT 1
-                          FROM room_assignments ra
-                          WHERE (ra.status = 'Active' AND ra.room_id = r.id)
-                             OR (
-                                  ra.status = 'Transferred'
-                                  AND (
-                                      (ra.actual_checkout_date > CURRENT_DATE AND ra.room_id = r.id)
-                                      OR (ra.actual_checkout_date <= CURRENT_DATE AND ra.transferred_to_room_id = r.id)
-                                  )
-                              )
-                      )
-                ) AS occupied_rooms,
-                COUNT(*) FILTER (WHERE r.status = 'Available') AS available_rooms,
-                COUNT(*) FILTER (WHERE r.status = 'Reserved') AS reserved_rooms,
-                COUNT(*) FILTER (WHERE r.status = 'Maintenance') AS maintenance_rooms
-            FROM rooms r
+                COUNT(*) FILTER (WHERE effective_status = 'Occupied') AS occupied_rooms,
+                COUNT(*) FILTER (WHERE effective_status = 'Available') AS available_rooms,
+                COUNT(*) FILTER (WHERE effective_status = 'Reserved') AS reserved_rooms,
+                COUNT(*) FILTER (WHERE effective_status = 'Maintenance') AS maintenance_rooms
+            FROM room_state
         ),
         room_types AS (
             SELECT COALESCE(NULLIF(room_type::text, ''), 'Unknown') AS room_type, COUNT(*)::int AS count

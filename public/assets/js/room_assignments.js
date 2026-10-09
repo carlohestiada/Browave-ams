@@ -441,22 +441,23 @@ function renderRoomOptions(selector = "#assign_room") {
 
   assignableRoomsCache
     .filter((room) => {
-      const isReservedForEmployee =
-        room.status === "Reserved" &&
-        employeeId &&
-        String(room.reserved_by_employee_id) === employeeId;
-      const capacityReached =
+    const reservationId = String(room.reserved_by_employee_id || "");
+    const capacityReached =
         Number(room.capacity) > 0 &&
         Number(room.current_occupancy || 0) >= Number(room.capacity);
+      const isReservedForOther = reservationId && reservationId !== employeeId;
       const isAssignable =
         !capacityReached &&
-        room.status !== "Reserved" &&
+        !isReservedForOther &&
         room.status !== "Maintenance";
 
-      return isAssignable || isReservedForEmployee;
+      return isAssignable;
     })
     .forEach((room) => {
-      const label = `${room.room_no || ""} (${room.accommodation_name || ""})`;
+      const reservationId = String(room.reserved_by_employee_id || "");
+      const isReservedForEmployee = reservationId && reservationId === employeeId;
+      const reservationLabel = isReservedForEmployee ? " - Reserved for you" : "";
+      const label = `${room.room_no || ""} (${room.accommodation_name || ""})${reservationLabel}`;
       opts += `<option value="${escapeHtml(room.id)}">${escapeHtml(label)}</option>`;
     });
 
@@ -474,8 +475,11 @@ function refreshAssignRoomsForEmployee() {
 
     const reservedRoom = assignableRoomsCache.find(
       (room) =>
-        room.status === "Reserved" &&
-        String(room.reserved_by_employee_id) === employeeId,
+        employeeId &&
+        String(room.reserved_by_employee_id || "") === employeeId &&
+        (!(Number(room.capacity) > 0) ||
+          Number(room.current_occupancy || 0) < Number(room.capacity)) &&
+        room.status !== "Maintenance",
     );
     if (reservedRoom) {
       $("#assign_room").val(String(reservedRoom.id));
@@ -496,6 +500,12 @@ function loadRoomsForAssign(selector = "#assign_room", onlyAvailable = true) {
     }
 
     const selectedRoom = String($(selector).data("selected-room") || "");
+    const transferAssignmentId = String(
+      $("#transfer_assignment_id").val() || $("#transfer_assignment").val() || "",
+    );
+    const transferAssignment = assignmentRows.find(
+      (assignment) => String(assignment.id) === transferAssignmentId,
+    );
     let opts = '<option value="">Select room</option>';
     rooms
       .filter((r) => {
@@ -503,23 +513,35 @@ function loadRoomsForAssign(selector = "#assign_room", onlyAvailable = true) {
         const capacityReached =
           Number(r.capacity) > 0 &&
           Number(r.current_occupancy || 0) >= Number(r.capacity);
+        const reservationId = String(r.reserved_by_employee_id || "");
+        const isReservedForEmployee =
+          reservationId &&
+          transferAssignment &&
+          reservationId === String(transferAssignment.employee_id);
+        const isReservedForOther = reservationId && !isReservedForEmployee;
         const isAssignable =
           !capacityReached &&
-          r.status !== "Reserved" &&
+          !isReservedForOther &&
           r.status !== "Maintenance";
 
         if (!onlyAvailable) {
           return isSelected || isAssignable;
         }
 
-        return (isAssignable || isSelected) && r.status !== "Reserved";
+        return isAssignable || isSelected;
       })
       .forEach((r) => {
         const selected = String(r.id) === selectedRoom ? " selected" : "";
         const capacityReached =
           Number(r.capacity) > 0 &&
           Number(r.current_occupancy || 0) >= Number(r.capacity);
-        const label = capacityReached
+        const reservationId = String(r.reserved_by_employee_id || "");
+        const isReservedForEmployee = reservationId &&
+          transferAssignment &&
+          reservationId === String(transferAssignment.employee_id);
+        const label = isReservedForEmployee
+          ? `${r.room_no} (${r.accommodation_name || ""}) - Reserved for you`
+          : capacityReached
           ? `${r.room_no} (${r.accommodation_name || ""}) - Full`
           : `${r.room_no} (${r.accommodation_name || ""})`;
         opts += `<option value="${r.id}"${selected}>${label}</option>`;
@@ -1030,6 +1052,7 @@ function loadRoomsForAssignmentEdit(assignment) {
     const rooms = typeof data === "string" ? JSON.parse(data) : data;
     const currentRoomId = String(assignment.room_id);
     const accommodationId = String(assignment.accommodation_id || "");
+    const employeeId = String(assignment.employee_id || "");
     const eligibleRooms = (rooms || []).filter((room) => {
       if (String(room.accommodation_id || "") !== accommodationId) {
         return false;
@@ -1040,7 +1063,10 @@ function loadRoomsForAssignmentEdit(assignment) {
 
       const capacityReached = Number(room.capacity) > 0 &&
         Number(room.current_occupancy || 0) >= Number(room.capacity);
-      return !capacityReached && room.status !== "Reserved" && room.status !== "Maintenance";
+      const reservationId = String(room.reserved_by_employee_id || "");
+      return !capacityReached &&
+        (!reservationId || reservationId === employeeId) &&
+        room.status !== "Maintenance";
     });
 
     let options = '<option value="">Select room</option>';
@@ -1216,9 +1242,17 @@ function displayRoomCards() {
     if (isCurrentRoom) {
       statusClass = 'room-current';
       statusText = 'Current Room';
-    } else if (capacityReached || room.status === 'Reserved' || room.status === 'Maintenance') {
+    } else if (
+      capacityReached ||
+      room.status === 'Maintenance' ||
+      (room.reserved_by_employee_id &&
+        String(room.reserved_by_employee_id) !== String(assignment.employee_id))
+    ) {
       statusClass = 'room-occupied';
-      statusText = 'Occupied';
+      statusText = room.status === 'Maintenance' ? 'Maintenance' : 'Occupied';
+    } else if (room.reserved_by_employee_id) {
+      statusClass = 'room-available';
+      statusText = 'Reserved for you';
     } else {
       statusClass = 'room-available';
       statusText = 'Available';
@@ -1229,7 +1263,9 @@ function displayRoomCards() {
       statusText = 'Selected';
     }
 
-    const isDisabled = isCurrentRoom || capacityReached || room.status === 'Reserved' || room.status === 'Maintenance';
+    const isReservedForOther = room.reserved_by_employee_id &&
+      String(room.reserved_by_employee_id) !== String(assignment.employee_id);
+    const isDisabled = isCurrentRoom || capacityReached || isReservedForOther || room.status === 'Maintenance';
     const clickHandler = isDisabled ? '' : `onclick="selectRoomCard('${roomId}')"`;
 
     html += `
@@ -1259,7 +1295,9 @@ function selectRoomCard(roomId) {
   const capacityReached = Number(room.capacity) > 0 && 
                           Number(room.current_occupancy || 0) >= Number(room.capacity);
 
-  if (isCurrentRoom || capacityReached || room.status === 'Reserved' || room.status === 'Maintenance') {
+  const isReservedForOther = room.reserved_by_employee_id &&
+    String(room.reserved_by_employee_id) !== String(assignment.employee_id);
+  if (isCurrentRoom || capacityReached || isReservedForOther || room.status === 'Maintenance') {
     return; // Cannot select
   }
 

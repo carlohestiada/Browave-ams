@@ -17,7 +17,21 @@ try {
     // Occupied - get employees in occupied rooms (only Active assignments)
     if ($status === 'Occupied') {
         $stmt = $db->prepare(
-            "SELECT DISTINCT
+            "WITH room_state AS (
+                SELECT
+                    r.*,
+                    CASE
+                        WHEN r.status = 'Maintenance' THEN 'Maintenance'
+                        WHEN EXISTS (
+                            SELECT 1 FROM room_assignments active_ra
+                            WHERE active_ra.room_id = r.id AND active_ra.status = 'Active'
+                        ) THEN 'Occupied'
+                        WHEN r.reserved_by_employee_id IS NOT NULL THEN 'Reserved'
+                        ELSE 'Available'
+                    END AS effective_status
+                FROM rooms r
+             )
+             SELECT DISTINCT
                 e.id,
                 e.employee_code,
                 e.english_name,
@@ -26,12 +40,15 @@ try {
                 d.department_name,
                 d.location,
                 r.room_no,
+                r.reserved_by_employee_id,
+                reserved_by.english_name AS reserved_by_name,
                 b.building_name,
                 f.floor_name
-             FROM employees e
+             FROM room_assignments ra
+             JOIN employees e ON e.id = ra.employee_id
              LEFT JOIN departments d ON e.department_id = d.id
-             LEFT JOIN room_assignments ra ON e.id = ra.employee_id AND ra.status = 'Active'
-             LEFT JOIN rooms r ON ra.room_id = r.id
+             JOIN room_state r ON ra.room_id = r.id AND r.effective_status = 'Occupied'
+             LEFT JOIN employees reserved_by ON r.reserved_by_employee_id = reserved_by.id
              LEFT JOIN floors f ON r.floor_id = f.id
              LEFT JOIN buildings b ON f.building_id = b.id
              WHERE ra.status = 'Active'
@@ -53,19 +70,33 @@ try {
     // Available - get available rooms
     if ($status === 'Available') {
         $stmt = $db->prepare(
-            "SELECT 
+            "WITH room_state AS (
+                SELECT
+                    r.*,
+                    CASE
+                        WHEN r.status = 'Maintenance' THEN 'Maintenance'
+                        WHEN EXISTS (
+                            SELECT 1 FROM room_assignments ra
+                            WHERE ra.room_id = r.id AND ra.status = 'Active'
+                        ) THEN 'Occupied'
+                        WHEN r.reserved_by_employee_id IS NOT NULL THEN 'Reserved'
+                        ELSE 'Available'
+                    END AS effective_status
+                FROM rooms r
+             )
+             SELECT
                 r.id,
                 r.room_no,
                 r.room_type,
-                r.status,
+                r.effective_status AS status,
                 r.capacity,
                 r.current_occupancy,
                 b.building_name,
                 f.floor_name
-             FROM rooms r
+             FROM room_state r
              LEFT JOIN floors f ON r.floor_id = f.id
              LEFT JOIN buildings b ON f.building_id = b.id
-             WHERE r.status = 'Available'
+             WHERE r.effective_status = 'Available'
              ORDER BY b.building_name, f.floor_name, r.room_no ASC"
         );
         $stmt->execute();
@@ -84,7 +115,7 @@ try {
     // Maintenance - get maintenance rooms
     if ($status === 'Maintenance') {
         $stmt = $db->prepare(
-            "SELECT 
+            "SELECT
                 r.id,
                 r.room_no,
                 r.room_type,
@@ -115,11 +146,25 @@ try {
     // Reserved - get reserved rooms with reserving employee
     if ($status === 'Reserved') {
         $stmt = $db->prepare(
-            "SELECT 
+            "WITH room_state AS (
+                SELECT
+                    r.*,
+                    CASE
+                        WHEN r.status = 'Maintenance' THEN 'Maintenance'
+                        WHEN EXISTS (
+                            SELECT 1 FROM room_assignments ra
+                            WHERE ra.room_id = r.id AND ra.status = 'Active'
+                        ) THEN 'Occupied'
+                        WHEN r.reserved_by_employee_id IS NOT NULL THEN 'Reserved'
+                        ELSE 'Available'
+                    END AS effective_status
+                FROM rooms r
+             )
+             SELECT
                 r.id,
                 r.room_no,
                 r.room_type,
-                r.status,
+                r.effective_status AS status,
                 r.capacity,
                 r.current_occupancy,
                 r.reserved_by_employee_id,
@@ -128,12 +173,12 @@ try {
                 d.department_name,
                 b.building_name,
                 f.floor_name
-             FROM rooms r
+             FROM room_state r
              LEFT JOIN employees e ON r.reserved_by_employee_id = e.id
              LEFT JOIN departments d ON e.department_id = d.id
              LEFT JOIN floors f ON r.floor_id = f.id
              LEFT JOIN buildings b ON f.building_id = b.id
-             WHERE r.status = 'Reserved'
+             WHERE r.effective_status = 'Reserved'
              ORDER BY b.building_name, f.floor_name, r.room_no ASC"
         );
         $stmt->execute();

@@ -469,6 +469,7 @@ function initDashboard() {
       <th>Department</th>
       <th>Location</th>
       <th>Room</th>
+      <th>Reservation</th>
     `;
     thead.appendChild(headerRow);
     table.appendChild(thead);
@@ -482,6 +483,7 @@ function initDashboard() {
         <td>${escapeHtml(emp.department_name || "N/A")}</td>
         <td>${escapeHtml(emp.location || "N/A")}</td>
         <td class="room-number">${escapeHtml(emp.room_no || "N/A")}</td>
+        <td>${emp.reserved_by_name ? `Reserved for ${escapeHtml(emp.reserved_by_name)}` : "—"}</td>
       `;
       tbody.appendChild(row);
     });
@@ -531,6 +533,7 @@ function initDashboard() {
       <th>Status</th>
       <th>Capacity</th>
       <th>Occupied</th>
+      <th>Reservation</th>
     `;
     thead.appendChild(headerRow);
     table.appendChild(thead);
@@ -576,6 +579,11 @@ function initDashboard() {
         ],
         0,
       );
+      const reservedByName = getRoomFieldValue(
+        room,
+        ["reserved_by_name", "reserved_by_employee_name"],
+        "",
+      );
       const badgeClass = roomStatus.toLowerCase().replace(/\s+/g, "-");
       const row = document.createElement("tr");
       row.className = "drawer-table-row";
@@ -586,6 +594,7 @@ function initDashboard() {
         <td><span class="status-badge status-badge--${badgeClass}">${escapeHtml(roomStatus)}</span></td>
         <td>${escapeHtml(capacity)}</td>
         <td>${escapeHtml(occupied)}</td>
+        <td>${reservedByName ? `Reserved for ${escapeHtml(reservedByName)}` : "—"}</td>
       `;
       tbody.appendChild(row);
     });

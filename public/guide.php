@@ -292,6 +292,12 @@
                                 Located within the 'Floor' view, this tool allows you to create hundreds of rooms simultaneously. Define a prefix (e.g., "A-"), a starting number (e.g., 101), and the increment. You can also bulk-apply attributes like "En-suite" or "Queen Bed" to the entire set.
                             </p>
                         </div>
+                        <div class="mt-4 p-4 rounded-lg border border-outline-variant bg-white">
+                            <h4 class="font-bold text-primary mb-2">Persistent Room Reservations</h4>
+                            <p class="text-body-md text-on-surface-variant">
+                                A room reservation stays with its selected employee until you remove it in the room's Edit Room form. Only that employee can be assigned to the room. While the employee is checked in, the room shows as Occupied and displays who it is reserved for; after checkout, it returns to Reserved for that employee. To release the room for others, clear Reserved By (or change a Reserved room's status) and save.
+                            </p>
+                        </div>
                     </div>
                 </section>
                 <section class="mb-20 scroll-mt-24" id="logistics">
@@ -344,7 +350,7 @@
                         <div class="flex gap-6">
                             <div class="flex-1 bg-white border border-outline-variant rounded-xl p-6">
                                 <h4 class="font-bold mb-3">Assign Flow</h4>
-                                <p class="text-body-sm text-on-surface-variant mb-4">Assign an unallocated employee to a vacant room.</p>
+                                <p class="text-body-sm text-on-surface-variant mb-4">Assign an unallocated employee to an available room or to a room reserved for that employee.</p>
                                 <div class="space-y-2 text-body-sm">
                                     <div class="p-2 bg-surface-container rounded border border-outline-variant">Select Employee</div>
                                     <div class="flex justify-center"><span class="material-symbols-outlined text-outline" data-icon="arrow_downward">arrow_downward</span></div>

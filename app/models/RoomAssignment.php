@@ -166,6 +166,10 @@ class RoomAssignment
             return ['success' => false, 'error' => 'This employee already has an active room assignment. Please check out or transfer the existing room before assigning a new one.'];
         }
 
+        if ($this->getRoomDisplayStatus($data['room_id']) === 'Maintenance') {
+            return ['success' => false, 'error' => 'This room is under maintenance. Please choose another room.'];
+        }
+
         if ($this->roomIsReserved($data['room_id'], $data['employee_id'])) {
             return ['success' => false, 'error' => 'This room is reserved by another employee. Please choose another room or remove the reservation first.'];
         }
@@ -192,8 +196,7 @@ class RoomAssignment
             return ['success' => false, 'error' => 'Could not create room assignment.'];
         }
 
-        $occupancyCount = $this->countRoomOccupants($data['room_id']);
-        if (!$this->updateRoomStatus($data['room_id'], 'Occupied', $occupancyCount)) {
+        if (!$this->syncRoomStatuses()) {
             return ['success' => false, 'error' => 'Assignment created, but room status failed to update.'];
         }
 
@@ -264,8 +267,8 @@ class RoomAssignment
                 return ['success' => false, 'error' => 'The selected room is reserved by another employee. Please choose another room.'];
             }
 
-            if (in_array($this->getRoomDisplayStatus($newRoomId), ['Reserved', 'Maintenance'], true)) {
-                return ['success' => false, 'error' => 'The selected room is reserved or under maintenance. Please choose another room.'];
+            if ($this->getRoomDisplayStatus($newRoomId) === 'Maintenance') {
+                return ['success' => false, 'error' => 'The selected room is under maintenance. Please choose another room.'];
             }
 
             if (!$this->roomHasCapacity($newRoomId, $assignmentId)) {
@@ -286,7 +289,9 @@ class RoomAssignment
             return ['success' => false, 'error' => 'Could not update room assignment.'];
         }
 
-        $this->syncRoomStatuses([$currentRoomId, $newRoomId]);
+        if (!$this->syncRoomStatuses()) {
+            return ['success' => false, 'error' => 'Assignment updated, but room status failed to update.'];
+        }
         return ['success' => true];
     }
 
@@ -329,7 +334,7 @@ class RoomAssignment
                 throw new Exception('Could not check out this room assignment.');
             }
 
-            if (!$this->syncRoomStatuses([$assignment['room_id']])) {
+            if (!$this->syncRoomStatuses()) {
                 throw new Exception('Could not update room occupancy and status.');
             }
 
@@ -404,6 +409,10 @@ class RoomAssignment
             return ['success' => false, 'error' => 'The selected room is the same as the current room. Please choose a different room.'];
         }
 
+        if ($this->getRoomDisplayStatus($newRoomId) === 'Maintenance') {
+            return ['success' => false, 'error' => 'The selected room is under maintenance. Please choose another room.'];
+        }
+
         if ($this->roomIsReserved($newRoomId, $employeeId)) {
             return ['success' => false, 'error' => 'The selected room is reserved by another employee. Please choose another room or remove the reservation first.'];
         }
@@ -445,7 +454,9 @@ class RoomAssignment
             }
 
             // Step 3: Sync room statuses for both old and new rooms
-            $this->syncRoomStatuses([$currentRoomId, $newRoomId]);
+            if (!$this->syncRoomStatuses()) {
+                throw new Exception('Could not update room occupancy and status.');
+            }
 
             $this->db->commit();
             return ['success' => true];
@@ -475,7 +486,9 @@ class RoomAssignment
         }
 
         // Only sync the room that was assigned (transferred_to_room_id is no longer used)
-        $this->syncRoomStatuses([$assignment['room_id']]);
+        if (!$this->syncRoomStatuses()) {
+            return ['success' => false, 'error' => 'Assignment was deleted, but room status failed to update.'];
+        }
 
         return ['success' => true];
     }
@@ -577,47 +590,28 @@ class RoomAssignment
         $this->syncRoomStatuses();
     }
 
-    private function syncRoomStatuses($extraRoomIds = [])
+    private function syncRoomStatuses()
     {
-        // Get all active assignments - these determine room occupancy
         $stmt = $this->db->prepare(
-            "SELECT room_id
-             FROM room_assignments
-             WHERE status = 'Active'"
+            "UPDATE rooms r
+             SET status = CASE
+                    WHEN r.status = 'Maintenance' THEN 'Maintenance'
+                    WHEN occupancy.active_occupancy > 0 THEN 'Occupied'
+                    WHEN r.reserved_by_employee_id IS NOT NULL THEN 'Reserved'
+                    ELSE 'Available'
+                 END,
+                 current_occupancy = occupancy.active_occupancy
+             FROM (
+                 SELECT rooms.id, COUNT(ra.id)::int AS active_occupancy
+                 FROM rooms
+                 LEFT JOIN room_assignments ra
+                    ON ra.room_id = rooms.id AND ra.status = 'Active'
+                 GROUP BY rooms.id
+             ) occupancy
+             WHERE r.id = occupancy.id"
         );
-        $stmt->execute();
-        $activeAssignments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $touchedRooms = [];
-
-        // Mark rooms that have active assignments
-        foreach ($activeAssignments as $assignment) {
-            if (!empty($assignment['room_id'])) {
-                $touchedRooms[(int)$assignment['room_id']] = true;
-            }
-        }
-
-        // Also include explicitly provided rooms to sync
-        foreach ($extraRoomIds as $roomId) {
-            if (!empty($roomId)) {
-                $touchedRooms[(int)$roomId] = true;
-            }
-        }
-
-        // Update status for all touched rooms
-        foreach (array_keys($touchedRooms) as $roomId) {
-            $occupancyCount = $this->countRoomOccupants($roomId);
-            $isOccupied = $occupancyCount > 0;
-            $roomStatus = $this->getRoomDisplayStatus($roomId);
-            $statusToSet = in_array($roomStatus, ['Reserved', 'Maintenance'], true)
-                ? $roomStatus
-                : ($isOccupied ? 'Occupied' : 'Available');
-            if (!$this->updateRoomStatus($roomId, $statusToSet, $occupancyCount)) {
-                return false;
-            }
-        }
-
-        return true;
+        return $stmt->execute();
     }
 
     private function ensureTransferredToColumn()
@@ -660,14 +654,4 @@ class RoomAssignment
         return $row['status'] ?? 'Available';
     }
 
-    private function updateRoomStatus($roomId, $status, $occupancy = null)
-    {
-        if ($occupancy === null) {
-            $stmt = $this->db->prepare("UPDATE rooms SET status=? WHERE id=?");
-            return $stmt->execute([$status, $roomId]);
-        }
-
-        $stmt = $this->db->prepare("UPDATE rooms SET status=?, current_occupancy=? WHERE id=?");
-        return $stmt->execute([$status, $occupancy, $roomId]);
-    }
 }
