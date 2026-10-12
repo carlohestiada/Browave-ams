@@ -122,7 +122,7 @@ class WorkCalendar
 
     private function defaultForDate(DateTime $date): array
     {
-        $isWeekday = (int) $date->format('N') <= 5;
+        $isWeekday = (int) $date->format('N') <= 6;
         return [
             'status' => $isWeekday ? 'working_day' : 'non_working_day',
             'reason' => $isWeekday ? 'Regular Work' : 'Weekend',
