@@ -16,7 +16,7 @@ let transportationRows = [];
 let allTransportationRows = [];
 let currentScheduleView = "active";
 let employeeSearchTimer = null;
-let filterEmployeeData = [];
+let scheduleSearchTimer = null;
 let modalMode = "create";
 let selectedTransportationIds = new Set();
 let tripDetailsRestoreTripId = null;
@@ -72,21 +72,16 @@ function populateTransportationTypeSelect(selector, includeAddOption, preferredV
   const select = document.querySelector(selector);
   if (!select) return;
 
-  const isFilter = selector === "#filterTransportationType";
   const currentValue = preferredValue !== undefined ? preferredValue : select.value;
   const selectedValue = currentValue && currentValue !== addTransportationTypeOption
     ? String(currentValue)
-    : isFilter ? "" : "Company Car";
+    : "Company Car";
 
   select.replaceChildren();
-  if (isFilter) {
-    select.add(new Option("All types", "", true, selectedValue === ""));
-  }
-
   const names = transportationTypeRows.map((row) => row.transportation_name);
   transportationTypeRows.forEach((row) => {
     const name = String(row.transportation_name);
-    select.add(new Option(name, name, !isFilter && name === "Company Car", name === selectedValue));
+    select.add(new Option(name, name, name === "Company Car", name === selectedValue));
   });
 
   if (selectedValue && !names.includes(selectedValue)) {
@@ -110,9 +105,9 @@ function loadTransportationTypes(preferredSelector = null, preferredValue = unde
     }
 
     transportationTypeRows = response.data;
-    ["#filterTransportationType", "#companyCar_transportation_type", "#bulkTransportationType"].forEach((selector) => {
+    ["#companyCar_transportation_type", "#bulkTransportationType"].forEach((selector) => {
       const preferred = selector === preferredSelector ? preferredValue : undefined;
-      populateTransportationTypeSelect(selector, selector !== "#filterTransportationType", preferred);
+      populateTransportationTypeSelect(selector, true, preferred);
     });
 
     return transportationTypeRows;
@@ -234,7 +229,6 @@ function loadStats() {
 function loadDrivers() {
   $.get(apiUrl("api/drivers/index.php"), function (data) {
     const drivers = typeof data === "string" ? JSON.parse(data) : data;
-    let options = '<option value="">All drivers</option>';
     let modalOptions = '<option value="">Select driver</option>';
     let bulkOptions = '<option value="">Select driver</option>';
     const activeDrivers = drivers.filter(
@@ -243,12 +237,10 @@ function loadDrivers() {
 
     activeDrivers.forEach((driver) => {
       const label = `${driver.driver_name}${driver.phone ? " (" + driver.phone + ")" : ""}`;
-      options += `<option value="${driver.id}">${label}</option>`;
       modalOptions += `<option value="${driver.id}">${label}</option>`;
       bulkOptions += `<option value="${driver.id}">${label}</option>`;
     });
 
-    $("#filterDriver").html(options);
     $("#companyCar_driver_id").html(modalOptions);
     $("#bulkDriverId").html(bulkOptions);
     $("#kpiAvailableDrivers").text(activeDrivers.length);
@@ -258,18 +250,15 @@ function loadDrivers() {
 function loadVehicles() {
   $.get(apiUrl("api/vehicles/index.php"), function (data) {
     const vehicles = typeof data === "string" ? JSON.parse(data) : data;
-    let options = '<option value="">All vehicles</option>';
     let modalOptions = '<option value="">Select vehicle</option>';
     let bulkOptions = '<option value="">Select vehicle</option>';
 
     vehicles.forEach((vehicle) => {
       const label = `${vehicle.vehicle_name}${vehicle.license_plate ? " (" + vehicle.license_plate + ")" : ""}`;
-      options += `<option value="${vehicle.id}">${label}</option>`;
       modalOptions += `<option value="${vehicle.id}">${label}</option>`;
       bulkOptions += `<option value="${vehicle.id}">${label}</option>`;
     });
 
-    $("#filterVehicle").html(options);
     $("#companyCar_vehicle_id").html(modalOptions);
     $("#bulkVehicleId").html(bulkOptions);
   });
@@ -425,12 +414,7 @@ function deleteVehicle(id) {
   });
 }
 
-function loadEmployees(
-  search = "",
-  targetList = "#filterEmployeeList",
-  inputId = "#filterEmployeeSearch",
-  hiddenId = "#filterEmployeeId",
-) {
+function loadEmployees(search, targetList, inputId, hiddenId) {
   const params = [];
   const query = search.trim();
 
@@ -445,7 +429,6 @@ function loadEmployees(
     ),
     function (data) {
       const employees = typeof data === "string" ? JSON.parse(data) : data;
-      filterEmployeeData = employees;
 
       const list = $(targetList);
       let html = "";
@@ -468,12 +451,7 @@ function loadEmployees(
         $(inputId).val(label);
         $(hiddenId).val(id);
         list.removeClass("show");
-
-        if (hiddenId === "#filterEmployeeId") {
-          loadTransportationSchedule(true);
-        } else {
-          fetchEmployeeDetails(id);
-        }
+        fetchEmployeeDetails(id);
       });
     },
   );
@@ -557,14 +535,67 @@ function getViewStatusFilter() {
   return ["SCHEDULED", "IN_PROGRESS"];
 }
 
+function scheduleSearchTerm() {
+  return String($("#scheduleSearchInput").val() || "").trim().toLowerCase();
+}
+
+function scheduleSearchText(row) {
+  const tripLabel = row.trip_id
+    ? `Trip #${row.trip_id} ${row.trip_id}`
+    : "Legacy Unlinked";
+  const tripType = row.trip_type || "NORMAL_TRIP";
+  const status = row.trip_status || row.status || "SCHEDULED";
+  return [
+    displayEmployeeCode(row.employee_code),
+    row.english_name,
+    row.chinese_name,
+    row.department_name,
+    tripLabel,
+    tripType,
+    String(tripType).replace(/_/g, " "),
+    row.arrival_date,
+    row.departure_date,
+    row.pickup_date,
+    row.transportation_type,
+    row.driver_name,
+    row.vehicle_name,
+    status,
+    String(status).replace(/_/g, " "),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function filterScheduleBySearch(rows) {
+  const words = scheduleSearchTerm().split(/\s+/).filter(Boolean);
+  if (!words.length) {
+    return rows;
+  }
+
+  return rows.filter((row) => {
+    const searchText = scheduleSearchText(row);
+    return words.every((word) => searchText.includes(word));
+  });
+}
+
 function applyScheduleViewFilter(rows) {
   const allowedStatuses = getViewStatusFilter();
-  return rows.filter((row) => {
+  const viewRows = rows.filter((row) => {
     const tripStatus = String(row.trip_status || row.status || "SCHEDULED")
       .toUpperCase()
       .replace(/\s+/g, "_");
     return allowedStatuses.includes(tripStatus);
   });
+  return filterScheduleBySearch(viewRows);
+}
+
+function refreshScheduleFromSearch() {
+  transportationRows = applyScheduleViewFilter(allTransportationRows);
+  selectedTransportationIds.clear();
+  renderTable(true);
+  renderTimeline();
+  $("#scheduleCount").text(`${transportationRows.length} trips found`);
 }
 
 function setScheduleView(view) {
@@ -587,26 +618,7 @@ function setScheduleView(view) {
 }
 
 function loadTransportationSchedule(resetPage = false) {
-  const params = [];
-  const employeeId = $("#filterEmployeeId").val();
-  const pickupDate = $("#filterPickupDate").val();
-  const type = $("#filterTransportationType").val();
-  const vehicleId = $("#filterVehicle").val();
-  const driverId = $("#filterDriver").val();
-  const status = $("#filterStatus").val();
-  const legType = $("#filterLegType").val();
-
-  if (employeeId) params.push(`employee_id=${encodeURIComponent(employeeId)}`);
-  if (pickupDate) params.push(`pickup_date=${encodeURIComponent(pickupDate)}`);
-  if (type) params.push(`transportation_type=${encodeURIComponent(type)}`);
-  if (vehicleId) params.push(`vehicle_id=${encodeURIComponent(vehicleId)}`);
-  if (driverId) params.push(`driver_id=${encodeURIComponent(driverId)}`);
-  if (status) params.push(`status=${encodeURIComponent(status)}`);
-  if (legType) params.push(`leg_type=${encodeURIComponent(legType)}`);
-
-  const url = apiUrl(
-    "api/company-car/index.php" + (params.length ? "?" + params.join("&") : ""),
-  );
+  const url = apiUrl("api/company-car/index.php");
 
   $.get(url, function (data) {
     const rows = typeof data === "string" ? JSON.parse(data) : data;
@@ -756,6 +768,13 @@ function renderTable(resetPage = false) {
     sortColumns,
     onRender: updateTransportationSelectionControls,
   });
+
+  if (transportationRows.length === 0 && scheduleSearchTerm()) {
+    const columnCount = $("#companyCarTableBody").closest("table").find("thead th").length;
+    $("#companyCarTableBody").html(
+      `<tr><td colspan="${columnCount}" class="text-center text-muted py-4">No trips match your search.</td></tr>`,
+    );
+  }
 }
 
 function bindRowActions() {
@@ -1571,9 +1590,6 @@ $(function () {
     openManageVehicles();
   });
 
-  $("#applyFilters").on("click", function () {
-    loadTransportationSchedule(true);
-  });
   $(document).on(
     "change",
     "#companyCar_transportation_type, #bulkTransportationType",
@@ -1590,32 +1606,12 @@ $(function () {
       promptAddTransportationType(`#${this.id}`, previousValue);
     },
   );
-  $("#resetFilters").on("click", function () {
-    $("#filterEmployeeSearch").val("");
-    $("#filterEmployeeId").val("");
-    $("#filterPickupDate").val("");
-    $("#filterTransportationType").val("");
-    $("#filterVehicle").val("");
-    $("#filterDriver").val("");
-    $("#filterStatus").val("");
-    loadTransportationSchedule(true);
+  $("#scheduleSearchInput").on("input", function () {
+    clearTimeout(scheduleSearchTimer);
+    scheduleSearchTimer = setTimeout(refreshScheduleFromSearch, 250);
   });
-
   $(".schedule-view-tab").on("click", function () {
     setScheduleView($(this).data("view"));
-  });
-
-  $("#filterEmployeeSearch").on("input", function () {
-    clearTimeout(employeeSearchTimer);
-    const search = $(this).val();
-    employeeSearchTimer = setTimeout(function () {
-      loadEmployees(
-        search,
-        "#filterEmployeeList",
-        "#filterEmployeeSearch",
-        "#filterEmployeeId",
-      );
-    }, 250);
   });
 
   $("#companyCar_employee_search").on("input", function () {
@@ -1633,7 +1629,6 @@ $(function () {
 
   $(document).on("click", function (e) {
     if (!$(e.target).closest(".search-input-wrapper").length) {
-      $("#filterEmployeeList").removeClass("show");
       $("#companyCar_employee_list").removeClass("show");
     }
   });

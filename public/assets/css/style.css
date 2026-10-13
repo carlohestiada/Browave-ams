@@ -78,64 +78,6 @@ body {
   .work-calendar-records__toggle-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 }
 
-.transportation-filter-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1.25fr) minmax(0, 1.65fr) repeat(3, minmax(0, 1fr)) minmax(0, 1.15fr) max-content;
-  gap: 0.75rem;
-  align-items: end;
-  width: 100%;
-}
-
-.transportation-filter-card {
-  width: 100%;
-}
-
-.transportation-filter-field,
-.transportation-filter-actions {
-  min-width: 0;
-}
-
-.transportation-filter-field .ams-input {
-  min-width: 0;
-}
-
-.transportation-filter-actions {
-  display: flex;
-  gap: 0.5rem;
-  align-items: end;
-  min-width: max-content;
-  white-space: nowrap;
-}
-
-.transportation-filter-actions .btn {
-  min-height: 38px;
-}
-
-@media (max-width: 1199.98px) {
-  .transportation-filter-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .transportation-filter-field--employee {
-    grid-column: span 2;
-  }
-
-  .transportation-filter-actions {
-    grid-column: span 2;
-  }
-}
-
-@media (max-width: 767.98px) {
-  .transportation-filter-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .transportation-filter-field--employee,
-  .transportation-filter-actions {
-    grid-column: auto;
-  }
-}
-
 /* Trip type badge chip styling for Company Car schedule rows */
 .trip-type-badge {
   display: inline-flex;
@@ -6846,22 +6788,6 @@ body {
 
 .dropdown-list .dropdown-item:hover {
   background: var(--surface-low);
-}
-
-#applyFilters {
-  border-radius: 8px;
-  background: var(--navy);
-  border-color: var(--navy);
-  font-weight: 600;
-  font-size: 13px;
-  padding: 9px 22px;
-}
-
-#resetFilters {
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 13px;
-  padding: 9px 18px;
 }
 
 /* ---- Two-panel schedule + timeline layout ---- */

@@ -51,58 +51,10 @@
         </a>
     </div>
 
-    <div class="transportation-filter-card ams-card p-4 mb-4">
-        <div class="transportation-filter-grid">
-            <div class="transportation-filter-field transportation-filter-field--employee">
-                <label class="ams-label" for="filterEmployeeSearch">Employee</label>
-                <div class="search-input-wrapper">
-                    <input id="filterEmployeeSearch" type="text" class="ams-input" placeholder="Search employee">
-                    <input type="hidden" id="filterEmployeeId">
-                    <div id="filterEmployeeList" class="dropdown-list"></div>
-                </div>
-            </div>
-            <div class="transportation-filter-field">
-                <label class="ams-label" for="filterPickupDate">Departure Date</label>
-                <input id="filterPickupDate" type="date" class="ams-input">
-            </div>
-            <div class="transportation-filter-field">
-                <label class="ams-label" for="filterTransportationType">Transportation Type</label>
-                <select id="filterTransportationType" class="ams-input">
-                    <option value="">All types</option>
-                </select>
-            </div>
-            <div class="transportation-filter-field">
-                <label class="ams-label" for="filterVehicle">Vehicle</label>
-                <select id="filterVehicle" class="ams-input"></select>
-            </div>
-            <div class="transportation-filter-field">
-                <label class="ams-label" for="filterDriver">Driver</label>
-                <select id="filterDriver" class="ams-input"></select>
-            </div>
-            <div class="transportation-filter-field">
-                <label class="ams-label" for="filterLegType">Leg Type</label>
-                <select id="filterLegType" class="ams-input">
-                    <option value="">All leg types</option>
-                    <option value="ARRIVAL">Arrival</option>
-                    <option value="DEPARTURE">Departure</option>
-                </select>
-            </div>
-            <div class="transportation-filter-field">
-                <label class="ams-label" for="filterStatus">Status</label>
-                <select id="filterStatus" class="ams-input">
-                    <option value="">All statuses</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Scheduled">Scheduled</option>
-                    <option value="Picked Up">Picked Up</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Cancelled">Cancelled</option>
-                </select>
-            </div>
-            <div class="transportation-filter-actions">
-                <button type="button" id="applyFilters" class="btn btn-primary">Apply</button>
-                <button type="button" id="resetFilters" class="btn btn-outline-secondary">Reset</button>
-            </div>
-        </div>
+    <div class="ams-card p-4 mb-4">
+        <label class="ams-label" for="scheduleSearchInput">Search Departures</label>
+        <input id="scheduleSearchInput" type="search" class="ams-input" autocomplete="off"
+               placeholder="Employee ID, name, department, trip, trip type, date, transportation, driver, vehicle, status">
     </div>
 
     <div class="ams-card dashboard-card-panel company-car-schedule-panel">
