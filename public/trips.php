@@ -21,50 +21,9 @@
 
     <div class="ams-card p-4 mb-4">
         <form id="tripFilterForm" class="row g-3 align-items-end">
-            <div class="col-lg-2 col-md-6">
-                <label class="ams-label" for="tripFilterDepartment">Department</label>
-                <select id="tripFilterDepartment" class="ams-input"><option value="">All departments</option></select>
-            </div>
-            <div class="col-lg-2 col-md-6">
-                <label class="ams-label" for="tripFilterEmployee">Employee</label>
-                <select id="tripFilterEmployee" class="ams-input"><option value="">All employees</option></select>
-            </div>
-            <div class="col-lg-2 col-md-6">
-                <label class="ams-label" for="tripFilterAssignment">Trip Assignment</label>
-                <select id="tripFilterAssignment" class="ams-input">
-                    <option value="">All trips</option>
-                    <option value="none">Employees without a trip</option>
-                </select>
-            </div>
-            <div class="col-lg-2 col-md-6">
-                <label class="ams-label" for="tripFilterType">Trip Type</label>
-                <select id="tripFilterType" class="ams-input">
-                    <option value="">All trip types</option>
-                    <option value="NORMAL_TRIP">Normal trip</option>
-                    <option value="ROUND_TRIP">Round trip</option>
-                </select>
-            </div>
-            <div class="col-lg-1 col-md-6">
-                <label class="ams-label" for="tripFilterStatus">Status</label>
-                <select id="tripFilterStatus" class="ams-input">
-                    <option value="">All statuses</option>
-                    <option value="PLANNED">Planned</option>
-                    <option value="ACTIVE">Active</option>
-                    <option value="COMPLETED">Completed</option>
-                    <option value="CANCELLED">Cancelled</option>
-                </select>
-            </div>
-            <div class="col-lg-1 col-md-6">
-                <label class="ams-label" for="tripFilterFrom">From</label>
-                <input id="tripFilterFrom" type="date" class="ams-input">
-            </div>
-            <div class="col-lg-1 col-md-6">
-                <label class="ams-label" for="tripFilterTo">To</label>
-                <input id="tripFilterTo" type="date" class="ams-input">
-            </div>
-            <div class="col-lg-1 col-md-6 d-flex gap-1">
-                <button type="submit" class="btn btn-primary" title="Search"><i class="bi bi-search" aria-hidden="true"></i><span class="visually-hidden">Search</span></button>
-                <button type="button" class="btn btn-outline-secondary px-1" id="resetTripFilters" title="Reset"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i><span class="visually-hidden">Reset</span></button>
+            <div class="col-12">
+                <label class="ams-label" for="tripSearchInput">Search Trips</label>
+                <input id="tripSearchInput" type="search" class="ams-input" autocomplete="off" placeholder="Employee ID, name, department, airport, room, accommodation, date, trip type, status">
             </div>
         </form>
     </div>

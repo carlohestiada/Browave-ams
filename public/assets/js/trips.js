@@ -8,11 +8,12 @@ let tripEmployees = [];
 let tripRooms = [];
 let tripRoomHistory = [];
 let tripRows = [];
+let tripSourceRows = [];
+let tripSearchTimer = null;
 let tripModal;
 let detailsModal;
 let tripLoadRequestId = 0;
 let currentTripView = "active";
-let activeTripStatusFilter = "";
 const tripSortColumns = [
   { index: 0, key: (trip) => trip.employee_code || trip.employee_id },
   { index: 1, key: (trip) => trip.employee_name || "" },
@@ -89,6 +90,49 @@ function roomForEmployee(employeeId) {
   };
 }
 
+function tripSearchTerm() {
+  return String($("#tripSearchInput").val() || "").trim().toLowerCase();
+}
+
+function tripSearchText(trip) {
+  const roomData = roomForEmployee(trip.employee_id);
+  const legs = trip.legs || [];
+  const arrival = legs.find((leg) => leg.leg_type === "ARRIVAL");
+  const departure = legs.find((leg) => leg.leg_type === "DEPARTURE");
+  const values = [
+    trip.employee_code
+      ? displayEmployeeCode(trip.employee_code)
+      : trip.employee_id,
+    trip.employee_name,
+    trip.department_name,
+    roomData.accommodation,
+    roomData.room,
+    arrival?.leg_date,
+    formatTripDate(arrival?.leg_date),
+    departure?.leg_date,
+    formatTripDate(departure?.leg_date),
+    arrival?.arrival_airport,
+    departure?.departure_airport,
+    trip.trip_type,
+    String(trip.trip_type || "").replace(/_/g, " "),
+    trip.status,
+  ];
+
+  return values.filter(Boolean).join(" ").toLowerCase();
+}
+
+function filterTripRows(rows) {
+  const words = tripSearchTerm().split(/\s+/).filter(Boolean);
+  if (!words.length) {
+    return rows;
+  }
+
+  return rows.filter((trip) => {
+    const searchText = tripSearchText(trip);
+    return words.every((word) => searchText.includes(word));
+  });
+}
+
 function renderEmployeeOptions(selector, includeAll = false, allowedIds = null) {
   const options = includeAll
     ? '<option value="">All employees</option>'
@@ -151,23 +195,6 @@ function initTripEmployeeSelect() {
   });
 }
 
-function renderDepartmentOptions() {
-  const departments = new Map();
-  tripEmployees.forEach((employee) => {
-    if (employee.department_id && employee.department_name)
-      departments.set(String(employee.department_id), employee.department_name);
-  });
-  $("#tripFilterDepartment").append(
-    Array.from(departments.entries())
-      .sort((a, b) => a[1].localeCompare(b[1]))
-      .map(
-        ([id, name]) =>
-          `<option value="${escapeTripHtml(id)}">${escapeTripHtml(name)}</option>`,
-      )
-      .join(""),
-  );
-}
-
 function renderTripRow(trip) {
   const legs = trip.legs || [];
   const arrival = legs.find((leg) => leg.leg_type === "ARRIVAL");
@@ -188,31 +215,18 @@ function renderTripRow(trip) {
         </tr>`;
 }
 
-function renderNoTripRow(employee) {
-  const roomData = roomForEmployee(employee.employee_id);
-  return `<tr>
-            <td>${escapeTripHtml(displayEmployeeCode(employee.employee_code))}</td>
-            <td>${escapeTripHtml(employee.employee_name || "—")}</td>
-            <td>${escapeTripHtml(employee.department_name || "—")}</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td>—</td>
-            <td><div style="white-space: normal; line-height: 1.4;">${escapeTripHtml(roomData.accommodation)}<br>${escapeTripHtml(roomData.room)}</div></td>
-            <td>—</td>
-            <td><span class="badge bg-secondary">No trip</span></td>
-            <td><button type="button" class="btn btn-primary create-trip-for-employee" data-employee-id="${escapeTripHtml(employee.employee_id)}">Create Trip</button></td>
-        </tr>`;
+function renderTrips(rows) {
+  tripSourceRows = Array.isArray(rows) ? rows : [];
+  renderTripTable();
 }
 
-function renderTrips(rows) {
-  const noTripMode = $("#tripFilterAssignment").val() === "none";
-  tripRows = Array.isArray(rows) ? rows : [];
-  $("#tripCount").text(noTripMode
-    ? `${tripRows.length} employees without a trip`
-    : currentTripView === "completed"
+function renderTripTable() {
+  tripRows = filterTripRows(tripSourceRows);
+  $("#tripCount").text(
+    currentTripView === "completed"
       ? `${tripRows.length} completed trips found`
-      : `${tripRows.length} trips found`);
+      : `${tripRows.length} trips found`,
+  );
   updateTripViewSummary();
 
   renderPaginatedTable({
@@ -220,62 +234,27 @@ function renderTrips(rows) {
     tableSelector: "#tripsTableBody",
     currentPage: 1,
     perPage: 10,
-    renderRow: noTripMode ? renderNoTripRow : renderTripRow,
-    sortColumns: noTripMode ? tripSortColumns.slice(0, 3) : tripSortColumns,
+    renderRow: renderTripRow,
+    sortColumns: tripSortColumns,
   });
 
   if (tripRows.length === 0) {
     $("#tripsTableBody").html(
-      `<tr><td colspan="11" class="text-center text-muted py-4">${noTripMode ? "All employees already have a trip." : currentTripView === "completed" ? "No completed trips found." : "No trips found."}</td></tr>`,
+      `<tr><td colspan="11" class="text-center text-muted py-4">${tripSearchTerm() ? "No trips match your search." : currentTripView === "completed" ? "No completed trips found." : "No trips found."}</td></tr>`,
     );
   }
 }
 
 function updateTripViewSummary() {
-  const noTripMode =
-    currentTripView === "active" && $("#tripFilterAssignment").val() === "none";
   $("#tripViewSummary").text(
-    noTripMode
-      ? "Showing employees without a trip"
-      : currentTripView === "completed"
-        ? "Showing completed trips"
-        : "Showing active trips",
+    currentTripView === "completed"
+      ? "Showing completed trips"
+      : "Showing active trips",
   );
 }
 
-function updateTripAssignmentFilters() {
-  const noTripMode = currentTripView === "active" && $("#tripFilterAssignment").val() === "none";
-  $("#tripFilterAssignment option[value='none']").prop("disabled", currentTripView === "completed");
-  $("#completedTripsTab").prop("disabled", noTripMode);
-  $("#tripFilterType, #tripFilterStatus, #tripFilterFrom, #tripFilterTo")
-    .prop("disabled", noTripMode);
-  $("#tripFilterStatus option[value='COMPLETED'], #tripFilterStatus option[value='CANCELLED']")
-    .prop("hidden", currentTripView === "active");
-  if (currentTripView === "completed") {
-    $("#tripFilterStatus").val("COMPLETED").prop("disabled", true);
-  } else {
-    if ($("#tripFilterStatus").val() === "COMPLETED" || $("#tripFilterStatus").val() === "CANCELLED") {
-      $("#tripFilterStatus").val("");
-    }
-    $("#tripFilterStatus").prop("disabled", noTripMode);
-  }
-  updateTripViewSummary();
-}
-
 function setTripView(view) {
-  const nextView = view === "completed" ? "completed" : "active";
-  if (nextView === "completed" && $("#tripFilterAssignment").val() === "none") {
-    $("#tripFilterAssignment").val("");
-  }
-  if (currentTripView === "active") {
-    activeTripStatusFilter = $("#tripFilterStatus").val() || activeTripStatusFilter;
-  }
-  currentTripView = nextView;
-  if (currentTripView === "completed") {
-    $("#tripFilterStatus").val("COMPLETED");
-  } else {
-    $("#tripFilterStatus").val(activeTripStatusFilter);
-  }
+  currentTripView = view === "completed" ? "completed" : "active";
 
   $(".trip-view-tab").each(function () {
     const active = $(this).data("view") === currentTripView;
@@ -285,34 +264,16 @@ function setTripView(view) {
     "aria-labelledby",
     currentTripView === "completed" ? "completedTripsTab" : "activeTripsTab",
   );
-  updateTripAssignmentFilters();
   loadTrips();
 }
 
 function loadTrips() {
-  updateTripAssignmentFilters();
   $("#tripsTableBody").html(
     '<tr><td colspan="11" class="text-center text-muted py-4">Loading trips...</td></tr>',
   );
   const params = new URLSearchParams();
-  const employeeId = $("#tripFilterEmployee").val();
-  const assignment = currentTripView === "active" ? $("#tripFilterAssignment").val() : "";
-  const type = $("#tripFilterType").val();
-  const status = currentTripView === "completed"
-    ? "COMPLETED"
-    : $("#tripFilterStatus").val();
-  const departmentId = $("#tripFilterDepartment").val();
-  if (employeeId) params.set("employee_id", employeeId);
-  if (departmentId) params.set("department_id", departmentId);
-  if (assignment === "none") {
-    params.set("assignment", "none");
-  } else {
-    if (type) params.set("trip_type", type);
-    if (status) params.set("status", status);
-    if ($("#tripFilterFrom").val())
-      params.set("date_from", $("#tripFilterFrom").val());
-    if ($("#tripFilterTo").val())
-      params.set("date_to", $("#tripFilterTo").val());
+  if (currentTripView === "completed") {
+    params.set("status", "COMPLETED");
   }
 
   const requestId = ++tripLoadRequestId;
@@ -326,15 +287,14 @@ function loadTrips() {
   })
     .done((data) => {
       if (requestId !== tripLoadRequestId) return;
-      const rows = tripResponse(data);
-      const filteredRows = assignment === "none"
-        ? rows
-        : (Array.isArray(rows) ? rows : []).filter((trip) =>
-            currentTripView === "completed"
-              ? String(trip.status).toUpperCase() === "COMPLETED"
-              : ["PLANNED", "ACTIVE"].includes(String(trip.status).toUpperCase()),
-          );
-      renderTrips(filteredRows);
+      const responseRows = tripResponse(data);
+      const rows = (Array.isArray(responseRows) ? responseRows : []).filter(
+        (trip) =>
+          currentTripView === "completed"
+            ? String(trip.status).toUpperCase() === "COMPLETED"
+            : ["PLANNED", "ACTIVE"].includes(String(trip.status).toUpperCase()),
+      );
+      renderTrips(rows);
     })
     .fail(() => {
       if (requestId !== tripLoadRequestId) return;
@@ -348,8 +308,6 @@ function loadTripEmployees() {
   return $.get(tripApiUrl("api/employees.php")).done((data) => {
     tripEmployees = tripResponse(data) || [];
     renderEmployeeOptions("#tripEmployee");
-    renderEmployeeOptions("#tripFilterEmployee", true);
-    renderDepartmentOptions();
   });
 }
 
@@ -1158,36 +1116,22 @@ $(function () {
   tripModal = new bootstrap.Modal("#tripFormModal");
   detailsModal = new bootstrap.Modal("#tripDetailsModal");
   $.when(loadTripEmployees(), loadTripRooms()).always(loadTrips);
-  $("#tripFilterForm").on("submit", (event) => {
-    event.preventDefault();
-    loadTrips();
+  $("#tripSearchInput").on("input", function () {
+    clearTimeout(tripSearchTimer);
+    tripSearchTimer = setTimeout(renderTripTable, 250);
+  });
+  $("#tripSearchInput").on("keydown", function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      clearTimeout(tripSearchTimer);
+      tripSearchTimer = null;
+      renderTripTable();
+    }
   });
   $(".trip-view-tab").on("click", function () {
     if (!$(this).prop("disabled")) {
       setTripView($(this).data("view"));
     }
-  });
-  $("#tripFilterAssignment").on("change", function () {
-    if (currentTripView === "completed" && $(this).val() === "none") {
-      $(this).val("");
-    }
-    updateTripAssignmentFilters();
-  });
-  $("#tripFilterStatus").on("change", function () {
-    if (currentTripView === "active") {
-      activeTripStatusFilter = $(this).val() || "";
-    }
-  });
-  $("#resetTripFilters").on("click", () => {
-    $("#tripFilterForm")[0].reset();
-    if (currentTripView === "active") {
-      activeTripStatusFilter = "";
-    }
-    if (currentTripView === "completed") {
-      $("#tripFilterAssignment").val("");
-    }
-    updateTripAssignmentFilters();
-    loadTrips();
   });
   $("#createTripButton").on("click", () => showTripForm());
   $("#tripEmployee").on("change", populateEmployeeInfo);
@@ -1222,9 +1166,5 @@ $(function () {
   });
   $("#tripsTableBody").on("click", ".view-trip", function () {
     openTripDetails($(this).data("id"));
-  });
-  $("#tripsTableBody").on("click", ".create-trip-for-employee", function () {
-    const employeeId = $(this).data("employee-id");
-    showTripForm(null, employeeId);
   });
 });
