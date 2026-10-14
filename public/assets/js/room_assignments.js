@@ -256,6 +256,10 @@ function renderAssignments(currentPage = 1) {
     onRender: updateAssignmentSelectionControls,
   });
 
+  if (filteredRows.length === 0 && $("#assignmentSearchInput").val().trim()) {
+    showNoAssignmentSearchResults("#assignmentTable");
+  }
+
   if (currentAssignmentView === "active") {
     $("#assignmentCount").text(`${filteredRows.length} room assignments found`);
     $("#assignmentViewSummary").text("Showing active assignments");
@@ -279,6 +283,13 @@ function filterCheckoutHistoryRows(rows) {
     row.actual_checkout_date,
     row.status,
   ].some((value) => String(value ?? "").toLowerCase().includes(search)));
+}
+
+function showNoAssignmentSearchResults(tableSelector) {
+  const columnCount = $(tableSelector).closest("table").find("thead th").length;
+  $(tableSelector).html(
+    `<tr><td colspan="${columnCount}" class="text-center text-muted py-4">No room assignments match your search.</td></tr>`,
+  );
 }
 
 function renderCheckoutHistory(rows = checkoutHistoryRows, currentPage = 1) {
@@ -309,6 +320,10 @@ function renderCheckoutHistory(rows = checkoutHistoryRows, currentPage = 1) {
     },
     sortColumns: checkoutSortColumns,
   });
+
+  if (filteredRows.length === 0 && $("#assignmentSearchInput").val().trim()) {
+    showNoAssignmentSearchResults("#checkoutHistoryTable");
+  }
 
   if (currentAssignmentView === "checkout") {
     $("#assignmentCount").text(`${filteredRows.length} checkouts found`);
@@ -343,13 +358,6 @@ function loadAssignments(onLoaded) {
       onLoaded();
     }
   });
-}
-
-function resetAssignmentFilters() {
-  $("#assignmentSearchInput").val("");
-  selectedAssignmentIds.clear();
-  renderAssignments();
-  renderCheckoutHistory();
 }
 
 function setAssignmentView(view) {

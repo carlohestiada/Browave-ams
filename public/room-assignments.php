@@ -29,9 +29,6 @@
           class="ams-input"
           placeholder="Room, accommodation, employee, department">
       </div>
-      <button type="button" onclick="resetAssignmentFilters()" class="btn-ams-ghost" style="height:40px;">
-        Reset
-      </button>
     </div>
   </div>
 
