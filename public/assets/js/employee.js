@@ -1,11 +1,11 @@
 let currentEmployeeId = null;
 let selectedEmployeeIds = new Set();
 let employeeRows = [];
+let employeeSourceRows = [];
 let employeeCurrentPage = 1;
 let employeePerPage = 10;
 let employeeSortKey = "";
 let employeeSortDirection = "asc";
-let employeeSearchTimer = null;
 
 function loadDepartments(callback) {
   $.get("api/departments.php", function (data) {
@@ -14,8 +14,8 @@ function loadDepartments(callback) {
     let filterOptions = '<option value="">All Departments</option>';
 
     departments.forEach((dep) => {
-      options += `<option value="${dep.id}">${dep.department_name}</option>`;
-      filterOptions += `<option value="${dep.id}">${dep.department_name}</option>`;
+      options += `<option value="${escapeHtml(dep.id)}">${escapeHtml(dep.department_name)}</option>`;
+      filterOptions += `<option value="${escapeHtml(dep.id)}">${escapeHtml(dep.department_name)}</option>`;
     });
 
     $("#department_id").html(options);
@@ -53,14 +53,9 @@ function applyEmployeeFiltersFromUrl() {
 
 function loadEmployees() {
   const params = new URLSearchParams();
-  const search = $("#searchInput").val()?.trim();
   const departmentId = $("#filterDepartment").val();
   const gender = $("#filterGender").val();
   const status = $("#filterStatus").val();
-
-  if (search) {
-    params.set("search", search);
-  }
 
   if (departmentId) {
     params.set("department_id", departmentId);
@@ -78,11 +73,32 @@ function loadEmployees() {
   const url = query ? `api/employees.php?${query}` : "api/employees.php";
 
   $.get(url, function (data) {
-    employeeRows = typeof data === "string" ? JSON.parse(data) : data;
-    employeeCurrentPage = 1;
-    selectedEmployeeIds.clear();
-    renderEmployeeTable();
+    employeeSourceRows = typeof data === "string" ? JSON.parse(data) : data;
+    applyEmployeeSearch();
   });
+}
+
+function employeeSearchValues(emp) {
+  return [
+    displayEmployeeCode(emp.employee_code),
+    emp.employee_code,
+    emp.english_name,
+    emp.chinese_name,
+    emp.gender,
+    emp.department_name,
+    emp.status,
+  ];
+}
+
+function applyEmployeeSearch() {
+  employeeRows = filterRowsBySearch(
+    employeeSourceRows,
+    $("#searchInput").val(),
+    employeeSearchValues,
+  );
+  employeeCurrentPage = 1;
+  selectedEmployeeIds.clear();
+  renderEmployeeTable();
 }
 
 function resetFilters() {
@@ -103,16 +119,16 @@ function renderEmployeeRow(emp) {
                 <input
                     type="checkbox"
                     class="employee-select-checkbox"
-                    value="${employeeId}"
+                    value="${escapeHtml(employeeId)}"
                     aria-label="Select employee"
                     onchange="toggleEmployeeSelection(${employeeId}, this.checked)"
                     ${checked}>
             </td>
-            <td>${displayEmployeeCode(emp.employee_code)}</td>
-            <td>${displayValue(emp.english_name)}</td>
-            <td>${displayValue(emp.chinese_name)}</td>
-            <td>${displayValue(emp.gender)}</td>
-            <td>${displayValue(emp.department_name)}</td>
+            <td>${escapeHtml(displayEmployeeCode(emp.employee_code))}</td>
+            <td>${escapeHtml(displayValue(emp.english_name))}</td>
+            <td>${escapeHtml(displayValue(emp.chinese_name))}</td>
+            <td>${escapeHtml(displayValue(emp.gender))}</td>
+            <td>${escapeHtml(displayValue(emp.department_name))}</td>
             <td>${renderStatusBadge(emp.status)}</td>
             <td>
                 <button class="btn btn-warning btn-sm me-1" onclick="editEmployee(${employeeId})">
@@ -138,9 +154,12 @@ function renderEmployeeTable() {
   let rows = pagination.items.map(renderEmployeeRow).join("");
 
   if (!rows) {
-    rows = renderEmptyTableRow(
-      $("#employeeTable").closest("table").find("thead th").length,
-    );
+    const columnCount = $("#employeeTable")
+      .closest("table")
+      .find("thead th").length;
+    rows = normalizeSearchTerm($("#searchInput").val())
+      ? `<tr><td colspan="${columnCount}" class="text-center">No employees match your search.</td></tr>`
+      : renderEmptyTableRow(columnCount);
   }
 
   $("#employeeTable").html(rows);
@@ -459,10 +478,7 @@ $(function () {
   $(".employee-sort-btn").on("click", function () {
     sortEmployeesBy($(this).attr("data-sort-key"));
   });
-  $("#searchInput").on("input", function () {
-    clearTimeout(employeeSearchTimer);
-    employeeSearchTimer = setTimeout(loadEmployees, 250);
-  });
+  bindLiveSearch("#searchInput", applyEmployeeSearch);
   $("#filterDepartment, #filterGender, #filterStatus").on(
     "change",
     loadEmployees,

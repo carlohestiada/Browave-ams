@@ -24,12 +24,12 @@
     <div class="ams-card" style="padding:16px; margin-bottom:20px;">
         <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end;">
             <div style="flex:1; min-width:200px;">
-                <label class="ams-label">Search Employee</label>
+                <label class="ams-label" for="searchInput">Search Employee</label>
                 <div style="position:relative;">
-                    <input id="searchInput" type="text"
+                    <input id="searchInput" type="search" autocomplete="off"
                         class="ams-input"
                         style="padding-left:36px;"
-                        placeholder="ID, Name, or Department">
+                        placeholder="Employee ID, name, department, gender, status">
                 </div>
             </div>
             <div style="width:180px;">
@@ -281,6 +281,7 @@
 </div>
 
 
+<script src="assets/js/table-search.js?v=<?= filemtime(__DIR__ . '/assets/js/table-search.js') ?>"></script>
 <script src="assets/js/employee.js?v=<?= filemtime(__DIR__ . '/assets/js/employee.js') ?>"></script>
 <script src="assets/js/bulk-upload.js?v=<?= filemtime(__DIR__ . '/assets/js/bulk-upload.js') ?>"></script>
 

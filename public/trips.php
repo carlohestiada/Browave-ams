@@ -112,5 +112,6 @@
 </div>
 
 <script src="assets/js/employee-utils.js?v=<?= filemtime(__DIR__ . '/assets/js/employee-utils.js') ?>"></script>
+<script src="assets/js/table-search.js?v=<?= filemtime(__DIR__ . '/assets/js/table-search.js') ?>"></script>
 <script src="assets/js/trips.js?v=<?= filemtime(__DIR__ . '/assets/js/trips.js') ?>"></script>
 <?php include 'layouts/footer.php'; ?>

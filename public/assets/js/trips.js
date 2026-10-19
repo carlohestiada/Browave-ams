@@ -9,7 +9,6 @@ let tripRooms = [];
 let tripRoomHistory = [];
 let tripRows = [];
 let tripSourceRows = [];
-let tripSearchTimer = null;
 let tripModal;
 let detailsModal;
 let tripLoadRequestId = 0;
@@ -91,18 +90,18 @@ function roomForEmployee(employeeId) {
 }
 
 function tripSearchTerm() {
-  return String($("#tripSearchInput").val() || "").trim().toLowerCase();
+  return normalizeSearchTerm($("#tripSearchInput").val());
 }
 
-function tripSearchText(trip) {
+function tripSearchValues(trip) {
   const roomData = roomForEmployee(trip.employee_id);
   const legs = trip.legs || [];
   const arrival = legs.find((leg) => leg.leg_type === "ARRIVAL");
   const departure = legs.find((leg) => leg.leg_type === "DEPARTURE");
-  const values = [
-    trip.employee_code
-      ? displayEmployeeCode(trip.employee_code)
-      : trip.employee_id,
+  return [
+    trip.employee_id,
+    trip.employee_code,
+    trip.employee_code ? displayEmployeeCode(trip.employee_code) : null,
     trip.employee_name,
     trip.department_name,
     roomData.accommodation,
@@ -117,20 +116,14 @@ function tripSearchText(trip) {
     String(trip.trip_type || "").replace(/_/g, " "),
     trip.status,
   ];
-
-  return values.filter(Boolean).join(" ").toLowerCase();
 }
 
 function filterTripRows(rows) {
-  const words = tripSearchTerm().split(/\s+/).filter(Boolean);
-  if (!words.length) {
-    return rows;
-  }
-
-  return rows.filter((trip) => {
-    const searchText = tripSearchText(trip);
-    return words.every((word) => searchText.includes(word));
-  });
+  return filterRowsBySearch(
+    rows,
+    $("#tripSearchInput").val(),
+    tripSearchValues,
+  );
 }
 
 function renderEmployeeOptions(selector, includeAll = false, allowedIds = null) {
@@ -1116,18 +1109,7 @@ $(function () {
   tripModal = new bootstrap.Modal("#tripFormModal");
   detailsModal = new bootstrap.Modal("#tripDetailsModal");
   $.when(loadTripEmployees(), loadTripRooms()).always(loadTrips);
-  $("#tripSearchInput").on("input", function () {
-    clearTimeout(tripSearchTimer);
-    tripSearchTimer = setTimeout(renderTripTable, 250);
-  });
-  $("#tripSearchInput").on("keydown", function (event) {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      clearTimeout(tripSearchTimer);
-      tripSearchTimer = null;
-      renderTripTable();
-    }
-  });
+  bindLiveSearch("#tripSearchInput", renderTripTable);
   $(".trip-view-tab").on("click", function () {
     if (!$(this).prop("disabled")) {
       setTripView($(this).data("view"));
