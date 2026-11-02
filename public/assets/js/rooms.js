@@ -196,18 +196,51 @@ function applyRoomTypeCapacity(roomType) {
     }
 }
 
-function updateRoomStatusSummary(rooms) {
-    const total = rooms.length;
-    const occupied = rooms.filter(r => r.status === 'Occupied').length;
-    const available = rooms.filter(r => r.status === 'Available').length;
-    const reserved = rooms.filter(r => r.status === 'Reserved').length;
-    const maintenance = rooms.filter(r => r.status === 'Maintenance').length;
+function getRoomCapacity(room) {
+    if (!room || room.capacity === null || room.capacity === undefined) return 0;
 
-    document.getElementById('roomSummaryTotal').textContent = total;
-    document.getElementById('roomSummaryOccupied').textContent = occupied;
-    document.getElementById('roomSummaryAvailable').textContent = available;
-    document.getElementById('roomSummaryReserved').textContent = reserved;
-    document.getElementById('roomSummaryMaintenance').textContent = maintenance;
+    const capacity = Number.parseInt(room.capacity, 10);
+    return Number.isNaN(capacity) || capacity < 0 ? 0 : capacity;
+}
+
+function getRoomOccupancy(room) {
+    if (!room || room.current_occupancy === null || room.current_occupancy === undefined) return 0;
+
+    const occupancy = Number.parseInt(room.current_occupancy, 10);
+    return Number.isNaN(occupancy) ? 0 : Math.max(0, Math.min(occupancy, getRoomCapacity(room)));
+}
+
+function updateRoomStatusSummary(rooms) {
+    const totals = {
+        total: 0,
+        occupied: 0,
+        available: 0,
+        reserved: 0,
+        maintenance: 0
+    };
+
+    rooms.forEach(room => {
+        const capacity = getRoomCapacity(room);
+        const occupied = getRoomOccupancy(room);
+        const free = capacity - occupied;
+
+        totals.total += capacity;
+        totals.occupied += occupied;
+
+        if (room.status === 'Reserved') {
+            totals.reserved += free;
+        } else if (room.status === 'Maintenance') {
+            totals.maintenance += free;
+        } else {
+            totals.available += free;
+        }
+    });
+
+    document.getElementById('roomSummaryTotal').textContent = totals.total;
+    document.getElementById('roomSummaryOccupied').textContent = totals.occupied;
+    document.getElementById('roomSummaryAvailable').textContent = totals.available;
+    document.getElementById('roomSummaryReserved').textContent = totals.reserved;
+    document.getElementById('roomSummaryMaintenance').textContent = totals.maintenance;
 }
 
 function updateRoomTypeSummary(rooms) {
@@ -217,7 +250,7 @@ function updateRoomTypeSummary(rooms) {
     const typeCounts = rooms.reduce((acc, room) => {
         const type = String(room.room_type || '').trim();
         if (!type) return acc;
-        acc[type] = (acc[type] || 0) + 1;
+        acc[type] = (acc[type] || 0) + getRoomCapacity(room);
         return acc;
     }, {});
 
