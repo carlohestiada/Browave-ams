@@ -615,14 +615,6 @@ $(function () {
 
     const showCheckoutFailure = (message, fallback) => {
       $(button).prop("disabled", false);
-      if (String(message || "").startsWith("Cannot check out yet")) {
-        Swal.fire({
-          title: "Departure Not Completed",
-          text: "This employee's departure transportation (company car) is not completed yet. Complete the departure first and the room will be released automatically, or cancel the trip.",
-          icon: "warning",
-        });
-        return;
-      }
       swalError(message || fallback);
     };
 
