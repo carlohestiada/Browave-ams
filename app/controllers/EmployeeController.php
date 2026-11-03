@@ -38,6 +38,20 @@ class EmployeeController
         );
     }
 
+    public function checkNameDuplicates()
+    {
+        $duplicates = $this->employee->findDuplicateNameFields(
+            $_GET['english_name'] ?? null,
+            $_GET['chinese_name'] ?? null,
+            $_GET['id'] ?? null
+        );
+
+        echo json_encode([
+            'success' => true,
+            'duplicates' => $duplicates
+        ]);
+    }
+
     public function store()
     {
         $data = $_POST;

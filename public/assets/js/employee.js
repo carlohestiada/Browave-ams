@@ -375,22 +375,58 @@ function saveEmployee(event) {
     $("#employee_code").val(generateNAEmployeeCode());
   }
 
-  $.ajax({
-    url: url,
-    type: method,
-    data: $("#employeeForm").serialize(),
-    success: function () {
-      loadEmployees();
-      $("#employeeModal").modal("hide");
-      swalSuccess("Employee saved successfully");
-    },
-    error: function (xhr) {
-      const error =
-        xhr.responseJSON?.error || xhr.responseText || "Unknown error";
+  $.get(employeeApiUrl, {
+    check_name_duplicates: 1,
+    id: id,
+    english_name: $("#english_name").val(),
+    chinese_name: $("#chinese_name").val(),
+  })
+    .done(function (response) {
+      const result = typeof response === "string" ? JSON.parse(response) : response;
+      if (!result.success || !result.duplicates) {
+        swalError("Unable to validate employee names. Please try again.");
+        return;
+      }
 
-      swalError("Error saving employee: " + error);
-    },
-  });
+      const duplicateNames = [];
+      if (result.duplicates.english_name) {
+        duplicateNames.push("English name");
+      }
+      if (result.duplicates.chinese_name) {
+        duplicateNames.push("Chinese name");
+      }
+      if (duplicateNames.length > 0) {
+        swalError(
+          `${duplicateNames.join(" and ")} already exists. Please enter a unique name.`,
+          "Duplicate Employee Name",
+        );
+        return;
+      }
+
+      $.ajax({
+        url: url,
+        type: method,
+        data: $("#employeeForm").serialize(),
+        success: function () {
+          loadEmployees();
+          $("#employeeModal").modal("hide");
+          swalSuccess("Employee saved successfully");
+        },
+        error: function (xhr) {
+          const error =
+            xhr.responseJSON?.error || xhr.responseText || "Unknown error";
+
+          swalError("Error saving employee: " + error);
+        },
+      });
+    })
+    .fail(function (xhr) {
+      const error =
+        xhr.responseJSON?.error ||
+        xhr.responseText ||
+        "Unable to validate employee names. Please try again.";
+      swalError(error, "Name Validation Failed");
+    });
 }
 
 function deleteEmployee(id) {

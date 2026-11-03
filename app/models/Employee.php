@@ -132,6 +132,95 @@ class Employee
         return preg_match("/^[\p{Latin}\s\-\.'’]+$/u", $value) === 1;
     }
 
+    public function findDuplicateNameFields($englishName, $chineseName, $employeeId = null): array
+    {
+        $names = [
+            'english_name' => $this->normalizeEnglishName($englishName),
+            'chinese_name' => $this->normalizeEnglishName($chineseName)
+        ];
+        $duplicates = [
+            'english_name' => false,
+            'chinese_name' => false
+        ];
+
+        foreach ($names as $field => $name) {
+            if ($name === null) {
+                continue;
+            }
+
+            $column = $field === 'english_name' ? 'english_name' : 'chinese_name';
+            $caseInsensitive = $field === 'english_name';
+            $expression = $this->getNormalizedNameExpression($column, $caseInsensitive);
+            $valueExpression = $this->getNormalizedNameExpression('?', $caseInsensitive);
+
+            if ($employeeId !== null && $employeeId !== '') {
+                $currentNameStmt = $this->db->prepare(
+                    "SELECT EXISTS (
+                        SELECT 1 FROM employees
+                        WHERE id = ? AND {$expression} = {$valueExpression}
+                    )"
+                );
+                $currentNameStmt->execute([$employeeId, $name]);
+                if ($currentNameStmt->fetchColumn()) {
+                    continue;
+                }
+            }
+
+            $sql = "SELECT EXISTS (
+                        SELECT 1 FROM employees
+                        WHERE {$expression} = {$valueExpression}";
+            $params = [$name];
+
+            if ($employeeId !== null && $employeeId !== '') {
+                $sql .= " AND id <> ?";
+                $params[] = $employeeId;
+            }
+
+            $sql .= ")";
+            $duplicateStmt = $this->db->prepare($sql);
+            $duplicateStmt->execute($params);
+            $duplicates[$field] = (bool) $duplicateStmt->fetchColumn();
+        }
+
+        return $duplicates;
+    }
+
+    private function getNormalizedNameExpression(string $column, bool $caseInsensitive): string
+    {
+        $trimCharacters = "CHR(9) || CHR(10) || CHR(11) || CHR(12) || CHR(13) || ' '";
+        $expression = "BTRIM({$column}, {$trimCharacters})";
+
+        return $caseInsensitive ? "LOWER({$expression})" : $expression;
+    }
+
+    private function assertUniqueNames($englishName, $chineseName, $employeeId = null): void
+    {
+        $duplicates = $this->findDuplicateNameFields($englishName, $chineseName, $employeeId);
+
+        if ($duplicates['english_name']) {
+            throw new Exception('An employee with this English name already exists.');
+        }
+
+        if ($duplicates['chinese_name']) {
+            throw new Exception('An employee with this Chinese name already exists.');
+        }
+    }
+
+    private function getDuplicateNameError(PDOException $exception): ?string
+    {
+        $message = strtolower($exception->errorInfo[2] ?? $exception->getMessage());
+
+        if (strpos($message, 'an employee with this english name already exists') !== false) {
+            return 'An employee with this English name already exists.';
+        }
+
+        if (strpos($message, 'an employee with this chinese name already exists') !== false) {
+            return 'An employee with this Chinese name already exists.';
+        }
+
+        return null;
+    }
+
     private function normalizeGender($value)
     {
         $value = isset($value) ? trim((string) $value) : '';
@@ -200,6 +289,8 @@ class Employee
             throw new Exception('English Name may only contain letters, spaces, hyphens, apostrophes, and periods.');
         }
 
+        $this->assertUniqueNames($englishName, $chineseName);
+
         try {
             $success = $stmt->execute([
                 $data['employee_code'],
@@ -210,6 +301,11 @@ class Employee
                 $data['status']
             ]);
         } catch (PDOException $e) {
+            $nameError = $this->getDuplicateNameError($e);
+            if ($nameError !== null) {
+                throw new Exception($nameError, 0, $e);
+            }
+
             $dbMessage = $e->getMessage();
             if (stripos($dbMessage, 'duplicate') !== false || stripos($dbMessage, 'unique') !== false || stripos($dbMessage, '1062') !== false || stripos($dbMessage, '23000') !== false) {
                 throw new Exception('This employee already exists. Please use a different employee code or name and try again.');
@@ -247,15 +343,26 @@ class Employee
             throw new Exception('English Name may only contain letters, spaces, hyphens, apostrophes, and periods.');
         }
 
-        return $stmt->execute([
-            $data['employee_code'],
-            $englishName,
-            $chineseName,
-            $gender,
-            $data['department_id'],
-            $data['status'],
-            $id
-        ]);
+        $this->assertUniqueNames($englishName, $chineseName, $id);
+
+        try {
+            return $stmt->execute([
+                $data['employee_code'],
+                $englishName,
+                $chineseName,
+                $gender,
+                $data['department_id'],
+                $data['status'],
+                $id
+            ]);
+        } catch (PDOException $e) {
+            $nameError = $this->getDuplicateNameError($e);
+            if ($nameError !== null) {
+                throw new Exception($nameError, 0, $e);
+            }
+
+            throw $e;
+        }
     }
 
     public function updateStatus($id, $status)

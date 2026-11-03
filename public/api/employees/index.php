@@ -15,7 +15,9 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
     case 'GET':
-        if ($id) {
+        if (isset($_GET['check_name_duplicates'])) {
+            $controller->checkNameDuplicates();
+        } elseif ($id) {
             $controller->edit($id);
         } else {
             $controller->index();
