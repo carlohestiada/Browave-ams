@@ -319,9 +319,9 @@ function renderCheckoutHistory(rows = checkoutHistoryRows, currentPage = 1) {
           <td>${displayValue(row.building_name)}</td>
           <td>${displayValue(row.floor_name)}</td>
           <td>${displayValue(row.room_no)}</td>
-          <td>${displayValue(row.checkin_date)}</td>
-          <td>${displayValue(row.expected_checkout_date)}</td>
-          <td>${displayValue(row.actual_checkout_date)}</td>
+          <td>${formatDate(row.checkin_date)}</td>
+          <td>${formatDate(row.expected_checkout_date)}</td>
+          <td>${formatDate(row.actual_checkout_date)}</td>
           <td>${renderAssignmentStatus(row.status)}</td>
           <td style="text-align:right; white-space:nowrap;">
             <button type="button" class="btn btn-primary btn-sm checkout-assignment-details" data-assignment-id="${row.id}">View Details</button>
