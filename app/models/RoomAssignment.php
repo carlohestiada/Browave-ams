@@ -491,25 +491,39 @@ class RoomAssignment
             return false;
         }
 
-        $otherAssignments = "room_id = ? AND status = 'Active' AND employee_id <> ?";
-        $candidateParams = [$roomId, $employeeId];
-        $occupantParams = [$roomId, $employeeId];
+        $eligibleConditions = "room_id = ? AND status = 'Active' AND employee_id <> ?";
+        $params = [$roomId, $employeeId];
 
         if ($excludeAssignmentId !== null) {
-            $otherAssignments .= " AND id <> ?";
-            $candidateParams[] = $excludeAssignmentId;
-            $occupantParams[] = $excludeAssignmentId;
+            $eligibleConditions .= " AND id <> ?";
+            $params[] = $excludeAssignmentId;
         }
 
-        $sql = "WITH candidate_dates AS (
+        if ($checkoutDate !== '') {
+            $eligibleConditions .= " AND checkin_date <= CAST(? AS DATE)";
+            $params[] = $checkoutDate;
+        }
+
+        $eligibleConditions .= " AND (COALESCE(actual_checkout_date, expected_checkout_date) IS NULL
+                                    OR COALESCE(actual_checkout_date, expected_checkout_date) >= CAST(? AS DATE))";
+        $params[] = $checkinDate;
+
+        $sql = "WITH eligible_assignments AS (
+                    SELECT DISTINCT
+                           employee_id,
+                           checkin_date,
+                           COALESCE(actual_checkout_date, expected_checkout_date) AS occupancy_end_date
+                    FROM room_assignments
+                    WHERE {$eligibleConditions}
+                ),
+                candidate_dates AS (
                     SELECT CAST(? AS DATE) AS occupancy_date
                     UNION
                     SELECT checkin_date
-                    FROM room_assignments
-                    WHERE {$otherAssignments}
-                      AND checkin_date >= CAST(? AS DATE)";
-        $params = [$checkinDate];
-        $params = array_merge($params, $candidateParams, [$checkinDate]);
+                    FROM eligible_assignments
+                    WHERE checkin_date >= CAST(? AS DATE)";
+        $params[] = $checkinDate;
+        $params[] = $checkinDate;
 
         if ($checkoutDate !== '') {
             $sql .= " AND checkin_date <= CAST(? AS DATE)";
@@ -523,14 +537,13 @@ class RoomAssignment
                     FROM candidate_dates dates
                     WHERE (
                         SELECT COUNT(DISTINCT occupants.employee_id)
-                        FROM room_assignments occupants
-                        WHERE occupants.{$otherAssignments}
-                          AND occupants.checkin_date <= dates.occupancy_date
-                          AND (occupants.expected_checkout_date IS NULL
-                               OR occupants.expected_checkout_date >= dates.occupancy_date)
+                        FROM eligible_assignments occupants
+                        WHERE occupants.checkin_date <= dates.occupancy_date
+                          AND (occupants.occupancy_end_date IS NULL
+                               OR occupants.occupancy_end_date >= dates.occupancy_date)
                     ) >= ?
                 )";
-        $params = array_merge($params, $occupantParams, [$capacity]);
+        $params[] = $capacity;
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
