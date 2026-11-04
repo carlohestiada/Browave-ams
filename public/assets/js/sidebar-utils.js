@@ -232,6 +232,14 @@ function renderPaginatedTable({ data, tableSelector, currentPage = 1, perPage = 
     state.updateFooter = updateFooter;
     state.onRender = onRender;
 
+    const defaultSortColumn = sortColumns.find(function(column) {
+        return column.defaultSortDirection;
+    });
+    if (!state.sortKey && defaultSortColumn) {
+        state.sortKey = defaultSortColumn.key;
+        state.sortDirection = defaultSortColumn.defaultSortDirection;
+    }
+
     setupSortableHeaders(tableSelector, sortColumns, state);
 
     const sortedData = sortTableData(data, state.sortKey, state.sortDirection);

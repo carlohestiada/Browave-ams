@@ -35,6 +35,11 @@ let modalMode = "create";
 let selectedTransportationIds = new Set();
 let tripDetailsRestoreTripId = null;
 let transportationSelectHeader = null;
+function transportationDateSortValue(value) {
+  const timestamp = Date.parse(value || "");
+  return Number.isNaN(timestamp) ? -8640000000000000 : timestamp;
+}
+
 const transportationSortColumns = [
   {
     index: 1,
@@ -44,8 +49,8 @@ const transportationSortColumns = [
   { index: 2, key: (row) => row.department_name || "" },
   { index: 3, key: (row) => row.trip_id || "" },
   { index: 4, key: (row) => row.trip_type || "" },
-  { index: 5, key: (row) => row.arrival_date || "" },
-  { index: 6, key: (row) => row.departure_date || "" },
+  { index: 5, key: (row) => transportationDateSortValue(row.arrival_date) },
+  { index: 6, key: (row) => transportationDateSortValue(row.departure_date) },
   { index: 7, key: (row) => row.transportation_type || "" },
   { index: 8, key: (row) => row.driver_name || "" },
   { index: 9, key: (row) => row.vehicle_name || "" },
@@ -58,9 +63,12 @@ function getTransportationRowId(row) {
 
 function getTransportationSortColumns() {
   const indexOffset = currentScheduleView === "archive" ? -1 : 0;
+  const defaultSortIndex = currentScheduleView === "archive" ? 6 : 5;
   return transportationSortColumns.map((column) => ({
     ...column,
     index: column.index + indexOffset,
+    defaultSortDirection:
+      column.index === defaultSortIndex ? "desc" : undefined,
   }));
 }
 
@@ -614,6 +622,11 @@ function refreshScheduleFromSearch() {
 
 function setScheduleView(view) {
   currentScheduleView = view;
+  if (tableStates["#companyCarTableBody"]) {
+    tableStates["#companyCarTableBody"].sortKey = "";
+    tableStates["#companyCarTableBody"].sortDirection = "asc";
+    tableStates["#companyCarTableBody"].currentPage = 1;
+  }
 
   $(".schedule-view-tab").removeClass("active");
   $(`.schedule-view-tab[data-view="${view}"]`).addClass("active");
