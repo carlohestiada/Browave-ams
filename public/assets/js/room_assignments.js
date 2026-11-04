@@ -514,6 +514,7 @@ function loadRoomsForAssign(selector = "#assign_room", onlyAvailable = true) {
     const transferAssignment = assignmentRows.find(
       (assignment) => String(assignment.id) === transferAssignmentId,
     );
+    const isTransferRoom = selector === "#transfer_room";
     let opts = '<option value="">Select room</option>';
     rooms
       .filter((r) => {
@@ -528,7 +529,7 @@ function loadRoomsForAssign(selector = "#assign_room", onlyAvailable = true) {
           reservationId === String(transferAssignment.employee_id);
         const isReservedForOther = reservationId && !isReservedForEmployee;
         const isAssignable =
-          !capacityReached &&
+          (isTransferRoom || !capacityReached) &&
           !isReservedForOther &&
           r.status !== "Maintenance";
 
@@ -550,7 +551,9 @@ function loadRoomsForAssign(selector = "#assign_room", onlyAvailable = true) {
         const label = isReservedForEmployee
           ? `${r.room_no} (${r.accommodation_name || ""}) - Reserved for you`
           : capacityReached
-          ? `${r.room_no} (${r.accommodation_name || ""}) - Full`
+          ? isTransferRoom
+            ? `${r.room_no} (${r.accommodation_name || ""}) - Availability checked for transfer date`
+            : `${r.room_no} (${r.accommodation_name || ""}) - Full`
           : `${r.room_no} (${r.accommodation_name || ""})`;
         opts += `<option value="${r.id}"${selected}>${label}</option>`;
       });
@@ -1243,13 +1246,15 @@ function displayRoomCards() {
       statusClass = 'room-current';
       statusText = 'Current Room';
     } else if (
-      capacityReached ||
       room.status === 'Maintenance' ||
       (room.reserved_by_employee_id &&
         String(room.reserved_by_employee_id) !== String(assignment.employee_id))
     ) {
       statusClass = 'room-occupied';
       statusText = room.status === 'Maintenance' ? 'Maintenance' : 'Occupied';
+    } else if (capacityReached) {
+      statusClass = 'room-available';
+      statusText = 'Availability checked for transfer date';
     } else if (room.reserved_by_employee_id) {
       statusClass = 'room-available';
       statusText = 'Reserved for you';
@@ -1265,7 +1270,7 @@ function displayRoomCards() {
 
     const isReservedForOther = room.reserved_by_employee_id &&
       String(room.reserved_by_employee_id) !== String(assignment.employee_id);
-    const isDisabled = isCurrentRoom || capacityReached || isReservedForOther || room.status === 'Maintenance';
+    const isDisabled = isCurrentRoom || isReservedForOther || room.status === 'Maintenance';
     const clickHandler = isDisabled ? '' : `onclick="selectRoomCard('${roomId}')"`;
 
     html += `
@@ -1282,7 +1287,7 @@ function displayRoomCards() {
 function selectRoomCard(roomId) {
   if (!roomId) return;
 
-  // Check if the room is selectable (not current room and not occupied)
+  // Date-based capacity is validated by the transfer endpoint.
   const room = transferRoomCardsData.find((r) => String(r.id) === String(roomId));
   if (!room) return;
 
@@ -1292,12 +1297,10 @@ function selectRoomCard(roomId) {
   if (!assignment) return;
 
   const isCurrentRoom = String(assignment.room_id) === String(roomId);
-  const capacityReached = Number(room.capacity) > 0 && 
-                          Number(room.current_occupancy || 0) >= Number(room.capacity);
 
   const isReservedForOther = room.reserved_by_employee_id &&
     String(room.reserved_by_employee_id) !== String(assignment.employee_id);
-  if (isCurrentRoom || capacityReached || isReservedForOther || room.status === 'Maintenance') {
+  if (isCurrentRoom || isReservedForOther || room.status === 'Maintenance') {
     return; // Cannot select
   }
 

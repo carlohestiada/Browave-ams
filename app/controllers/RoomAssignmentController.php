@@ -115,14 +115,21 @@ class RoomAssignmentController
     public function transfer($id)
     {
         parse_str(file_get_contents('php://input'), $data);
+        $transferDate = trim((string) ($data['transfer_date'] ?? ''));
 
-        if (empty($data['new_room_id']) || empty($data['transfer_date'])) {
+        if (empty($data['new_room_id']) || $transferDate === '') {
             http_response_code(400);
             echo json_encode(['success' => false, 'error' => 'Missing required fields']);
             return;
         }
 
-        $result = $this->assignment->transfer($id, $data['new_room_id'], $data['transfer_date']);
+        if (!$this->isValidDate($transferDate)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Enter a valid transfer date.']);
+            return;
+        }
+
+        $result = $this->assignment->transfer($id, $data['new_room_id'], $transferDate);
 
         if (is_array($result) && !$result['success']) {
             http_response_code(400);
