@@ -1,3 +1,17 @@
+// For date formatting in the table
+function formatDate(value) {
+  if (!value) return "";
+
+  // Handles YYYY-MM-DD and YYYY-MM-DD HH:mm:ss
+  const datePart = String(value).split(" ")[0];
+  const parts = datePart.split("-");
+
+  if (parts.length !== 3) return value;
+
+  const [year, month, day] = parts;
+  return `${month}/${day}/${year}`;
+}
+
 function apiUrl(path) {
   const base = window.location.pathname.replace(/\/[^\/]+$/, "");
   return base + "/" + path.replace(/^\/+/, "");
@@ -700,8 +714,8 @@ function renderTransportationRow(row) {
   const overallStatus = String(row.trip_status || row.status || "SCHEDULED")
     .toUpperCase()
     .replace(/\s+/g, "_");
-  const arrivalDate = row.arrival_date || "";
-  const departureDate = row.departure_date || "";
+  const arrivalDate = formatDate(row.arrival_date);
+  const departureDate = formatDate(row.departure_date);
   const tripType = formatTripType(row.trip_type || "NORMAL_TRIP");
   const checkboxCell = isArchive
     ? ""
@@ -961,7 +975,7 @@ function openTripDetailsModal(tripId, readOnly = false) {
           (leg) => `
             <tr>
                 <td>${escapeTripHtml(leg.leg_type || "—")}</td>
-                <td>${escapeTripHtml(leg.leg_date || "—")}</td>
+                <td>${escapeTripHtml(formatDate(leg.leg_date) || "—")}</td>
                 <td>${escapeTripHtml(leg.origin || "—")}</td>
                 <td>${escapeTripHtml(leg.destination || "—")}</td>
                 <td>${escapeTripHtml(leg.arrival_airport || leg.departure_airport || "—")}</td>
