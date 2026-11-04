@@ -522,7 +522,7 @@ class RoomAssignment
                     SELECT 1
                     FROM candidate_dates dates
                     WHERE (
-                        SELECT COUNT(*)
+                        SELECT COUNT(DISTINCT occupants.employee_id)
                         FROM room_assignments occupants
                         WHERE occupants.{$otherAssignments}
                           AND occupants.checkin_date <= dates.occupancy_date
