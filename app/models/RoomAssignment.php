@@ -391,11 +391,16 @@ class RoomAssignment
             return ['success' => false, 'error' => 'The selected room is reserved by another employee. Please choose another room or remove the reservation first.'];
         }
 
+        $expectedCheckoutDate = $oldAssignment['expected_checkout_date'] ?? null;
+        if ($expectedCheckoutDate !== null && $expectedCheckoutDate < $transferDate) {
+            $expectedCheckoutDate = null;
+        }
+
         if ($this->roomExceedsCapacityForDates(
             $newRoomId,
             $employeeId,
             $transferDate,
-            $oldAssignment['expected_checkout_date'] ?? null,
+            $expectedCheckoutDate,
             $assignmentId
         )) {
             return ['success' => false, 'error' => 'The selected room has reached its maximum capacity for the selected dates. Please choose another room.'];
@@ -424,7 +429,7 @@ class RoomAssignment
                 $employeeId,
                 $newRoomId,
                 $transferDate,
-                $oldAssignment['expected_checkout_date']
+                $expectedCheckoutDate
             ])) {
                 throw new Exception('Could not create new assignment for the new room.');
             }
