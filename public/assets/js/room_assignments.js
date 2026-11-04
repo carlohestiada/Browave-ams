@@ -170,6 +170,17 @@ function initializeAssignmentDateBounds() {
   };
 }
 
+//for date formatting in the table
+function formatDate(value) {
+    if (!value) return "-";
+
+    const parts = value.split("-");
+    if (parts.length !== 3) return value;
+
+    const [year, month, day] = parts;
+    return `${month}/${day}/${year}`;
+}
+
 function renderAssignmentRow(r, lookup) {
   const assignmentId = String(r.id);
   const checked = selectedAssignmentIds.has(assignmentId) ? "checked" : "";
@@ -191,8 +202,8 @@ function renderAssignmentRow(r, lookup) {
             <td><a href="#" class="employee-room-link fw-semibold text-decoration-none" title="Click to see the reserved room" onclick="viewAssignmentDetails(${r.id}); return false;">${employeeName}</a></td>
             <td>${displayValue(r.department_name)}</td>
             <td>${displayValue(r.gender)}</td>
-            <td>${displayValue(r.checkin_date)}</td>
-            <td>${displayValue(r.expected_checkout_date)}</td>
+            <td>${formatDate(r.checkin_date)}</td>
+            <td>${formatDate(r.expected_checkout_date)}</td>
             <td>${displayValue(r.accommodation_name)}</td>
             <td>${displayValue(r.room_no)}</td>
             <td>${renderAssignmentStatus(r.status)}</td>
