@@ -22,12 +22,17 @@ class Trip
                     t.remarks,
                     t.created_at,
                     t.updated_at,
-                    trip_leg_dates.start_date
+                    trip_leg_dates.start_date,
+                    trip_leg_dates.arrival_date,
+                    trip_leg_dates.departure_date
                 FROM trips t
                 JOIN employees e ON t.employee_id = e.id
                 LEFT JOIN departments d ON e.department_id = d.id
                 LEFT JOIN (
-                    SELECT trip_id, MIN(leg_date) AS start_date
+                    SELECT trip_id,
+                           MIN(leg_date) AS start_date,
+                           MIN(leg_date) FILTER (WHERE leg_type = 'ARRIVAL') AS arrival_date,
+                           MIN(leg_date) FILTER (WHERE leg_type = 'DEPARTURE') AS departure_date
                     FROM trip_legs
                     GROUP BY trip_id
                 ) trip_leg_dates ON trip_leg_dates.trip_id = t.id";
@@ -91,7 +96,46 @@ class Trip
             $trips = array_values(array_filter($trips, static fn($trip) => $trip['status'] === $filters['status']));
         }
 
+        $completedView = ($filters['status'] ?? null) === 'COMPLETED';
+        usort($trips, function ($first, $second) use ($completedView) {
+            $dateField = $completedView ? 'departure_date' : 'arrival_date';
+            $firstDate = $this->tripDateSortValue($first[$dateField] ?? null);
+            $secondDate = $this->tripDateSortValue($second[$dateField] ?? null);
+
+            if ($firstDate === null && $secondDate !== null) {
+                return 1;
+            }
+            if ($secondDate === null && $firstDate !== null) {
+                return -1;
+            }
+            if ($firstDate !== $secondDate) {
+                if ($completedView) {
+                    return $firstDate < $secondDate ? 1 : -1;
+                }
+
+                return $firstDate < $secondDate ? -1 : 1;
+            }
+
+            return (int) $first['id'] <=> (int) $second['id'];
+        });
+
         return $trips;
+    }
+
+    private function tripDateSortValue($date): ?int
+    {
+        if (!is_string($date) || $date === '') {
+            return null;
+        }
+
+        $parsedDate = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+        $dateErrors = DateTimeImmutable::getLastErrors();
+
+        if (!$parsedDate || ($dateErrors !== false && ($dateErrors['warning_count'] > 0 || $dateErrors['error_count'] > 0))) {
+            return null;
+        }
+
+        return $parsedDate->getTimestamp();
     }
 
     public function getEmployeesWithoutTrip(array $filters = []): array

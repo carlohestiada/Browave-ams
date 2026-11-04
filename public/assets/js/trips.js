@@ -20,12 +20,16 @@ const tripSortColumns = [
   {
     index: 3,
     key: (trip) =>
-      trip.legs?.find((leg) => leg.leg_type === "ARRIVAL")?.leg_date || "",
+      tripDateSortValue(
+        trip.legs?.find((leg) => leg.leg_type === "ARRIVAL")?.leg_date,
+      ),
   },
   {
     index: 4,
     key: (trip) =>
-      trip.legs?.find((leg) => leg.leg_type === "DEPARTURE")?.leg_date || "",
+      tripDateSortValue(
+        trip.legs?.find((leg) => leg.leg_type === "DEPARTURE")?.leg_date,
+      ),
   },
   { index: 9, key: (trip) => trip.status || "" },
 ];
@@ -238,6 +242,29 @@ function renderTripTable() {
   }
 }
 
+function tripDateSortValue(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || "");
+  if (!match) {
+    return "";
+  }
+
+  const timestamp = Date.UTC(
+    Number(match[1]),
+    Number(match[2]) - 1,
+    Number(match[3]),
+  );
+  const date = new Date(timestamp);
+  if (
+    date.getUTCFullYear() !== Number(match[1]) ||
+    date.getUTCMonth() !== Number(match[2]) - 1 ||
+    date.getUTCDate() !== Number(match[3])
+  ) {
+    return "";
+  }
+
+  return timestamp;
+}
+
 function updateTripViewSummary() {
   $("#tripViewSummary").text(
     currentTripView === "completed"
@@ -248,6 +275,11 @@ function updateTripViewSummary() {
 
 function setTripView(view) {
   currentTripView = view === "completed" ? "completed" : "active";
+  if (tableStates["#tripsTableBody"]) {
+    tableStates["#tripsTableBody"].sortKey = "";
+    tableStates["#tripsTableBody"].sortDirection = "asc";
+    tableStates["#tripsTableBody"].currentPage = 1;
+  }
 
   $(".trip-view-tab").each(function () {
     const active = $(this).data("view") === currentTripView;
