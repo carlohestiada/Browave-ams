@@ -109,11 +109,7 @@ class Trip
                 return -1;
             }
             if ($firstDate !== $secondDate) {
-                if ($completedView) {
-                    return $firstDate < $secondDate ? 1 : -1;
-                }
-
-                return $firstDate < $secondDate ? -1 : 1;
+                return $firstDate < $secondDate ? 1 : -1;
             }
 
             return (int) $first['id'] <=> (int) $second['id'];
