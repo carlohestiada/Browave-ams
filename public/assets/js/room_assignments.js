@@ -929,14 +929,23 @@ function viewAssignmentDetails(id, readOnly = false) {
     const availableCapacity = roomCapacity > 0 ? Math.max(roomCapacity - roomOccupancy, 0) : '-';
     const transferRows = history
       .filter((row) => row.status === 'Transferred' && row.transferred_to_room_id)
-      .map((row) => `
-        <tr>
-          <td>${displayValue(row.room_no || '-')}</td>
-          <td>${displayValue(row.transferred_room_no || '-')}</td>
-          <td>${displayValue(formatISODate(row.checkin_date))}</td>
-          <td>${displayValue(formatISODate(row.actual_checkout_date || row.transfer_date))}</td>
-        </tr>
-      `)
+      .map((row) => {
+        const fromRoom = [row.accommodation_name, row.room_no ?  `${row.room_no}` : '']
+          .filter(Boolean)
+          .join(' - ') || '-';
+        const toRoom = [row.transferred_accommodation_name, row.transferred_room_no ? `${row.transferred_room_no}` : '']
+          .filter(Boolean)
+          .join(' - ') || '-';
+
+        return `
+          <tr>
+            <td class="text-break">${displayValue(fromRoom)}</td>
+            <td class="text-break">${displayValue(toRoom)}</td>
+            <td>${displayValue(formatISODate(row.checkin_date))}</td>
+            <td>${displayValue(formatISODate(row.actual_checkout_date || row.transfer_date))}</td>
+          </tr>
+        `;
+      })
       .join('');
 
     const checkoutButton = document.getElementById("assignmentDetailsCheckoutBtn");
@@ -987,7 +996,7 @@ function viewAssignmentDetails(id, readOnly = false) {
       <div class="mt-4 border-top pt-3">
         <h6 class="mb-3">Room Transfer History</h6>
         <div class="table-responsive">
-          <table class="table table-sm table-striped mb-0">
+          <table class="table table-sm table-striped mb-0" style="min-width: 640px;">
             <thead>
               <tr>
                 <th>From Room</th>

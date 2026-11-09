@@ -107,15 +107,15 @@ class RoomAssignment
              JOIN employees e ON ra.employee_id = e.id
              JOIN rooms r ON ra.room_id = r.id
              LEFT JOIN floors f ON r.floor_id = f.id
-             LEFT JOIN buildings bf ON f.building_id = bf.id
-             LEFT JOIN accommodations af ON bf.accommodation_id = af.id
+             LEFT JOIN buildings bf ON COALESCE(r.building_id, f.building_id) = bf.id
+             LEFT JOIN accommodations af ON COALESCE(r.accommodation_id, bf.accommodation_id) = af.id
              LEFT JOIN rooms tr ON ra.transferred_to_room_id = tr.id
              LEFT JOIN floors tf ON tr.floor_id = tf.id
-             LEFT JOIN buildings tb ON tf.building_id = tb.id
-             LEFT JOIN accommodations ta ON tb.accommodation_id = ta.id
+             LEFT JOIN buildings tb ON COALESCE(tr.building_id, tf.building_id) = tb.id
+             LEFT JOIN accommodations ta ON COALESCE(tr.accommodation_id, tb.accommodation_id) = ta.id
              LEFT JOIN departments d ON e.department_id = d.id
              WHERE ra.employee_id = ?
-             ORDER BY ra.checkin_date DESC, ra.id DESC"
+             ORDER BY ra.checkin_date ASC, ra.id ASC"
         );
         $stmt->execute([$employeeId]);
 
