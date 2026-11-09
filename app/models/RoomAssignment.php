@@ -139,6 +139,7 @@ class RoomAssignment
                 'english_name' => $assignment['english_name'],
                 'gender' => $assignment['gender'],
                 'department_name' => $assignment['department_name'],
+                'original_checkin_date' => $history[0]['checkin_date'] ?? $assignment['checkin_date'],
             ],
         ];
     }
@@ -369,6 +370,10 @@ class RoomAssignment
 
         $currentRoomId = $oldAssignment['room_id'];
         $employeeId = $oldAssignment['employee_id'];
+
+        if ($transferDate < $oldAssignment['checkin_date']) {
+            return ['success' => false, 'error' => 'Transfer date cannot be before the current room check-in date.'];
+        }
 
         $duplicateCheck = $this->db->prepare(
             "SELECT COUNT(*) AS count FROM room_assignments WHERE employee_id = ? AND status = 'Active' AND id != ?"

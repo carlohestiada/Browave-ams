@@ -181,6 +181,13 @@ function formatDate(value) {
     return `${month}/${day}/${year}`;
 }
 
+function formatISODate(value) {
+  if (!value) return "-";
+
+  const match = String(value).match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : value;
+}
+
 function renderAssignmentRow(r, lookup) {
   const assignmentId = String(r.id);
   const checked = selectedAssignmentIds.has(assignmentId) ? "checked" : "";
@@ -926,7 +933,8 @@ function viewAssignmentDetails(id, readOnly = false) {
         <tr>
           <td>${displayValue(row.room_no || '-')}</td>
           <td>${displayValue(row.transferred_room_no || '-')}</td>
-          <td>${displayValue(row.actual_checkout_date || row.transfer_date || '-')}</td>
+          <td>${displayValue(formatISODate(row.checkin_date))}</td>
+          <td>${displayValue(formatISODate(row.actual_checkout_date || row.transfer_date))}</td>
         </tr>
       `)
       .join('');
@@ -953,9 +961,9 @@ function viewAssignmentDetails(id, readOnly = false) {
               <div class="col-6"><strong>Name</strong></div><div class="col-6">${displayValue(employee.english_name)}</div>
               <div class="col-6"><strong>Department</strong></div><div class="col-6">${displayValue(assignment.department_name || employee.department_name)}</div>
               <div class="col-6"><strong>Gender</strong></div><div class="col-6">${displayValue(employee.gender || assignment.gender)}</div>
-              <div class="col-6"><strong>Check-in Date</strong></div><div class="col-6">${displayValue(assignment.checkin_date)}</div>
-              <div class="col-6"><strong>Expected Check-out</strong></div><div class="col-6">${displayValue(assignment.expected_checkout_date)}</div>
-              <div class="col-6"><strong>Actual Checkout</strong></div><div class="col-6">${displayValue(assignment.actual_checkout_date)}</div>
+              <div class="col-6"><strong>Check-in Date</strong></div><div class="col-6">${displayValue(formatISODate(employee.original_checkin_date || assignment.checkin_date))}</div>
+              <div class="col-6"><strong>Expected Check-out</strong></div><div class="col-6">${displayValue(formatISODate(assignment.expected_checkout_date))}</div>
+              <div class="col-6"><strong>Actual Checkout</strong></div><div class="col-6">${displayValue(formatISODate(assignment.actual_checkout_date))}</div>
             </div>
           </div>
         </div>
@@ -970,7 +978,7 @@ function viewAssignmentDetails(id, readOnly = false) {
               <div class="col-6"><strong>Active Occupants</strong></div><div class="col-6">${displayValue(roomOccupancy)}</div>
               <div class="col-6"><strong>Available Capacity</strong></div><div class="col-6">${displayValue(availableCapacity)}</div>
               <div class="col-6"><strong>Room Status</strong></div><div class="col-6">${displayValue(assignment.room_status)}</div>
-              <div class="col-6"><strong>Assignment Date</strong></div><div class="col-6">${displayValue(assignment.checkin_date)}</div>
+              <div class="col-6"><strong>Assignment Date</strong></div><div class="col-6">${displayValue(formatISODate(assignment.checkin_date))}</div>
               <div class="col-6"><strong>Current Status</strong></div><div class="col-6">${displayValue(currentStatus)}</div>
             </div>
           </div>
@@ -984,11 +992,12 @@ function viewAssignmentDetails(id, readOnly = false) {
               <tr>
                 <th>From Room</th>
                 <th>To Room</th>
+                <th>Check-in Date</th>
                 <th>Transfer Date</th>
               </tr>
             </thead>
             <tbody>
-              ${transferRows || '<tr><td colspan="3" class="text-center text-muted">No previous room transfers found.</td></tr>'}
+              ${transferRows || '<tr><td colspan="4" class="text-center text-muted">No room transfer history available.</td></tr>'}
             </tbody>
           </table>
         </div>
