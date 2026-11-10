@@ -563,7 +563,7 @@ function scheduleSearchTerm() {
 
 function scheduleSearchText(row) {
   const tripLabel = row.trip_id
-    ? `Trip #${row.trip_id} ${row.trip_id}`
+    ? `#${row.trip_id} ${row.trip_id}`
     : "Legacy Unlinked";
   const tripType = row.trip_type || "NORMAL_TRIP";
   const status = row.trip_status || row.status || "SCHEDULED";
@@ -722,7 +722,7 @@ function renderTransportationRow(row) {
     ? "checked"
     : "";
   const tripLabel = row.trip_id
-    ? `Trip #${row.trip_id}`
+    ? `#${row.trip_id}`
     : '<span class="text-muted">Legacy / Unlinked</span>';
   const overallStatus = String(row.trip_status || row.status || "SCHEDULED")
     .toUpperCase()
